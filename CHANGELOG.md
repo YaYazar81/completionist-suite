@@ -11,7 +11,16 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 | CompletionistMD | `mdeditor/__init__.py` |
 | CompletionistQR | `completionistqr/__init__.py` |
 
-CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
+CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Online
+(Ordner `QR-Online/`) zählt die Version in `QR-Online/qronline/__init__.py`.
+
+## 21.10.2026 – QR-Online 1.0.0
+
+* **Neues Projekt QR-Online:** QR-Codes mit Scan-Statistik. Der Code enthält einen kurzen
+  Link auf den eigenen Webspace; `server/index.php` (PHP + SQLite) zählt jeden Scan und
+  leitet weiter. Gespeichert werden nur Zeit, Gerätetyp, Betriebssystem und Sprache, keine
+  IP-Adresse. Die App zeigt Scans pro Tag/Woche, Uhrzeit, Wochentag, Gerät, Betriebssystem
+  und Sprache als Graphen (matplotlib). Das Ziel eines Links lässt sich nachträglich ändern.
 
 ## 21.10.2026 – PDF 1.4.0 · MD 1.4.0 · QR 1.2.0
 

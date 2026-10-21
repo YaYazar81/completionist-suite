@@ -1,0 +1,9 @@
+# QR-Online: alle Adressen an index.php, z. B. /A7KX9P -> index.php
+Options -Indexes
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [L,QSA]
+
+<FilesMatch "^(config(\.sample)?\.php|.*\.sqlite.*)$">
+    Require all denied
+</FilesMatch>
