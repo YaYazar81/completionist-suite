@@ -91,8 +91,8 @@ DEFAULTS = {("url", "url"): "https://example.com", ("wifi", "security"): "WPA",
             ("payment", "kind"): "epc", ("geo", "mode"): "maps", ("social", "platform"): "instagram",
             ("app", "store"): "android", ("feedback", "subject"): "Feedback"}
 
-LOGO_TYPES = [("Bilder", "*.png *.jpg *.jpeg *.webp *.bmp *.gif"), ("Alle Dateien", "*.*")]
-LOGO_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"}
+LOGO_TYPES = [("Bilder", "*.png *.jpg *.jpeg *.webp *.avif *.bmp *.gif"), ("Alle Dateien", "*.*")]
+LOGO_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".avif", ".bmp", ".gif"}
 
 
 class Controls(ctk.CTkTabview):

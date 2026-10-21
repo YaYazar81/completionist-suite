@@ -41,6 +41,8 @@ der Größe wegfiel und sichtbar schlechter war, ist zurück.
   derselben Kontur wie das PDF.
 * **Scharfe Vorschau bei Windows-Skalierung** (125 %, 150 % …). Vorschau und
   Vorlagen-Galerie werden in echten Bildschirmpixeln gerendert, statt hochgezogen zu werden.
+* **Logos auch als AVIF.** Der AVIF-Decoder von Pillow wurde bisher aus Platzgründen
+  weggelassen und ist wieder dabei.
 * Build: `PIL._tkinter_finder` wird ausdrücklich mitgepackt. Ohne stürzte der gebaute
   Programmordner (geprüft unter Linux) beim Aufbau der Vorlagen-Galerie ab.
 
@@ -51,6 +53,8 @@ der Größe wegfiel und sichtbar schlechter war, ist zurück.
   leitet weiter. Gespeichert werden nur Zeit, Gerätetyp, Betriebssystem und Sprache, keine
   IP-Adresse. Die App zeigt Scans pro Tag/Woche, Uhrzeit, Wochentag, Gerät, Betriebssystem
   und Sprache als Graphen (matplotlib). Das Ziel eines Links lässt sich nachträglich ändern.
+* Eigenes Programmsymbol im Stil der Suite (Violett, mit Balkendiagramm), erzeugt von
+  `QR-Online/tools/make_icon.py`.
 
 ## 21.10.2026 – PDF 1.4.0 · MD 1.4.0 · QR 1.2.0
 

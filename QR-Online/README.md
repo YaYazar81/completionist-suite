@@ -94,6 +94,7 @@ Die App spricht den Server über eine kleine JSON-API an. Der Schlüssel steht i
 ..\.venv\Scripts\python.exe -m pytest tests      # Server-Tests brauchen php im PATH
 ..\.venv\Scripts\python.exe build_exe.py         # dist\QR-Online\ (Programmordner)
 .\build_setup.ps1                                # Ordner + Setup (Inno Setup 6)
+..\.venv\Scripts\python.exe tools\make_icon.py   # Programmsymbol neu erzeugen (assets\)
 ```
 
 Die Server-Tests starten `server/index.php` mit dem eingebauten PHP-Server und gehen den

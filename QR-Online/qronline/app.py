@@ -6,6 +6,7 @@ import queue
 import sys
 import threading
 from datetime import date, datetime, timezone
+from pathlib import Path
 from tkinter import filedialog, messagebox
 from typing import Callable
 
@@ -109,6 +110,13 @@ class QROnlineApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title(f"QR-Online {__version__}")
+        # In der gepackten App liegen die Assets unter sys._MEIPASS
+        icon = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1])) / "assets" / "icon.ico"
+        if icon.is_file():
+            try:
+                self.iconbitmap(str(icon))
+            except Exception:  # z. B. unter Linux: .ico nicht als Fenstersymbol
+                pass
         self.geometry("1240x860")
         self.minsize(1000, 680)
         self.settings = settings.load()

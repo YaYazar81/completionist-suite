@@ -7,7 +7,7 @@ Bewusst ein Ordner statt einer einzelnen .exe: die .exe selbst bleibt klein und
 startet sofort, weil nichts bei jedem Aufruf in den Temp-Ordner entpackt wird.
 Verteilt wird der Ordner ueber das Setup (build_setup.ps1).
 
-Das Programmsymbol ist vorerst das von CompletionistQR.
+Das Programmsymbol (assets\icon.ico) erzeugt tools\make_icon.py.
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 NAME = "QR-Online"
-ICON = ROOT.parent / "completionistqr" / "assets" / "icon.ico"
+ICON = ROOT / "assets" / "icon.ico"
 # Pakete, deren Lizenztexte in den Ordner Lizenzen kommen
 LICENSED = ["requests", "urllib3", "certifi", "idna", "charset-normalizer", "customtkinter",
             "darkdetect", "qrcode", "pillow", "matplotlib", "contourpy", "cycler", "fonttools",
@@ -108,6 +108,8 @@ def main() -> int:
         "--workpath", str(args.workpath),
         "--specpath", str(args.workpath),
         "--paths", str(ROOT),
+        # Fenstersymbol (qronline/app.py liest es zur Laufzeit)
+        "--add-data", f"{ICON}{';' if sys.platform == 'win32' else ':'}assets",
         # CustomTkinter laedt seine Themes als Dateien
         "--collect-data", "customtkinter",
         # charts.py wird erst nach dem Fensteraufbau importiert

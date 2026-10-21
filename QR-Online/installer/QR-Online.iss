@@ -40,7 +40,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 
 OutputDir=..\dist
 OutputBaseFilename={#AppName}-Setup-{#AppVersion}
-SetupIconFile=..\..\completionistqr\assets\icon.ico
+SetupIconFile=..\assets\icon.ico
 WizardStyle=modern
 Compression=lzma2/max
 SolidCompression=yes

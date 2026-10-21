@@ -122,15 +122,14 @@ DROP_MD = [
 KEEP_WEBENGINE_LOCALES = {"de.pak", "en-US.pak", "en-GB.pak"}
 
 # CompletionistQR braucht Tkinter, aber kein Qt und nichts aus der PDF-Kette.
-# Dazu ein Brocken, den Pillow sonst mitschleppt:
-#   PIL._avif        AVIF-Decoder, 7,5 MB -- die App liest PNG/JPG/WebP
 # numpy wurde ganz abgeloest, siehe completionistqr/core/colors.py.
+# Der AVIF-Decoder von Pillow (PIL._avif) bleibt seit QR 1.3.0 drin: Logos
+# duerfen auch .avif sein.
 # ssl/_ssl/_hashlib bleiben (frueher ausgeschlossen): "Datei in Google Drive
 # hochladen" spricht HTTPS (core/drive.py, completionistqr/ui/drive_upload.py).
 EXCLUDES_QR = [
     "PySide6", "shiboken6", "typst", "markdown_it", "mdit_py_plugins",
     "numpy",
-    "PIL.AvifImagePlugin", "PIL._avif",
     "pytest", "unittest", "pydoc",
 ]
 

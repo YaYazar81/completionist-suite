@@ -13,7 +13,7 @@ from .core import fonts
 from .core.config import QRDesign
 from .core.userdir import user_dir
 from .ui import dropfiles
-from .ui.controls import Controls
+from .ui.controls import LOGO_SUFFIXES, Controls
 from .ui.preview import PreviewPanel
 
 
@@ -133,7 +133,7 @@ class CompletionistQRApp(ctk.CTk):
                 self.controls.set("Export")
                 self.controls.batch_export(p)
                 return
-            if ext in (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"):
+            if ext in LOGO_SUFFIXES:
                 self.controls._set_logo(p)
                 self.controls.set("Logo")
                 return

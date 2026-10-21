@@ -37,3 +37,19 @@ def test_export_formats(tmp_path, logo_path):
         out = export.save(d, tmp_path / f"qr{ext}", 600)
         assert out.stat().st_size > 1000
     assert export.decode(Image.open(tmp_path / "qr.png")) == PAYLOAD
+
+
+def test_avif_logo_loads_and_scans(tmp_path):
+    from PIL import features
+
+    from completionistqr.core.geometry import load_logo
+
+    if not features.check("avif"):
+        pytest.skip("Pillow ohne AVIF")
+    img = Image.new("RGBA", (300, 200), (0, 0, 0, 0))
+    ImageDraw.Draw(img).ellipse([20, 20, 280, 180], fill=(37, 99, 235, 255))
+    path = tmp_path / "logo.avif"
+    img.save(path, quality=90)
+    assert load_logo(str(path)).size == (300, 200)
+    d = QRDesign(payload=PAYLOAD, logo_path=str(path), logo_size=0.2)
+    assert export.decode(render_pil.render(d, 800, supersample=2)) == PAYLOAD

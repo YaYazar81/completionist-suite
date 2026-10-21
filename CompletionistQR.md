@@ -21,7 +21,7 @@ auf, nicht auf Qt wie die beiden anderen Programme.
 | :--- | :--- |
 | **Inhalt** | Website, Kontakt (vCard), WLAN, E-Mail, SMS, WhatsApp, Telefon, Zahlung (SEPA-GiroCode oder PayPal.me), Standort (Kartenlink oder `geo:`), Social Media (Instagram, TikTok, YouTube …), App-Link, Feedback (Formular oder E-Mail), PDF/Bild/Video als Link, Freitext; Fehlerkorrektur L/M/Q/H |
 | **Design** | 8 Vorlagen + eigene Vorlagen speichern; Modulform (Quadrate, Punkte, abgerundet, Rauten, Balken …), Farbe oder Verlauf (linear/radial), Hintergrund oder transparent, Ruhezone; Ecken-Marker mit eigener Form und Farbe |
-| **Logo** | PNG/JPG/WebP in der Mitte (wählen, ins Fenster ziehen oder Strg+V), Größe 10–30 %, farbige Unterlage mit Eckenradius und Innenabstand |
+| **Logo** | PNG/JPG/WebP/AVIF in der Mitte (wählen, ins Fenster ziehen oder Strg+V), Größe 10–30 %, farbige Unterlage mit Eckenradius und Innenabstand |
 | **Beschriftung** | Rahmen (Linie, Karte, Banner oben/unten, Ticket), ein- oder zweizeiliger Text, 10 Schriftarten, fett, Größe, Farbe |
 | **Export** | PNG in 512–4096 px und 150/300/600 dpi, SVG und PDF als echte Vektorgrafik (Strg+S); in die Zwischenablage (Strg+C); Stapel-Export aus einer CSV-Liste |
 
@@ -120,13 +120,13 @@ CompletionistMD nutzt dieselben (`mdeditor/gdrive.py`).
 ### Was nicht mitgepackt wird
 
 Die App kommt mit Pillow, qrcode, CustomTkinter, zxing-cpp und uharfbuzz (Beschriftung im
-Vektor-PDF) aus, dazu google-auth und requests für das Hochladen nach Google Drive. Zwei Brocken sind bewusst draußen, zusammen
-rund 33 MB:
+Vektor-PDF) aus, dazu google-auth und requests für das Hochladen nach Google Drive. Bewusst
+draußen ist nur NumPy, weil es ohne Einbuße an Qualität ersetzt ist:
 
 | | Grund |
 | :--- | :--- |
 | **NumPy** (26 MB) | wurde nur für den Farbverlauf gebraucht. `core/colors.py` zieht stattdessen eine kleine Vorlage mit einer affinen Abbildung auf die Zielgröße — das rechnet Pillow in C. |
-| **AVIF-Decoder** (7,5 MB) | Pillow bringt ihn mit; gelesen werden nur PNG, JPG und WebP. |
+| ~~**AVIF-Decoder** (7,5 MB)~~ | war bis 1.2.0 draußen. Seit 1.3.0 dürfen Logos auch AVIF sein. |
 | ~~**OpenSSL** (6 MB)~~ | war bis 1.1.0 draußen. Seit dem Hochladen nach Google Drive spricht die App HTTPS und braucht `ssl`, `_ssl` und `_hashlib` wieder. |
 
 Gemessen am 21.10.2026: Mit dem Upload wuchs das Setup von 14,6 auf 21,1 MB und
