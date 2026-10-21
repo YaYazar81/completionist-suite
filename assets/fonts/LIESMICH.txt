@@ -1,0 +1,1 @@
+﻿Hier abgelegte .ttf/.otf-Schriften stehen in der App zur Auswahl (z. B. NotoColorEmoji.ttf).

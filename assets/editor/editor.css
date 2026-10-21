@@ -1,0 +1,409 @@
+/* editor.css -- Aussehen des Schreibbereichs.
+ *
+ * Zwei Themen ueber data-theme am <html>; die Farben entsprechen der
+ * CompletionistPDF-Suite (Petrol-Akzent #00897b).
+ */
+
+:root {
+  --cm-accent: #00897b;
+  --cm-font-size: 11.5pt;
+
+  --cm-bg: #1e1e1e;
+  --cm-paper: #232323;
+  --cm-fg: #e6e6e6;
+  --cm-dim: #9a9a9a;
+  --cm-line: #3a3a3a;
+  --cm-code-bg: #2c2c2c;
+  --cm-quote-bg: #262626;
+  --cm-sel: rgba(0, 137, 123, 0.35);
+  --cm-chrome: #2f2f2f;
+}
+
+:root[data-theme="light"] {
+  --cm-bg: #f4f4f4;
+  --cm-paper: #ffffff;
+  --cm-fg: #1f1f1f;
+  --cm-dim: #6b6b6b;
+  --cm-line: #dcdcdc;
+  --cm-code-bg: #f1f1f1;
+  --cm-quote-bg: #f7f7f7;
+  --cm-sel: rgba(0, 137, 123, 0.22);
+  --cm-chrome: #ffffff;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--cm-bg);
+  color: var(--cm-fg);
+}
+
+body {
+  font-family: "Segoe UI", "Inter", system-ui, sans-serif;
+  font-size: var(--cm-font-size);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--cm-sel); }
+
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--cm-line);
+  border: 3px solid var(--cm-bg);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--cm-dim); }
+
+/* ---------------------------------------------------------------- */
+/* Schreibbereich                                                    */
+/* ---------------------------------------------------------------- */
+
+.cm-doc {
+  max-width: 860px;
+  min-height: calc(100vh - 80px);
+  margin: 0 auto;
+  padding: 48px 56px 45vh 56px;   /* unten Luft, damit der Cursor nie am Rand klebt */
+  background: var(--cm-paper);
+  outline: none;
+  overflow-wrap: break-word;
+}
+
+.cm-doc > *:first-child { margin-top: 0; }
+
+/* Ueberschriften */
+.cm-doc h1, .cm-doc h2, .cm-doc h3,
+.cm-doc h4, .cm-doc h5, .cm-doc h6 {
+  line-height: 1.3;
+  font-weight: 650;
+  margin: 1.5em 0 0.6em;
+}
+.cm-doc h1 { font-size: 1.95em; letter-spacing: -0.01em; }
+.cm-doc h2 { font-size: 1.55em; border-bottom: 1px solid var(--cm-line); padding-bottom: 0.25em; }
+.cm-doc h3 { font-size: 1.28em; }
+.cm-doc h4 { font-size: 1.12em; }
+.cm-doc h5 { font-size: 1em; color: var(--cm-dim); }
+.cm-doc h6 { font-size: 0.92em; color: var(--cm-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+
+.cm-doc p { margin: 0 0 0.9em; }
+
+.cm-doc a { color: var(--cm-accent); text-decoration: none; border-bottom: 1px solid rgba(0, 137, 123, 0.4); }
+.cm-doc a:hover { border-bottom-color: var(--cm-accent); }
+
+.cm-doc code {
+  font-family: "Cascadia Mono", "Consolas", monospace;
+  font-size: 0.9em;
+  background: var(--cm-code-bg);
+  border: 1px solid var(--cm-line);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+
+.cm-doc pre {
+  position: relative;
+  background: var(--cm-code-bg);
+  border: 1px solid var(--cm-line);
+  border-left: 3px solid var(--cm-accent);
+  border-radius: 5px;
+  padding: 12px 14px;
+  margin: 1em 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+.cm-doc pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.92em;
+}
+.cm-doc pre[data-lang]::before {
+  content: attr(data-lang);
+  position: absolute;
+  top: 2px;
+  right: 8px;
+  font-size: 0.7em;
+  color: var(--cm-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cm-doc blockquote {
+  margin: 1em 0;
+  padding: 0.4em 1em;
+  border-left: 3px solid var(--cm-accent);
+  background: var(--cm-quote-bg);
+  color: var(--cm-fg);
+}
+.cm-doc blockquote p:last-child { margin-bottom: 0; }
+
+/* Listen */
+.cm-doc ul, .cm-doc ol { margin: 0.6em 0 1em; padding-left: 1.6em; }
+.cm-doc li { margin: 0.2em 0; }
+
+.cm-doc li > p { margin: 0; }
+
+/* Aufgabenlisten (Tiptap: ul[data-type=taskList] > li > label + div) */
+.cm-doc ul[data-type="taskList"] { list-style: none; padding-left: 0.2em; }
+.cm-doc ul[data-type="taskList"] > li { display: flex; align-items: flex-start; gap: 0.5em; }
+.cm-doc ul[data-type="taskList"] > li > label {
+  flex: 0 0 auto;
+  margin-top: 0.22em;
+  user-select: none;
+}
+.cm-doc ul[data-type="taskList"] > li > label input {
+  width: 1.02em;
+  height: 1.02em;
+  margin: 0;
+  accent-color: var(--cm-accent);
+  cursor: pointer;
+}
+.cm-doc ul[data-type="taskList"] > li > div { flex: 1 1 auto; min-width: 0; }
+.cm-doc ul[data-type="taskList"] > li[data-checked="true"] > div { color: var(--cm-dim); }
+
+/* Trennlinien: *** ist die harte (Seitenumbruch im PDF), --- die visuelle. */
+.cm-doc hr {
+  border: none;
+  margin: 1.6em 0;
+  overflow: visible;  /* Chromium kappt sonst die Beschriftung unten */
+}
+.cm-doc hr.cm-rule {
+  height: 1px;
+  background: var(--cm-line);
+}
+.cm-doc hr.cm-break {
+  height: 0;
+  border-top: 2px dashed var(--cm-accent);
+  position: relative;
+  margin: 2.2em 0;
+}
+.cm-doc hr.cm-break::after {
+  content: "Seitenumbruch";
+  position: absolute;
+  top: -0.85em;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--cm-paper);
+  color: var(--cm-accent);
+  font-size: 0.68em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0 0.7em;
+}
+
+/* ---------------------------------------------------------------- */
+/* Bilder und Textumfluss                                           */
+/* ---------------------------------------------------------------- */
+
+.cm-doc img.cm-img {
+  max-width: 100%;
+  border-radius: 3px;
+  cursor: default;
+}
+
+/* Umflossen: der Text schmiegt sich im Editor live an das Bild. */
+.cm-doc img.cm-align-left {
+  float: left;
+  width: 40%;
+  margin: 0.35em 1.4em 0.8em 0;
+}
+.cm-doc img.cm-align-right {
+  float: right;
+  width: 40%;
+  margin: 0.35em 0 0.8em 1.4em;
+}
+
+/* Zentriert: eigener Block, beendet jeden Umfluss davor */
+.cm-doc img.cm-align-center {
+  display: block;
+  clear: both;
+  margin: 1.4em auto;
+}
+
+.cm-doc img.cm-inline-img {
+  height: 1.15em;
+  vertical-align: -0.15em;
+}
+
+/* Ausgewaehlte Knoten (Bild, Linie, HTML-Block) */
+.cm-doc .ProseMirror-selectednode,
+.cm-doc img.ProseMirror-selectednode {
+  outline: 2px solid var(--cm-accent);
+  outline-offset: 2px;
+}
+
+/* Rohes HTML, das der Editor nicht anfasst */
+.cm-doc .cm-html {
+  position: relative;
+  border: 1px dashed var(--cm-line);
+  border-radius: 4px;
+  background: var(--cm-code-bg);
+  padding: 1.6em 0.8em 0.6em;
+  margin: 1em 0;
+  font-size: 0.85em;
+  color: var(--cm-dim);
+  white-space: pre-wrap;
+}
+.cm-doc .cm-html pre { margin: 0; font-family: "Cascadia Mono", monospace; }
+.cm-doc .cm-html .cm-html-tag {
+  position: absolute;
+  top: 3px; left: 8px;
+  font-size: 0.78em;
+  letter-spacing: 0.1em;
+  color: var(--cm-accent);
+}
+
+/* ---------------------------------------------------------------- */
+/* Tabellen                                                          */
+/* ---------------------------------------------------------------- */
+
+.cm-doc .tableWrapper { overflow-x: auto; clear: both; margin: 1.2em 0; }
+.cm-doc table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1.2em 0;
+  clear: both;
+  font-size: 0.95em;
+}
+.cm-doc .tableWrapper table { margin: 0; }
+.cm-doc th,
+.cm-doc td {
+  position: relative;
+  border: 1px solid var(--cm-line);
+  padding: 7px 10px;
+  vertical-align: top;
+  min-width: 2.5em;
+}
+.cm-doc th > p, .cm-doc td > p { margin: 0; }
+.cm-doc th {
+  background: var(--cm-code-bg);
+  font-weight: 650;
+}
+/* Mehrere Zellen markiert (Ziehen ueber die Tabelle) */
+.cm-doc .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--cm-sel);
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- */
+/* Bildleiste und Kontextmenue                                       */
+/* ---------------------------------------------------------------- */
+
+.cm-imagebar {
+  display: none;
+  position: fixed;
+  z-index: 40;
+  gap: 2px;
+  align-items: center;
+  padding: 4px;
+  background: var(--cm-chrome);
+  border: 1px solid var(--cm-line);
+  border-radius: 7px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.cm-imagebar button {
+  min-width: 28px;
+  height: 26px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--cm-fg);
+  font-size: 13px;
+  cursor: pointer;
+}
+.cm-imagebar button:hover { background: rgba(0, 137, 123, 0.22); }
+.cm-imagebar button.on { background: var(--cm-accent); color: #fff; }
+.cm-imagebar .cm-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--cm-line);
+  margin: 0 3px;
+}
+
+.cm-imagebar .cm-imagesrc {
+  width: 300px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--cm-line);
+  border-radius: 4px;
+  background: var(--cm-paper);
+  color: var(--cm-fg);
+  font-family: "Cascadia Mono", "Consolas", monospace;
+  font-size: 12px;
+  outline: none;
+}
+.cm-imagebar .cm-imagesrc:focus { border-color: var(--cm-accent); }
+/* Bild im Satz: nur Quelltext und Entfernen */
+.cm-imagebar.cm-inline [data-align],
+.cm-imagebar.cm-inline [data-width],
+.cm-imagebar.cm-inline [data-act="alt"] { display: none; }
+
+/* ---------------------------------------------------------------- */
+/* Render-in-Place: Markdown-Syntax am Cursor (editor-src/src/reveal.js) */
+/* ---------------------------------------------------------------- */
+
+/* Begrenzer wie **, ](url), ## -- grau, Inhalt schon formatiert */
+.cm-doc .cm-syn {
+  color: var(--cm-dim);
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: none;
+  opacity: 0.85;
+}
+.cm-doc .cm-r-bold { font-weight: 700; }
+.cm-doc .cm-r-italic { font-style: italic; }
+.cm-doc .cm-r-strike { text-decoration: line-through; }
+.cm-doc .cm-r-underline { text-decoration: underline; }
+.cm-doc .cm-r-link { color: var(--cm-accent); }
+.cm-doc .cm-r-code {
+  font-family: "Cascadia Mono", "Consolas", monospace;
+  font-size: 0.9em;
+  background: var(--cm-code-bg);
+  border-radius: 3px;
+}
+.cm-doc .cm-syn-rule {
+  font-family: "Cascadia Mono", "Consolas", monospace;
+  letter-spacing: 0.15em;
+}
+
+/* Marker von Zitat und Liste vor dem Absatz mit dem Cursor */
+.cm-doc .cm-syn-block {
+  font-family: "Cascadia Mono", "Consolas", monospace;
+  font-size: 0.92em;
+  user-select: none;
+  white-space: pre;
+}
+.cm-doc li.cm-reveal-li { list-style: none; }
+
+/* Codeblock: ```sprache oben, ``` unten */
+.cm-doc pre.cm-reveal-code[data-lang]::before { display: none; }
+.cm-doc .cm-fence {
+  display: block;
+  font-family: "Cascadia Mono", "Consolas", monospace;
+  font-size: 0.92em;
+  user-select: none;
+}
+.cm-doc .cm-fence-close { margin-top: 2px; }
+.cm-doc .cm-fence-lang {
+  width: 12em;
+  margin-left: 1px;
+  padding: 0 2px;
+  border: none;
+  border-bottom: 1px dashed var(--cm-line);
+  background: transparent;
+  color: var(--cm-fg);
+  font: inherit;
+  outline: none;
+}
+.cm-doc .cm-fence-lang:focus { border-bottom-color: var(--cm-accent); }
+.cm-doc .cm-fence-lang::placeholder { color: var(--cm-dim); opacity: 0.6; }
+
+/* Suchen und Ersetzen (search.js) */
+.cm-find { background: rgba(255, 200, 0, 0.35); border-radius: 2px; }
+.cm-find-current { background: rgba(255, 140, 0, 0.75); outline: 1px solid rgba(255, 140, 0, 0.9); }

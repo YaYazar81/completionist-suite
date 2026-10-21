@@ -1,0 +1,62 @@
+{
+  "Inter": {
+    "dir": "inter",
+    "regular": "Inter[opsz,wght].ttf",
+    "bold": null,
+    "variable": true
+  },
+  "Montserrat": {
+    "dir": "montserrat",
+    "regular": "Montserrat[wght].ttf",
+    "bold": null,
+    "variable": true
+  },
+  "Poppins": {
+    "dir": "poppins",
+    "regular": "Poppins-Regular.ttf",
+    "bold": "Poppins-Bold.ttf",
+    "variable": false
+  },
+  "Oswald": {
+    "dir": "oswald",
+    "regular": "Oswald[wght].ttf",
+    "bold": null,
+    "variable": true
+  },
+  "Bebas Neue": {
+    "dir": "bebasneue",
+    "regular": "BebasNeue-Regular.ttf",
+    "bold": null,
+    "variable": false
+  },
+  "Anton": {
+    "dir": "anton",
+    "regular": "Anton-Regular.ttf",
+    "bold": null,
+    "variable": false
+  },
+  "Playfair Display": {
+    "dir": "playfairdisplay",
+    "regular": "PlayfairDisplay[wght].ttf",
+    "bold": null,
+    "variable": true
+  },
+  "Lora": {
+    "dir": "lora",
+    "regular": "Lora[wght].ttf",
+    "bold": null,
+    "variable": true
+  },
+  "Roboto Mono": {
+    "dir": "robotomono",
+    "regular": "RobotoMono[wght].ttf",
+    "bold": null,
+    "variable": true
+  },
+  "Caveat": {
+    "dir": "caveat",
+    "regular": "Caveat[wght].ttf",
+    "bold": null,
+    "variable": true
+  }
+}

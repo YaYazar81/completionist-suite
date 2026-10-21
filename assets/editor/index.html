@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <title>CompletionistMD</title>
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+  <!-- Hier haengt sich Tiptap ein (div.ProseMirror.cm-doc). -->
+  <div id="doc"></div>
+
+  <!-- Schwebende Leiste am ausgewaehlten Bild -->
+  <div id="imagebar" class="cm-imagebar">
+    <button type="button" data-align="left" title="Links umflossen">◧</button>
+    <button type="button" data-align="center" title="Zentriert (Block)">▣</button>
+    <button type="button" data-align="right" title="Rechts umflossen">◨</button>
+    <span class="cm-sep"></span>
+    <button type="button" data-width="-" title="Schmaler">−</button>
+    <button type="button" data-width="+" title="Breiter">+</button>
+    <span class="cm-sep"></span>
+    <button type="button" data-act="alt" title="Bildunterschrift">✎</button>
+    <button type="button" data-act="delete" title="Entfernen">🗑</button>
+    <span class="cm-sep"></span>
+    <!-- Markdown des Bildes, direkt editierbar (Enter übernimmt) -->
+    <input type="text" id="imagesrc" class="cm-imagesrc" spellcheck="false"
+           title="Markdown-Quelltext des Bildes – Enter übernimmt, Esc verwirft">
+  </div>
+  <!-- Das Kontextmenü zeigt Python als QMenu (mdeditor/window.py). -->
+
+  <!-- markdown.js: Markdown -> HTML. tiptap.bundle.js: gebaut aus
+       editor-src/ (build_editor.ps1), stellt window.CM bereit. -->
+  <script src="markdown.js"></script>
+  <script src="tiptap.bundle.js"></script>
+</body>
+</html>

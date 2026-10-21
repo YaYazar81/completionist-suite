@@ -1,0 +1,57 @@
+{
+  "Classic": {
+    "module_style": "square", "fg_color": "#000000", "bg_color": "#FFFFFF",
+    "gradient": "none", "eye_outer_style": "square", "eye_inner_style": "square",
+    "eye_custom_color": false, "frame": "none"
+  },
+  "Dots": {
+    "module_style": "circle", "fg_color": "#1F2937", "bg_color": "#FFFFFF",
+    "gradient": "none", "eye_outer_style": "circle", "eye_inner_style": "circle",
+    "eye_custom_color": false, "frame": "none"
+  },
+  "Rounded Soft": {
+    "module_style": "rounded", "fg_color": "#334155", "bg_color": "#F8FAFC",
+    "gradient": "none", "eye_outer_style": "rounded", "eye_inner_style": "rounded",
+    "eye_custom_color": true, "eye_outer_color": "#0F766E", "eye_inner_color": "#334155",
+    "frame": "thin", "frame_color": "#CBD5E1", "caption_color": "#334155"
+  },
+  "Neon Gradient": {
+    "module_style": "gapped_square", "fg_color": "#7C3AED", "bg_color": "#FFFFFF",
+    "gradient": "linear", "gradient_color": "#06B6D4", "gradient_angle": 45,
+    "eye_outer_style": "leaf", "eye_inner_style": "leaf",
+    "eye_custom_color": false, "frame": "none"
+  },
+  "Corporate Blue": {
+    "module_style": "square", "fg_color": "#1E3A8A", "bg_color": "#FFFFFF",
+    "gradient": "none", "eye_outer_style": "rounded", "eye_inner_style": "square",
+    "eye_custom_color": true, "eye_outer_color": "#2563EB", "eye_inner_color": "#1E3A8A",
+    "frame": "card", "frame_color": "#1E3A8A", "caption_color": "#1E3A8A"
+  },
+  "Scan-Me Banner": {
+    "module_style": "rounded", "fg_color": "#111827", "bg_color": "#FFFFFF",
+    "gradient": "none", "eye_outer_style": "rounded", "eye_inner_style": "circle",
+    "eye_custom_color": false, "frame": "banner_bottom", "frame_color": "#111827",
+    "caption": "SCAN ME", "caption_font": "Montserrat", "caption_bold": true,
+    "caption_color": "#FFFFFF"
+  },
+  "Mono Minimal": {
+    "module_style": "vertical_bars", "fg_color": "#000000", "bg_color": "#FFFFFF",
+    "gradient": "none", "eye_outer_style": "square", "eye_inner_style": "square",
+    "eye_custom_color": false, "frame": "none"
+  },
+  "Midnight": {
+    "module_style": "rounded", "fg_color": "#E0E7FF", "bg_color": "#0F172A",
+    "gradient": "linear", "gradient_color": "#67E8F9", "gradient_angle": 90,
+    "eye_outer_style": "rounded", "eye_inner_style": "circle",
+    "eye_custom_color": true, "eye_outer_color": "#A5B4FC", "eye_inner_color": "#67E8F9",
+    "logo_plate_color": "#0F172A",
+    "frame": "card", "frame_color": "#334155", "caption_color": "#E0E7FF"
+  },
+  "Sunset Radial": {
+    "module_style": "diamond", "fg_color": "#DB2777", "bg_color": "#FFF7ED",
+    "gradient": "radial", "gradient_color": "#EA580C",
+    "eye_outer_style": "circle", "eye_inner_style": "rounded",
+    "eye_custom_color": true, "eye_outer_color": "#9D174D", "eye_inner_color": "#C2410C",
+    "frame": "ticket", "frame_color": "#9D174D", "caption_color": "#FFF7ED"
+  }
+}

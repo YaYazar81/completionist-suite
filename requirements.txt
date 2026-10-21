@@ -1,0 +1,17 @@
+PyQt6>=6.6
+PyQt6-WebEngine>=6.6   # nur fuer CompletionistMD (main_md.py)
+google-auth>=2.30          # MD: Drive-Sync, QR: Datei hochladen (core/drive.py)
+google-auth-oauthlib>=1.2
+requests>=2.31
+typst>=0.15
+markdown-it-py>=3
+mdit-py-plugins>=0.4
+Pillow>=10
+
+# nur fuer CompletionistQR (run_completionistqr.py)
+qrcode>=8.2
+customtkinter>=6
+zxing-cpp>=3.1            # Scan-Pruefung der erzeugten Codes
+
+# nur fuer den Build der .exe
+pyinstaller>=6

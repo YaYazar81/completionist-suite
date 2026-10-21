@@ -1,0 +1,70 @@
+{
+  "page_size": "a4",
+  "margin_top": 25.0,
+  "margin_bottom": 25.0,
+  "margin_left": 25.0,
+  "margin_right": 25.0,
+  "binding_offset": 0.0,
+  "cover": {
+    "enabled": true,
+    "image": "",
+    "full_bleed": true,
+    "title": "",
+    "subtitle": "",
+    "author": ""
+  },
+  "toc": {
+    "enabled": true,
+    "title": "Inhaltsverzeichnis",
+    "numbering_depth": 0,
+    "toc_depth": 2,
+    "numbering_pattern": "1.1.1.1.1.1.1",
+    "first_level_name": 1,
+    "roman_front_matter": true
+  },
+  "typography": {
+    "body_font": "Georgia",
+    "heading_font": "Segoe UI",
+    "mono_font": "Consolas",
+    "emoji_font": "Segoe UI Emoji",
+    "body_size": 11.0,
+    "leading": 0.75,
+    "par_spacing": 1.0,
+    "justify": true,
+    "hyphenate": true,
+    "lang": "de",
+    "first_line_indent": 0.0,
+    "link_color": "#1a4b8c"
+  },
+  "header_footer": {
+    "header_enabled": true,
+    "header_text": "{chapter}",
+    "header_rule": true,
+    "footer_enabled": true,
+    "footer_format": "Seite {page} von {total}",
+    "footer_rule": false,
+    "skip_on_chapter_start": true
+  },
+  "content": {
+    "heading_offset": 0,
+    "pagebreak_before_level1": true,
+    "hr_as_pagebreak": true,
+    "table_style": "header",
+    "table_zebra": false,
+    "table_header_bold": true,
+    "image_width": 80.0,
+    "figure_captions": true,
+    "code_background": "#f4f4f6",
+    "code_border": true,
+    "code_size": 9.0
+  },
+  "watermark": {
+    "mode": "text",
+    "text": "ENTWURF",
+    "image": "",
+    "opacity": 12,
+    "angle": -45.0,
+    "size": 72.0,
+    "color": "#707070"
+  }
+}

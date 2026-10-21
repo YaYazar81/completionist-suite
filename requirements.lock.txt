@@ -1,0 +1,44 @@
+﻿# Exakte Versionen des letzten geprueften Builds (pip freeze).
+# Neu aufsetzen:  .venv\Scripts\python.exe -m pip install -r requirements.lock.txt
+# Nach einem bewussten Update:  pip freeze --all > requirements.lock.txt (Kopfzeilen behalten)
+altgraph==0.17.5
+certifi==2026.10.18
+cffi==2.1.1
+charset-normalizer==3.5.2
+colorama==0.4.6
+cryptography==50.0.2
+customtkinter==6.0.0
+darkdetect==0.8.0
+google-auth==2.62.0
+google-auth-oauthlib==1.5.0
+idna==3.20
+iniconfig==2.3.1
+markdown-it-py==4.2.0
+mdit-py-plugins==0.6.1
+mdurl==0.1.2
+oauthlib==4.0.0
+packaging==26.3
+pefile==2024.8.26
+pillow==13.0.0
+pip==26.2.1
+pluggy==1.7.0
+pyasn1==0.6.4
+pyasn1_modules==0.4.2
+pycparser==3.11
+Pygments==2.21.0
+pyinstaller==6.22.3
+pyinstaller-hooks-contrib==2026.8
+PyQt6==6.11.0
+PyQt6-Qt6==6.11.2
+PyQt6-WebEngine==6.11.0
+PyQt6-WebEngine-Qt6==6.11.2
+PyQt6_sip==13.13.0
+pytest==9.1.1
+pywin32-ctypes==0.2.3
+qrcode==8.2
+requests==2.34.2
+requests-oauthlib==2.0.0
+setuptools==84.0.0
+typst==0.15.0
+urllib3==2.8.0
+zxing-cpp==3.1.1

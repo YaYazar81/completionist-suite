@@ -1,0 +1,23 @@
+{
+  "name": "completionistmd-editor",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Tiptap-Bundle fuer CompletionistMD (Ausgabe: ../assets/editor/tiptap.bundle.js)",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch"
+  },
+  "dependencies": {
+    "@tiptap/core": "3.31.4",
+    "@tiptap/pm": "3.31.4",
+    "@tiptap/starter-kit": "3.31.4",
+    "@tiptap/extension-code-block": "3.31.4",
+    "@tiptap/extension-hard-break": "3.31.4",
+    "@tiptap/extension-image": "3.31.4",
+    "@tiptap/extension-table": "3.31.4",
+    "@tiptap/extension-list": "3.31.4"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
