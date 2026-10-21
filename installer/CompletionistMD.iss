@@ -14,7 +14,8 @@
 #endif
 
 #define AppName "CompletionistMD"
-#define AppPublisher "Completionist Suite"
+#define AppPublisher "Completionist Library"
+#define AppCopyright "© 2026 Mike-Dominique Horch (Completionist Library)"
 #define AppExe "CompletionistMD.exe"
 #define SourceDir "..\dist\CompletionistMD"
 
@@ -26,6 +27,9 @@ AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
 AppPublisher={#AppPublisher}
+AppCopyright={#AppCopyright}
+AppContact=mail@mike-horch.de
+AppSupportURL=mailto:mail@mike-horch.de
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName=Completionist Suite
 UninstallDisplayName={#AppName} {#AppVersion}
@@ -64,6 +68,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 ; Der ganze PyInstaller-Ordner, inklusive _internal mit QtWebEngine und Editor-Bundle.
 Source: "{#SourceDir}\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Lizenztexte (eigene Lizenz, Fremdkomponenten, LGPL fuer Qt/PySide6 ...)
+Source: "{#SourceDir}\Lizenzen\*"; DestDir: "{app}\Lizenzen"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\CompletionistMD.md"; DestDir: "{app}"; DestName: "Liesmich.md"; Flags: ignoreversion
 
 [Icons]

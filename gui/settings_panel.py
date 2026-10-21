@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
     QComboBox,
@@ -56,13 +56,13 @@ MAX_LEVEL = 6  # Markdown kennt sechs Ueberschriftenebenen
 
 
 class SettingsPanel(QWidget):
-    config_changed = pyqtSignal()
-    markdown_changed = pyqtSignal(str)
+    config_changed = Signal()
+    markdown_changed = Signal(str)
 
-    preset_load_requested = pyqtSignal(str)
-    preset_save_requested = pyqtSignal(str)  # leerer Name = "Speichern unter"
-    preset_delete_requested = pyqtSignal(str)
-    emoji_test_requested = pyqtSignal(str)
+    preset_load_requested = Signal(str)
+    preset_save_requested = Signal(str)  # leerer Name = "Speichern unter"
+    preset_delete_requested = Signal(str)
+    emoji_test_requested = Signal(str)
 
     def __init__(self, fonts: list[str], parent: QWidget | None = None) -> None:
         super().__init__(parent)

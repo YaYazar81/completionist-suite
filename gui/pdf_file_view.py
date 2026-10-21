@@ -11,7 +11,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from PyQt6.QtCore import (
+from PySide6.QtCore import (
     QBuffer,
     QByteArray,
     QEvent,
@@ -24,12 +24,12 @@ from PyQt6.QtCore import (
     QSizeF,
     Qt,
     QTimer,
-    pyqtSignal,
+    Signal,
 )
-from PyQt6.QtGui import QDesktopServices, QGuiApplication, QKeySequence, QShortcut
-from PyQt6.QtPdf import QPdfBookmarkModel, QPdfDocument, QPdfLink, QPdfLinkModel, QPdfSearchModel
-from PyQt6.QtPdfWidgets import QPdfView
-from PyQt6.QtWidgets import (
+from PySide6.QtGui import QDesktopServices, QGuiApplication, QKeySequence, QShortcut
+from PySide6.QtPdf import QPdfBookmarkModel, QPdfDocument, QPdfLink, QPdfLinkModel, QPdfSearchModel
+from PySide6.QtPdfWidgets import QPdfView
+from PySide6.QtWidgets import (
     QHBoxLayout,
     QInputDialog,
     QLabel,
@@ -57,8 +57,8 @@ class PdfFileView(QWidget):
 
     ZOOM_STEP = 1.25
 
-    changed = pyqtSignal()  # Seite, Zoom oder Datei gewechselt -> Statuszeile
-    load_failed = pyqtSignal(str)  # Fehlermeldung fuer den Nutzer
+    changed = Signal()  # Seite, Zoom oder Datei gewechselt -> Statuszeile
+    load_failed = Signal(str)  # Fehlermeldung fuer den Nutzer
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)

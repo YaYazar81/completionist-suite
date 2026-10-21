@@ -11,9 +11,9 @@ from __future__ import annotations
 import unicodedata
 from functools import lru_cache
 
-from PyQt6.QtCore import QSize, Qt, pyqtSignal
-from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QLabel,
@@ -203,7 +203,7 @@ def display_name(char: str) -> str:
 class EmojiDialog(QDialog):
     """Nicht-modales Fenster; jeder Klick fuegt ein Emoji am Cursor ein."""
 
-    picked = pyqtSignal(str)
+    picked = Signal(str)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)

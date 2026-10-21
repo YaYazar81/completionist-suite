@@ -1,1 +1,1 @@
-"""PyQt6-Oberflaeche von CompletionistPDF."""
+"""PySide6-Oberflaeche von CompletionistPDF."""

@@ -5,8 +5,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from PyQt6.QtGui import QColor, QPalette
-from PyQt6.QtWidgets import QApplication
+from PySide6.QtGui import QColor, QPalette
+from PySide6.QtWidgets import QApplication
 
 APP_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 if str(APP_DIR) not in sys.path:
@@ -80,7 +80,7 @@ def main() -> int:
     # Fenster- und Taskleisten-Icon (das .exe-Icon setzt build_exe.py)
     icon_path = APP_DIR / "assets" / "icon_pdf.ico"
     if icon_path.is_file():
-        from PyQt6.QtGui import QIcon
+        from PySide6.QtGui import QIcon
 
         app.setWindowIcon(QIcon(str(icon_path)))
 

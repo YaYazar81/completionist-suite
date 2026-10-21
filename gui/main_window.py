@@ -15,9 +15,9 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QObject, QRunnable, Qt, QThreadPool, QTimer, pyqtSignal
-from PyQt6.QtGui import QAction, QKeySequence
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import QObject, QRunnable, Qt, QThreadPool, QTimer, Signal
+from PySide6.QtGui import QAction, QKeySequence
+from PySide6.QtWidgets import (
     QFileDialog,
     QInputDialog,
     QLabel,
@@ -75,7 +75,7 @@ def next_free_name(path: Path) -> Path:
 
 
 class _Signals(QObject):
-    done = pyqtSignal(object, object)  # CompileResult, Auftrag
+    done = Signal(object, object)  # CompileResult, Auftrag
 
 
 class _Job(QRunnable):
@@ -264,6 +264,7 @@ class MainWindow(QMainWindow):
         act("Ordner öffnen", self._open_output_dir, None, "Ordner der Datei im Explorer öffnen")
         tb.addSeparator()
         act("▣ QR", self.open_qr, None, "CompletionistQR starten (eigenes Fenster)")
+        act("ⓘ", self.show_about, "F1", "Über CompletionistPDF, Lizenz und Fremdkomponenten")
 
     def _update_mode(self) -> None:
         viewer = self.is_viewer_mode()
@@ -341,6 +342,12 @@ class MainWindow(QMainWindow):
                                            lambda path=p: self.open_path(path))
             a.setToolTip(p)
         self.recent_menu.setToolTipsVisible(True)
+
+    def show_about(self) -> None:
+        from core.about_dialog import AboutDialog
+
+        AboutDialog("CompletionistPDF", __version__, "Markdown zu PDF mit Typst · PDF-Viewer",
+                    self.windowIcon(), self).exec()
 
     def print_pdf(self) -> None:
         from .printing import print_document

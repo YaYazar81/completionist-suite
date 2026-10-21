@@ -103,14 +103,14 @@ Der Programmordner ist von 507 auf 282 MB geschrumpft. Gut 200 MB davon sind
 | Qt-Übersetzungen (`.qm`) | 9 | die App installiert keinen QTranslator |
 | `qml/` | 8 | QML-Module; `QWebEngineView` ist ein Widget |
 | TLS-Plugins von Qt | – | Chromium bringt sein eigenes TLS (BoringSSL) mit. Pythons OpenSSL (`_ssl`) bleibt dagegen drin: der Google-Drive-Sync spricht HTTPS |
-| PyQt6-Module Quick, Qml, OpenGL, Positioning … | 3 | `QtWebEngineWidgets` lädt auf Python-Seite nur QtNetwork, QtWebChannel und QtPrintSupport nach |
+| PySide6-Module Quick, Qml, OpenGL, Positioning … | 3 | `QtWebEngineWidgets` lädt auf Python-Seite nur QtNetwork, QtWebChannel und QtPrintSupport nach |
 
 Geprüft am fertigen Build und nach Installation per Setup: Datei öffnen, tippen, Strg+S,
 Bild über **Bild ▾** einfügen (landet in `images/`), **▶ PDF** startet das installierte
 CompletionistPDF mit der Datei.
 
 Die Listen stehen in `build_exe.py` (`EXCLUDES_MD`, `DROP_COMMON`, `DROP_MD`,
-`KEEP_WEBENGINE_LOCALES`). Nach einem Update von PyQt6 einmal bauen und prüfen, ob die App
+`KEEP_WEBENGINE_LOCALES`). Nach einem Update von PySide6 einmal bauen und prüfen, ob die App
 startet. Die DLL-Auswahl passt sich von selbst an, die Dateilisten nicht.
 
 ## Speichern

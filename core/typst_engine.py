@@ -365,7 +365,7 @@ def count_saturated_pixels(png: Path) -> int:
     Liest mit QImage statt Pillow, damit CompletionistPDF Pillow nicht
     mitbringen muss. QImage kommt ohne laufende QApplication aus.
     """
-    from PyQt6.QtGui import QImage
+    from PySide6.QtGui import QImage
 
     img = QImage(str(png))
     if img.isNull():

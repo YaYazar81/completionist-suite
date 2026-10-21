@@ -5,9 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Callable
 
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import (
     QCheckBox,
     QColorDialog,
     QComboBox,
@@ -34,7 +34,7 @@ from PyQt6.QtWidgets import (
 class PathEdit(QWidget):
     """Zeile mit Dateiauswahl-Knopf und Loeschen-Knopf."""
 
-    changed = pyqtSignal()
+    changed = Signal()
 
     def __init__(
         self,
@@ -96,7 +96,7 @@ class PathEdit(QWidget):
 class ColorEdit(QWidget):
     """Hex-Farbe mit Farbfeld; Klick oeffnet den Farbdialog."""
 
-    changed = pyqtSignal()
+    changed = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -141,7 +141,7 @@ class ColorEdit(QWidget):
 class LabeledSlider(QWidget):
     """Schieberegler mit Wertanzeige."""
 
-    valueChanged = pyqtSignal(int)
+    valueChanged = Signal(int)
 
     def __init__(self, lo: int, hi: int, suffix: str = "", parent: QWidget | None = None) -> None:
         super().__init__(parent)

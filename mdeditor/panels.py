@@ -10,9 +10,9 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from PyQt6.QtCore import QObject, QRunnable, Qt, QThreadPool, QTimer, pyqtSignal
-from PyQt6.QtGui import QKeySequence, QShortcut
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import QObject, QRunnable, Qt, QThreadPool, QTimer, Signal
+from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
     QHBoxLayout,
@@ -34,7 +34,7 @@ from PyQt6.QtWidgets import (
 class OutlinePanel(QWidget):
     """Ueberschriften des aktiven Dokuments; Klick springt hin."""
 
-    jump = pyqtSignal(int)  # Dokumentposition (ProseMirror)
+    jump = Signal(int)  # Dokumentposition (ProseMirror)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -94,11 +94,11 @@ class FindBar(QWidget):
     """Leiste unter den Tabs. Die eigentliche Suche erledigt das Hauptfenster
     (im Markdown-Editor ueber JavaScript, im Text-Tab ueber QTextDocument)."""
 
-    findRequested = pyqtSignal(str, bool)   # Text, Gross/klein beachten
-    nextRequested = pyqtSignal(int)         # +1 / -1
-    replaceRequested = pyqtSignal(str)
-    replaceAllRequested = pyqtSignal(str)
-    closed = pyqtSignal()
+    findRequested = Signal(str, bool)   # Text, Gross/klein beachten
+    nextRequested = Signal(int)         # +1 / -1
+    replaceRequested = Signal(str)
+    replaceAllRequested = Signal(str)
+    closed = Signal()
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -195,8 +195,8 @@ MAX_HITS = 500
 
 
 class _Signals(QObject):
-    found = pyqtSignal(int, list)   # Lauf-Nr., [(Pfad, Zeile, Ausschnitt)]
-    done = pyqtSignal(int, int)     # Lauf-Nr., Anzahl Dateien
+    found = Signal(int, list)   # Lauf-Nr., [(Pfad, Zeile, Ausschnitt)]
+    done = Signal(int, int)     # Lauf-Nr., Anzahl Dateien
 
 
 class _SearchJob(QRunnable):
@@ -246,7 +246,7 @@ class _SearchJob(QRunnable):
 class VaultSearchDialog(QDialog):
     """Suche ueber alle Notizen. Doppelklick/Enter oeffnet die Datei an der Stelle."""
 
-    openHit = pyqtSignal(str, str)  # Pfad, Suchbegriff
+    openHit = Signal(str, str)  # Pfad, Suchbegriff
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)

@@ -18,11 +18,11 @@ import json
 import sys
 from pathlib import Path
 
-from PyQt6.QtCore import QMimeData, QPoint, Qt, QUrl, pyqtSignal
-from PyQt6.QtGui import QDesktopServices
-from PyQt6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
-from PyQt6.QtWebEngineWidgets import QWebEngineView
-from PyQt6.QtWidgets import QApplication, QWidget
+from PySide6.QtCore import QMimeData, QPoint, Qt, QUrl, Signal
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
+from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtWidgets import QApplication, QWidget
 
 from . import images
 
@@ -32,7 +32,7 @@ BRIDGE_PREFIX = "@@CM@@"
 class EditorPage(QWebEnginePage):
     """Seite, die Bruecken-Meldungen aussortiert und Links extern oeffnet."""
 
-    command = pyqtSignal(dict)
+    command = Signal(dict)
 
     def javaScriptConsoleMessage(self, level, message, line, source):  # noqa: N802
         if message.startswith(BRIDGE_PREFIX):
@@ -58,8 +58,8 @@ class EditorPage(QWebEnginePage):
 class EditorView(QWebEngineView):
     """Der Editor als Widget. Drag & Drop wird auf Qt-Ebene abgefangen."""
 
-    imagesDropped = pyqtSignal(object, QPoint)  # QMimeData, Position im Widget
-    markdownDropped = pyqtSignal(list)
+    imagesDropped = Signal(object, QPoint)  # QMimeData, Position im Widget
+    markdownDropped = Signal(list)
 
     def __init__(self, editor_dir: Path, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -97,8 +97,15 @@ class EditorView(QWebEngineView):
     def run(self, script: str, callback=None) -> None:
         if callback is None:
             self._page.runJavaScript(script)
-        else:
-            self._page.runJavaScript(script, callback)
+            return
+        # Ergebnisse als JSON uebergeben: PySide6 wandelt JS-Objekte und
+        # -Arrays sonst nicht verlaesslich in dict/list um.
+        def done(raw, cb=callback):
+            try:
+                cb(json.loads(raw) if isinstance(raw, str) else None)
+            except json.JSONDecodeError:
+                cb(None)
+        self._page.runJavaScript(f"JSON.stringify(({script}))", 0, done)
 
     def call(self, name: str, *args, callback=None) -> None:
         """``CM.<name>(...)`` mit JSON-serialisierten Argumenten aufrufen."""

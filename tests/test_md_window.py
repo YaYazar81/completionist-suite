@@ -13,9 +13,9 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 # Ohne Bildschirm hat Chromium keinen GPU-Kontext und stuerzt beim Beenden ab
 os.environ.setdefault("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-gpu")
 
-from PyQt6.QtCore import QEvent, Qt  # noqa: E402
-from PyQt6.QtGui import QColor, QGuiApplication, QImage, QKeyEvent  # noqa: E402
-from PyQt6.QtWidgets import QApplication  # noqa: E402
+from PySide6.QtCore import QEvent, Qt  # noqa: E402
+from PySide6.QtGui import QColor, QGuiApplication, QImage, QKeyEvent  # noqa: E402
+from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from mdeditor import markdown_io  # noqa: E402
 from mdeditor.window import MainWindow  # noqa: E402

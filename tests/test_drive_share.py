@@ -189,7 +189,7 @@ def test_drive_link_scans_in_every_preset():
 def test_core_drive_does_not_pull_in_qt():
     import subprocess
 
-    code = "import core.drive, completionistqr.ui.drive_upload, sys; print('PyQt6' in sys.modules)"
+    code = "import core.drive, completionistqr.ui.drive_upload, sys; print('PySide6' in sys.modules)"
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
                          cwd=str(__import__("pathlib").Path(__file__).resolve().parents[1]))
     assert out.returncode == 0, out.stderr

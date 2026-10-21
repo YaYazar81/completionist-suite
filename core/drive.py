@@ -2,7 +2,7 @@
 
 Gemeinsam genutzt von CompletionistMD (Vault-Sync, ``mdeditor/gdrive.py``) und
 CompletionistQR (Datei hochladen und freigeben, ``completionistqr/ui/drive_upload.py``).
-Kein Qt und kein Tk hier -- QR baut auf CustomTkinter und darf PyQt6 nicht laden.
+Kein Qt und kein Tk hier -- QR baut auf CustomTkinter und darf PySide6 nicht laden.
 
 * ``TokenStore``  -- client_secret.json und das per Windows-DPAPI
   verschluesselte Token unter %LOCALAPPDATA%\\CompletionistLibrary\\

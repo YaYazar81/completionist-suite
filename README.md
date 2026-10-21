@@ -32,6 +32,9 @@ CompletionistQR lädt `tools\fetch_fonts.py`.
 
 ## Lizenz
 
+© 2026 Mike-Dominique Horch (Completionist Library) · Kontakt: mail@mike-horch.de
+
 Der eigene Quellcode steht unter **CC BY-NC-ND 4.0** – siehe [LICENSE](LICENSE).
+Die Qt-Oberfläche von PDF und MD nutzt PySide6 (Qt for Python) unter der LGPL v3.
 Mitgelieferte und benutzte Fremdkomponenten behalten ihre eigenen Lizenzen:
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -49,17 +49,17 @@ APPS = {
 
 # Qt-Module, die die App nicht braucht -- spart deutlich Platz.
 EXCLUDES = [
-    "PyQt6.QtWebEngineCore", "PyQt6.QtWebEngineWidgets", "PyQt6.QtWebEngineQuick",
-    "PyQt6.QtWebChannel", "PyQt6.QtWebSockets",
-    "PyQt6.QtQml", "PyQt6.QtQuick", "PyQt6.QtQuick3D", "PyQt6.QtQuickWidgets",
-    "PyQt6.Qt3DCore", "PyQt6.Qt3DRender", "PyQt6.Qt3DExtras", "PyQt6.Qt3DInput",
-    "PyQt6.QtMultimedia", "PyQt6.QtMultimediaWidgets", "PyQt6.QtCharts",
-    "PyQt6.QtDataVisualization", "PyQt6.QtBluetooth", "PyQt6.QtNfc",
-    "PyQt6.QtPositioning", "PyQt6.QtLocation", "PyQt6.QtSensors",
-    "PyQt6.QtSerialPort", "PyQt6.QtSql", "PyQt6.QtTest", "PyQt6.QtDesigner",
-    "PyQt6.QtHelp", "PyQt6.QtOpenGL", "PyQt6.QtOpenGLWidgets", "PyQt6.QtSpatialAudio",
-    "PyQt6.QtTextToSpeech", "PyQt6.QtRemoteObjects", "PyQt6.QtStateMachine",
-    "PyQt6.QtNetwork",
+    "PySide6.QtWebEngineCore", "PySide6.QtWebEngineWidgets", "PySide6.QtWebEngineQuick",
+    "PySide6.QtWebChannel", "PySide6.QtWebSockets",
+    "PySide6.QtQml", "PySide6.QtQuick", "PySide6.QtQuick3D", "PySide6.QtQuickWidgets",
+    "PySide6.Qt3DCore", "PySide6.Qt3DRender", "PySide6.Qt3DExtras", "PySide6.Qt3DInput",
+    "PySide6.QtMultimedia", "PySide6.QtMultimediaWidgets", "PySide6.QtCharts",
+    "PySide6.QtDataVisualization", "PySide6.QtBluetooth", "PySide6.QtNfc",
+    "PySide6.QtPositioning", "PySide6.QtLocation", "PySide6.QtSensors",
+    "PySide6.QtSerialPort", "PySide6.QtSql", "PySide6.QtTest", "PySide6.QtDesigner",
+    "PySide6.QtHelp", "PySide6.QtOpenGL", "PySide6.QtOpenGLWidgets", "PySide6.QtSpatialAudio",
+    "PySide6.QtTextToSpeech", "PySide6.QtRemoteObjects", "PySide6.QtStateMachine",
+    "PySide6.QtNetwork",
     # Pillow las nur das Emoji-Testbild, das macht jetzt QImage
     # (count_saturated_pixels in core/typst_engine.py). Ohne OpenSSL: die App
     # geht nie ins Netz, hashlib.sha1 kommt ohne _hashlib aus.
@@ -70,19 +70,19 @@ EXCLUDES = [
 # Der Editor braucht QtWebEngine samt dessen Abhaengigkeiten (WebChannel,
 # Qml/Quick, Positioning, OpenGL ...) -- dort nur sicher Unbenutztes weglassen.
 EXCLUDES_MD = [
-    "PyQt6.Qt3DCore", "PyQt6.Qt3DRender", "PyQt6.Qt3DExtras", "PyQt6.Qt3DInput",
-    "PyQt6.QtMultimedia", "PyQt6.QtMultimediaWidgets", "PyQt6.QtCharts",
-    "PyQt6.QtDataVisualization", "PyQt6.QtBluetooth", "PyQt6.QtNfc",
-    "PyQt6.QtSensors", "PyQt6.QtSerialPort", "PyQt6.QtSql", "PyQt6.QtTest",
-    "PyQt6.QtDesigner", "PyQt6.QtHelp", "PyQt6.QtSpatialAudio",
-    "PyQt6.QtTextToSpeech", "PyQt6.QtRemoteObjects",
+    "PySide6.Qt3DCore", "PySide6.Qt3DRender", "PySide6.Qt3DExtras", "PySide6.Qt3DInput",
+    "PySide6.QtMultimedia", "PySide6.QtMultimediaWidgets", "PySide6.QtCharts",
+    "PySide6.QtDataVisualization", "PySide6.QtBluetooth", "PySide6.QtNfc",
+    "PySide6.QtSensors", "PySide6.QtSerialPort", "PySide6.QtSql", "PySide6.QtTest",
+    "PySide6.QtDesigner", "PySide6.QtHelp", "PySide6.QtSpatialAudio",
+    "PySide6.QtTextToSpeech", "PySide6.QtRemoteObjects",
     # QtPdf/QtPdfWidgets bleiben: PDF-Vorschau-Tab (mdeditor/tabs.py)
-    "PyQt6.QtQuick3D", "PyQt6.QtWebEngineQuick", "PyQt6.QtStateMachine",
-    "PyQt6.QtWebSockets", "PyQt6.QtOpenGLWidgets",
+    "PySide6.QtQuick3D", "PySide6.QtWebEngineQuick", "PySide6.QtStateMachine",
+    "PySide6.QtWebSockets", "PySide6.QtOpenGLWidgets",
     # QtWebEngineWidgets laedt auf Python-Seite nur QtNetwork, QtWebChannel und
     # QtPrintSupport nach; die Quick-/Qml-DLLs selbst bleiben (siehe unten).
-    "PyQt6.QtQuick", "PyQt6.QtQml", "PyQt6.QtQuickWidgets", "PyQt6.QtOpenGL",
-    "PyQt6.QtPositioning",
+    "PySide6.QtQuick", "PySide6.QtQml", "PySide6.QtQuickWidgets", "PySide6.QtOpenGL",
+    "PySide6.QtPositioning",
     "typst", "markdown_it", "mdit_py_plugins", "PIL",
     # ssl/_ssl/_hashlib bleiben: der Google-Drive-Sync spricht HTTPS.
     "tkinter", "unittest", "pydoc",
@@ -94,25 +94,25 @@ EXCLUDES_MD = [
 DROP_COMMON = [
     # Software-OpenGL (20 MB): Notloesung fuer Rechner ohne OpenGL-Treiber.
     # Die Widgets-Oberflaeche zeichnet ohne OpenGL, QtWebEngine ueber Direct3D.
-    "PyQt6/Qt6/bin/opengl32sw.dll",
+    "PySide6/opengl32sw.dll",
     # Qt-Uebersetzungen: keine der Apps installiert einen QTranslator.
-    "PyQt6/Qt6/translations/*.qm",
+    "PySide6/translations/*.qm",
     # TLS, Netzwerkstatus, Standort, Touch-Eingabegeraete
-    "PyQt6/Qt6/plugins/tls/*", "PyQt6/Qt6/plugins/networkinformation/*",
-    "PyQt6/Qt6/plugins/position/*", "PyQt6/Qt6/plugins/generic/*",
+    "PySide6/plugins/tls/*", "PySide6/plugins/networkinformation/*",
+    "PySide6/plugins/position/*", "PySide6/plugins/generic/*",
 ]
 # Pythons OpenSSL -- von den Qt-Apps geht nur MD ins Netz (Google-Drive-Sync, core/drive.py);
 # QR nimmt den Filter nicht (install_file_filter nur fuer pdf/md) und behaelt OpenSSL
 DROP_NO_TLS = ["libcrypto-*.dll", "libssl-*.dll"]
 DROP_MD = [
     # Nur fuer Debug-Builds von Qt bzw. fuer die Chromium-Entwicklerwerkzeuge
-    "PyQt6/Qt6/resources/*.debug.*",
-    "PyQt6/Qt6/resources/qtwebengine_devtools_resources.pak",
+    "PySide6/resources/*.debug.*",
+    "PySide6/resources/qtwebengine_devtools_resources.pak",
     # Qt-Quick-Module (QML-Dateien und Plugins); QWebEngineView braucht nur
     # die DLLs, die Qt6WebEngineCore.dll direkt laedt.
-    "PyQt6/Qt6/qml/*",
+    "PySide6/qml/*",
     # PDF als Bildformat -- die PDF-Vorschau nutzt QtPdf direkt, nicht dieses Plugin
-    "PyQt6/Qt6/plugins/imageformats/qpdf.dll",
+    "PySide6/plugins/imageformats/qpdf.dll",
 ]
 # Chromium-Oberflaechentexte (Kontextmenue, Fehlerseiten): nur Deutsch und
 # Englisch; fehlt die Systemsprache, nimmt Chromium en-US.
@@ -125,7 +125,7 @@ KEEP_WEBENGINE_LOCALES = {"de.pak", "en-US.pak", "en-GB.pak"}
 # ssl/_ssl/_hashlib bleiben (frueher ausgeschlossen): "Datei in Google Drive
 # hochladen" spricht HTTPS (core/drive.py, completionistqr/ui/drive_upload.py).
 EXCLUDES_QR = [
-    "PyQt6", "typst", "markdown_it", "mdit_py_plugins",
+    "PySide6", "shiboken6", "typst", "markdown_it", "mdit_py_plugins",
     "numpy",
     "PIL.AvifImagePlugin", "PIL._avif",
     "pytest", "unittest", "pydoc",
@@ -149,6 +149,62 @@ def ensure_icon() -> None:
     ICON.parent.mkdir(parents=True, exist_ok=True)
     img.save(ICON, sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
     print(f"Icon erzeugt: {ICON}")
+
+
+# Pakete je App, deren Lizenztexte in den Ordner "Lizenzen" der App kommen
+# (aus den *.dist-info der .venv). Fehlende Pakete werden uebersprungen.
+_QT = ["PySide6", "PySide6_Essentials", "PySide6_Addons", "PySide6_WebEngine", "PySide6_Pdf",
+       "shiboken6"]
+_NET = ["google-auth", "google-auth-oauthlib", "requests", "requests-oauthlib", "oauthlib",
+        "urllib3", "certifi", "idna", "charset-normalizer", "pyasn1", "pyasn1-modules", "rsa",
+        "cachetools"]
+LICENSE_PACKAGES = {
+    "pdf": _QT + ["typst", "markdown-it-py", "mdit-py-plugins", "mdurl", "pyinstaller"],
+    "md": _QT + _NET + ["pyinstaller"],
+    "qr": ["pillow", "qrcode", "customtkinter", "darkdetect", "packaging", "zxing-cpp",
+           "pyinstaller"] + _NET,
+}
+
+
+def collect_licenses(app: str, target: Path) -> Path:
+    """Legt ``<Programmordner>/Lizenzen`` an: eigene Lizenz, Fremdkomponenten-Liste,
+    Lizenztexte aller mitgelieferten Pakete, Python, ggf. Schriften."""
+    from importlib import metadata
+
+    out = target / "Lizenzen"
+    shutil.rmtree(out, ignore_errors=True)
+    out.mkdir(parents=True)
+    shutil.copyfile(ROOT / "LICENSE", out / "LICENSE (Completionist Suite).txt")
+    shutil.copyfile(ROOT / "THIRD_PARTY_NOTICES.md", out / "THIRD_PARTY_NOTICES.md")
+    py_license = Path(sys.base_prefix) / "LICENSE.txt"
+    if py_license.is_file():
+        shutil.copyfile(py_license, out / "Python - LICENSE.txt")
+    for name in LICENSE_PACKAGES[app]:
+        try:
+            dist = metadata.distribution(name)
+        except metadata.PackageNotFoundError:
+            continue
+        files = [f for f in (dist.files or [])
+                 if any(k in f.name.upper() for k in ("LICEN", "COPYING", "NOTICE"))]
+        if not files:
+            continue
+        folder = out / f"{dist.metadata['Name']} {dist.version}"
+        folder.mkdir(exist_ok=True)
+        for f in files:
+            src = Path(dist.locate_file(f))
+            if src.is_file():
+                shutil.copyfile(src, folder / src.name)
+    if app == "qr":
+        fonts = ROOT / "completionistqr" / "assets" / "fonts"
+        for ofl in fonts.glob("*/OFL.txt"):
+            shutil.copyfile(ofl, out / f"Schrift {ofl.parent.name} - OFL.txt")
+    if app == "md":
+        # Editor-Bundle: Lizenztexte von Tiptap und ProseMirror aus editor-src/node_modules
+        nm = ROOT / "editor-src" / "node_modules"
+        for pkg in ("@tiptap/core", "prosemirror-model", "prosemirror-view", "prosemirror-state"):
+            for lic in (nm / pkg).glob("LICENSE*"):
+                shutil.copyfile(lic, out / f"{pkg.replace('/', '-')} - {lic.name}")
+    return out
 
 
 VERSION_PACKAGES = {"pdf": "core", "md": "mdeditor", "qr": "completionistqr"}
@@ -177,14 +233,15 @@ def write_version_file(app: str, folder: Path) -> Path:
                     OS=0x40004, fileType=0x1, subtype=0x0, date=(0, 0)),
   kids=[
     StringFileInfo([StringTable('040704B0', [
-      StringStruct('CompanyName', 'Completionist Suite'),
+      StringStruct('CompanyName', 'Completionist Library'),
       StringStruct('FileDescription', '{name} – {DESCRIPTIONS[app]}'),
       StringStruct('FileVersion', '{version}'),
       StringStruct('InternalName', '{name}'),
       StringStruct('OriginalFilename', '{name}.exe'),
       StringStruct('ProductName', '{name}'),
       StringStruct('ProductVersion', '{version}'),
-      StringStruct('LegalCopyright', 'CC BY-NC-ND 4.0')])]),
+      StringStruct('LegalCopyright', '© 2026 Mike-Dominique Horch (Completionist Library)'),
+      StringStruct('Comments', 'Lizenz: CC BY-NC-ND 4.0{"" if app == "qr" else "; Qt/PySide6: LGPL v3"}; Kontakt: mail@mike-horch.de')])]),
     VarFileInfo([VarStruct('Translation', [0x0407, 1200])])
   ]
 )
@@ -207,7 +264,7 @@ def install_file_filter(app: str) -> None:
     from PyInstaller.building import build_main
 
     patterns = [p.lower() for p in DROP_COMMON + (DROP_MD if app == "md" else DROP_NO_TLS)]
-    locales_dir = "pyqt6/qt6/translations/qtwebengine_locales/"
+    locales_dir = "pyside6/translations/qtwebengine_locales/"
     keep_locales = {n.lower() for n in KEEP_WEBENGINE_LOCALES}
 
     def dropped(dest: str) -> bool:
@@ -228,7 +285,7 @@ def install_file_filter(app: str) -> None:
 
 
 def drop_unused_qt_dlls(binaries: list) -> list:
-    """Entfernt DLLs aus PyQt6/Qt6/bin, die keine mitgenommene Datei laedt.
+    """Entfernt DLLs direkt in PySide6/, die keine mitgenommene Datei laedt.
 
     PyInstallers Qt-Hooks sammeln ganze Modulfamilien ein (Qt Quick 3D, Quick
     Controls, Multimedia ...). Geladen wird davon nur, was ueber die
@@ -239,7 +296,8 @@ def drop_unused_qt_dlls(binaries: list) -> list:
 
     def is_qt_dll(dest: str) -> bool:
         dest = dest.replace("\\", "/").lower()
-        return dest.startswith("pyqt6/qt6/bin/") and dest.endswith(".dll")
+        # PySide6 legt die Qt-DLLs (samt FFmpeg fuer QtMultimedia) direkt in den Paketordner
+        return dest.startswith("pyside6/") and dest.count("/") == 1 and dest.endswith(".dll")
 
     by_name = {Path(dest).name.lower(): src for dest, src, _ in binaries}
     todo = [src for dest, src, _ in binaries if not is_qt_dll(dest)]
@@ -282,7 +340,8 @@ def main() -> int:
 
     app = APPS[args.app]
     name = app["name"]
-    data_dirs = app["data"]
+    # Fremdkomponenten-Liste fuer den Dialog "Über …" (core/legal.py)
+    data_dirs = app["data"] + ["THIRD_PARTY_NOTICES.md"]
 
     if args.app == "md" and not (ROOT / "assets" / "editor" / "tiptap.bundle.js").is_file():
         print("assets/editor/tiptap.bundle.js fehlt -- erst build_editor.ps1 ausfuehren.",
@@ -329,17 +388,17 @@ def main() -> int:
             # markdown-it laedt Regeln teils dynamisch
             "--collect-submodules", "markdown_it",
             "--collect-submodules", "mdit_py_plugins",
-            "--hidden-import", "PyQt6.QtPdf",
-            "--hidden-import", "PyQt6.QtPdfWidgets",
+            "--hidden-import", "PySide6.QtPdf",
+            "--hidden-import", "PySide6.QtPdfWidgets",
         ]
         excludes = EXCLUDES
     elif args.app == "md":
         cmd += [
-            "--hidden-import", "PyQt6.QtWebEngineWidgets",
-            "--hidden-import", "PyQt6.QtWebEngineCore",
+            "--hidden-import", "PySide6.QtWebEngineWidgets",
+            "--hidden-import", "PySide6.QtWebEngineCore",
             # erst beim Oeffnen eines PDF-Tabs importiert (mdeditor/tabs.py)
-            "--hidden-import", "PyQt6.QtPdf",
-            "--hidden-import", "PyQt6.QtPdfWidgets",
+            "--hidden-import", "PySide6.QtPdf",
+            "--hidden-import", "PySide6.QtPdfWidgets",
         ]
         excludes = EXCLUDES_MD
     else:
@@ -374,6 +433,9 @@ def main() -> int:
                   "neu bauen, ggf. mit --distpath auf ein anderes Laufwerk.", file=sys.stderr)
             return 1
         print("Integritaet geprueft: alle Eintraege entpackbar.")
+    if onedir:
+        lic = collect_licenses(args.app, target)
+        print(f"Lizenzen: {sum(1 for _ in lic.rglob('*') if _.is_file())} Dateien in {lic}")
     print(f"\nFertig: {target}")
     return 0
 

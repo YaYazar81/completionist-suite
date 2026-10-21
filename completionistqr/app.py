@@ -85,7 +85,10 @@ class CompletionistQRApp(ctk.CTk):
         self.appearance = ctk.CTkSegmentedButton(self.preview, values=list(APPEARANCE),
                                                  command=self._appearance_changed)
         self.appearance.set(next((k for k, v in APPEARANCE.items() if v == current), "System"))
-        self.appearance.place(relx=1.0, x=-16, y=16, anchor="ne")
+        self.appearance.place(relx=1.0, x=-60, y=16, anchor="ne")
+        ctk.CTkButton(self.preview, text="ⓘ", width=34, command=self.show_about).place(
+            relx=1.0, x=-16, y=16, anchor="ne")
+        self.bind("<F1>", lambda _e: self.show_about())
 
         self.bind("<Control-s>", lambda _e: self.controls.save())
         # Strg+C / Strg+V nur, wenn kein Textfeld den Fokus hat -- dort kopieren sie Text
@@ -99,6 +102,11 @@ class CompletionistQRApp(ctk.CTk):
             self.controls.restore_content(saved["content"])
         self.controls.refresh()
         self.changed()
+
+    def show_about(self) -> None:
+        from .ui.about import AboutWindow
+
+        AboutWindow(self)
 
     @staticmethod
     def _typing(widget) -> bool:

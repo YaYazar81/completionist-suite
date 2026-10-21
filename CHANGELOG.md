@@ -13,6 +13,22 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
 
+## 21.10.2026 – PDF 1.4.0 · MD 1.4.0 · QR 1.2.0
+
+### Alle Apps
+* **Über … / Lizenzen** (ⓘ bzw. F1): Version, Copyright, Lizenz, Fremdkomponenten.
+  Die Setups legen einen Ordner `Lizenzen` mit allen Lizenztexten an.
+* Herausgeber in Setup und Dateieigenschaften: „Completionist Library“,
+  © 2026 Mike-Dominique Horch (Completionist Library).
+
+### CompletionistPDF 1.4.0 · CompletionistMD 1.4.0
+* **Umstieg von PyQt6 (GPL v3) auf PySide6 (LGPL v3)**: Damit lässt sich der eigene
+  Code unter CC BY-NC-ND 4.0 veröffentlichen. Bedienung und Funktionen unverändert.
+
+### CompletionistQR 1.2.0
+* **Datei in Google Drive hochladen** beim Inhaltstyp „PDF, Bild oder Video“: lädt die
+  Datei hoch, gibt sie für „Jeder mit dem Link“ frei und setzt den Link in den Code.
+
 ## 21.10.2026 – PDF 1.3.0 · MD 1.3.0 · QR 1.1.0
 
 ### CompletionistMD 1.3.0

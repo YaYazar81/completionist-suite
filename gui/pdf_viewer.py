@@ -1,15 +1,15 @@
 """PDF-Vorschau.
 
-Bevorzugt ``QPdfView`` (PyQt6 >= 6.4). Fehlt das QtPdf-Modul, zeigt ein
+Bevorzugt ``QPdfView`` (PySide6 >= 6.4). Fehlt das QtPdf-Modul, zeigt ein
 Ersatz-Widget von Typst gerenderte PNG-Seiten an -- ``needs_png`` sagt dem
 Hauptfenster, welches Format es liefern muss.
 """
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QBuffer, QByteArray, QIODevice, Qt, pyqtSignal
-from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import QBuffer, QByteArray, QIODevice, Qt, Signal
+from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QScrollArea,
@@ -19,8 +19,8 @@ from PyQt6.QtWidgets import (
 )
 
 try:
-    from PyQt6.QtPdf import QPdfDocument
-    from PyQt6.QtPdfWidgets import QPdfView
+    from PySide6.QtPdf import QPdfDocument
+    from PySide6.QtPdfWidgets import QPdfView
 
     HAS_QTPDF = True
 except ImportError:  # pragma: no cover - abhaengig von der Qt-Installation
@@ -30,7 +30,7 @@ except ImportError:  # pragma: no cover - abhaengig von der Qt-Installation
 class PdfPreview(QWidget):
     """Vorschau mit Zoom-Leiste; behaelt die Scrollposition beim Neuladen."""
 
-    page_count_changed = pyqtSignal(int)
+    page_count_changed = Signal(int)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)

@@ -16,7 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PyQt6.QtCore import (
+from PySide6.QtCore import (
     QDir,
     QFile,
     QModelIndex,
@@ -27,12 +27,13 @@ from PyQt6.QtCore import (
     Qt,
     QTimer,
     QUrl,
-    pyqtSignal,
+    Signal,
 )
-from PyQt6.QtGui import QDesktopServices, QFileSystemModel, QIcon, QPixmap
-from PyQt6.QtWidgets import (
+from PySide6.QtGui import QDesktopServices, QIcon, QPixmap
+from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
+    QFileSystemModel,  # bei PySide6 in QtWidgets (PyQt6: QtGui)
     QDialog,
     QDialogButtonBox,
     QFileDialog,
@@ -297,15 +298,15 @@ class _HideDotFiles(QSortFilterProxyModel):
 class VaultPanel(QWidget):
     """Verzeichnisbaum + Bookmarks."""
 
-    openFile = pyqtSignal(str)               # Einfachklick: im aktiven Editor-Tab
-    openInNewTab = pyqtSignal(str)           # Doppelklick: neuer Tab
-    bookmarksChanged = pyqtSignal(list)
-    aboutToChange = pyqtSignal(str)          # Pfad wird gleich umbenannt/geloescht
-    pathRenamed = pyqtSignal(str, str)       # alt, neu
-    pathRemoved = pyqtSignal(str)
-    settingsRequested = pyqtSignal()
-    handoffRequested = pyqtSignal(str, str)  # Suite-App ("CompletionistPDF" ...), Datei
-    mergeRequested = pyqtSignal(list)        # mehrere .md (Strg/Umschalt+Klick) zusammenfuehren
+    openFile = Signal(str)               # Einfachklick: im aktiven Editor-Tab
+    openInNewTab = Signal(str)           # Doppelklick: neuer Tab
+    bookmarksChanged = Signal(list)
+    aboutToChange = Signal(str)          # Pfad wird gleich umbenannt/geloescht
+    pathRenamed = Signal(str, str)       # alt, neu
+    pathRemoved = Signal(str)
+    settingsRequested = Signal()
+    handoffRequested = Signal(str, str)  # Suite-App ("CompletionistPDF" ...), Datei
+    mergeRequested = Signal(list)        # mehrere .md (Strg/Umschalt+Klick) zusammenfuehren
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -653,7 +654,7 @@ class VaultPanel(QWidget):
         if answer != QMessageBox.StandardButton.Yes:
             return
         self.aboutToChange.emit(str(target))
-        result = QFile.moveToTrash(str(target))  # PyQt6: (ok, pfad_im_papierkorb)
+        result = QFile.moveToTrash(str(target))  # PySide6: (ok, pfad_im_papierkorb)
         if not (result[0] if isinstance(result, tuple) else result):
             QMessageBox.critical(self, "Löschen", f"„{target.name}“ konnte nicht in den Papierkorb verschoben werden.")
             return

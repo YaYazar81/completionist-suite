@@ -7,9 +7,9 @@ import shutil
 import subprocess
 import time
 
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QBrush, QColor
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QBrush, QColor
+from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -32,7 +32,7 @@ _LABELS = {"error": "Fehler", "warning": "Warnung", "info": "Info"}
 class LogPanel(QWidget):
     """Liste der Meldungen; Doppelklick oeffnet die Markdown-Datei an der Zeile."""
 
-    counts_changed = pyqtSignal(int, int)  # Fehler, Warnungen
+    counts_changed = Signal(int, int)  # Fehler, Warnungen
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)

@@ -18,7 +18,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from PyQt6.QtCore import (
+from PySide6.QtCore import (
     QBuffer,
     QByteArray,
     QFileSystemWatcher,
@@ -28,10 +28,10 @@ from PyQt6.QtCore import (
     QSize,
     Qt,
     QTimer,
-    pyqtSignal,
+    Signal,
 )
-from PyQt6.QtGui import QFontDatabase, QImageReader, QKeySequence, QPixmap, QShortcut
-from PyQt6.QtWidgets import (
+from PySide6.QtGui import QFontDatabase, QImageReader, QKeySequence, QPixmap, QShortcut
+from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPlainTextEdit,
@@ -80,10 +80,10 @@ class BaseTab(QWidget):
     """Gemeinsame Schnittstelle fuer das Hauptfenster."""
 
     kind = ""
-    changed = pyqtSignal()  # Titel, Speicherstand oder Statuszeile neu zeichnen
+    changed = Signal()  # Titel, Speicherstand oder Statuszeile neu zeichnen
     # Die Datei wurde ausserhalb geaendert (anderes Fenster, anderes Programm),
     # waehrend der Tab ungespeicherte Aenderungen hat -- das Hauptfenster fragt nach.
-    conflict = pyqtSignal()
+    conflict = Signal()
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -121,7 +121,7 @@ class MdTab(BaseTab):
     Hauptfenster; hier steht nur, was je Tab gilt."""
 
     kind = "md"
-    disk_changed_signal = pyqtSignal()  # die Datei wurde ausserhalb geaendert
+    disk_changed_signal = Signal()  # die Datei wurde ausserhalb geaendert
 
     def __init__(self, editor_dir: Path, parent=None) -> None:
         super().__init__(parent)
@@ -195,7 +195,7 @@ class TextTab(BaseTab):
     """``.txt`` mit Auto-Save, Undo/Redo (Strg+Z / Strg+Y) des Editors."""
 
     kind = "txt"
-    saved = pyqtSignal(str)  # Pfad -- fuer den Drive-Sync
+    saved = Signal(str)  # Pfad -- fuer den Drive-Sync
 
     def __init__(self, path: Path, parent=None) -> None:
         super().__init__(parent)
@@ -326,7 +326,7 @@ class FileWatch(QObject):
     """Meldet Aenderungen an einer Datei -- auch wenn ein Programm sie beim
     Speichern ersetzt (dann verliert QFileSystemWatcher sie aus den Augen)."""
 
-    changed = pyqtSignal()
+    changed = Signal()
 
     def __init__(self, path: Path, parent=None) -> None:
         super().__init__(parent)
@@ -405,8 +405,8 @@ class PdfTab(BaseTab):
 
     def __init__(self, path: Path, parent=None) -> None:
         super().__init__(parent)
-        from PyQt6.QtPdf import QPdfDocument, QPdfSearchModel
-        from PyQt6.QtPdfWidgets import QPdfView
+        from PySide6.QtPdf import QPdfDocument, QPdfSearchModel
+        from PySide6.QtPdfWidgets import QPdfView
 
         self.path = Path(path)
         self._buffer: QBuffer | None = None
@@ -655,7 +655,7 @@ class PdfTab(BaseTab):
 
 class ImageTab(BaseTab):
     kind = "img"
-    handoffRequested = pyqtSignal(str, str)  # App, Datei
+    handoffRequested = Signal(str, str)  # App, Datei
     ZOOM_STEP = 1.25
 
     def __init__(self, path: Path, parent=None) -> None:

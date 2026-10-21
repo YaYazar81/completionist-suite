@@ -78,7 +78,10 @@ class PreviewPanel(ctk.CTkFrame):
             result = (img, scene, readable, None)
         except Exception as exc:  # Darstellungsfehler nie die App abstürzen lassen
             result = (None, None, False, exc)
-        self.after(0, lambda: self._show(gen, design, *result))
+        try:
+            self.after(0, lambda: self._show(gen, design, *result))
+        except RuntimeError:
+            pass  # Fenster wurde inzwischen geschlossen
 
     def _show(self, gen: int, design: QRDesign, img, scene, readable: bool, error) -> None:
         if gen != self._generation:

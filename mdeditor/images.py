@@ -13,8 +13,8 @@ import re
 import shutil
 from pathlib import Path
 
-from PyQt6.QtCore import QBuffer, QByteArray, QIODevice, QMimeData, QUrl
-from PyQt6.QtGui import QImage
+from PySide6.QtCore import QBuffer, QByteArray, QIODevice, QMimeData, QUrl
+from PySide6.QtGui import QImage
 
 IMAGE_DIR = "images"
 DEFAULT_STEM = "bild"

@@ -17,7 +17,7 @@ if str(APP_DIR) not in sys.path:
 from mdeditor import theme  # noqa: E402
 from mdeditor.window import MainWindow  # noqa: E402
 
-from PyQt6.QtWidgets import QApplication  # noqa: E402
+from PySide6.QtWidgets import QApplication  # noqa: E402
 
 
 def main() -> int:
@@ -41,13 +41,13 @@ def main() -> int:
 
     icon_path = APP_DIR / "assets" / "icon_md.ico"
     if icon_path.is_file():
-        from PyQt6.QtGui import QIcon
+        from PySide6.QtGui import QIcon
 
         app.setWindowIcon(QIcon(str(icon_path)))
 
     # Mehrere Fenster sind ausdruecklich erlaubt (Alt+Tab zwischen Dateien).
     # Nur das erste stellt die letzten Tabs wieder her und merkt sie sich.
-    from PyQt6.QtCore import QLockFile
+    from PySide6.QtCore import QLockFile
 
     from core.presets import user_data_dir
 

@@ -1,5 +1,4 @@
-PyQt6>=6.6
-PyQt6-WebEngine>=6.6   # nur fuer CompletionistMD (main_md.py)
+﻿PySide6>=6.8             # Qt fuer PDF und MD (LGPL v3), inkl. WebEngine und Pdf
 google-auth>=2.30          # MD: Drive-Sync, QR: Datei hochladen (core/drive.py)
 google-auth-oauthlib>=1.2
 requests>=2.31

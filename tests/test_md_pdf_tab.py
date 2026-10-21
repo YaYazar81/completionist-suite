@@ -10,7 +10,7 @@ import pytest
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PyQt6.QtWidgets import QApplication  # noqa: E402
+from PySide6.QtWidgets import QApplication  # noqa: E402
 
 # Beim Sammeln importieren, also bevor irgendein Test eine QApplication
 # anlegt: mdeditor zieht QtWebEngineWidgets nach, und das muss vorher geladen sein.

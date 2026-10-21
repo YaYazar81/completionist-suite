@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PyQt6.QtCore import QFileSystemWatcher, QObject, QTimer, pyqtSignal
+from PySide6.QtCore import QFileSystemWatcher, QObject, QTimer, Signal
 
 
 class DebouncedWatcher(QObject):
@@ -15,7 +15,7 @@ class DebouncedWatcher(QObject):
     deshalb wird jeder Pfad nach einem Ereignis neu registriert.
     """
 
-    changed = pyqtSignal()
+    changed = Signal()
 
     def __init__(self, delay_ms: int = 400, parent: QObject | None = None) -> None:
         super().__init__(parent)

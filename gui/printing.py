@@ -7,16 +7,16 @@ seitenfuellend, mit erhaltenem Seitenverhaeltnis, auf das Blatt.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QRectF, QSize, Qt
-from PyQt6.QtWidgets import QApplication, QMessageBox, QWidget
+from PySide6.QtCore import QRectF, QSize, Qt
+from PySide6.QtWidgets import QApplication, QMessageBox, QWidget
 
 MAX_DPI = 300
 
 
 def print_document(parent: QWidget, doc, title: str) -> None:
     """``doc``: geladenes ``QPdfDocument``."""
-    from PyQt6.QtGui import QPainter
-    from PyQt6.QtPrintSupport import QPrintDialog, QPrinter
+    from PySide6.QtGui import QPainter
+    from PySide6.QtPrintSupport import QPrintDialog, QPrinter
 
     pages = doc.pageCount() if doc is not None else 0
     if pages <= 0:

@@ -10,9 +10,9 @@ import pytest
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PyQt6.QtCore import QThreadPool  # noqa: E402
-from PyQt6.QtGui import QPageSize, QPainter, QPdfWriter  # noqa: E402
-from PyQt6.QtWidgets import QApplication  # noqa: E402
+from PySide6.QtCore import QThreadPool  # noqa: E402
+from PySide6.QtGui import QPageSize, QPainter, QPdfWriter  # noqa: E402
+from PySide6.QtWidgets import QApplication  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -182,7 +182,7 @@ def test_watcher_reloads_after_external_write(qapp, tmp_path):
 
 
 def test_default_zoom_is_whole_page(qapp, tmp_path):
-    from PyQt6.QtPdfWidgets import QPdfView
+    from PySide6.QtPdfWidgets import QPdfView
 
     from gui.pdf_file_view import PdfFileView
 
@@ -253,7 +253,7 @@ def demo_view(qapp):
 
 
 def point_to_viewport(view, page, point):
-    from PyQt6.QtCore import QPoint
+    from PySide6.QtCore import QPoint
 
     rect = view.page_rects()[page]
     pt = view.doc.pagePointSize(page)
@@ -263,8 +263,8 @@ def point_to_viewport(view, page, point):
 
 def test_click_on_internal_link_jumps(qapp):
     # demo.pdf, Seite 2 (Index 1): Inhaltsverzeichnis; "Zweites Kapitel" fuehrt auf Index 3
-    from PyQt6.QtCore import QPointF, Qt
-    from PyQt6.QtTest import QTest
+    from PySide6.QtCore import QPointF, Qt
+    from PySide6.QtTest import QTest
 
     view = demo_view(qapp)
     view.go_to(1)
@@ -278,8 +278,8 @@ def test_click_on_internal_link_jumps(qapp):
 
 
 def test_drag_is_not_a_click(qapp):
-    from PyQt6.QtCore import QPoint, QPointF, Qt
-    from PyQt6.QtTest import QTest
+    from PySide6.QtCore import QPoint, QPointF, Qt
+    from PySide6.QtTest import QTest
 
     view = demo_view(qapp)
     view.go_to(1)
@@ -293,8 +293,8 @@ def test_drag_is_not_a_click(qapp):
 
 
 def test_external_link_opens_only_safe_schemes(qapp, monkeypatch):
-    from PyQt6.QtCore import QPointF
-    from PyQt6.QtGui import QDesktopServices
+    from PySide6.QtCore import QPointF
+    from PySide6.QtGui import QDesktopServices
 
     import gui.pdf_file_view as pfv
 
@@ -395,7 +395,7 @@ def test_viewer_start_does_not_import_typst(tmp_path):
     code = (
         "import os, sys; os.environ['QT_QPA_PLATFORM'] = 'offscreen'; "
         f"sys.path.insert(0, {str(ROOT)!r}); "
-        "from PyQt6.QtWidgets import QApplication; app = QApplication([]); "
+        "from PySide6.QtWidgets import QApplication; app = QApplication([]); "
         "from gui.main_window import MainWindow; "
         f"w = MainWindow(__import__('pathlib').Path({str(ROOT)!r}), {str(pdf)!r}); "
         "print(w.is_viewer_mode(), 'typst' in sys.modules, 'core.md_converter' in sys.modules)"
@@ -430,7 +430,7 @@ def test_switch_from_viewer_to_markdown(qapp, tmp_path, isolated_session):
 
 
 def test_start_with_broken_pdf_falls_back_to_markdown_mode(qapp, tmp_path, isolated_session, monkeypatch):
-    from PyQt6.QtWidgets import QMessageBox
+    from PySide6.QtWidgets import QMessageBox
 
     from gui.main_window import MainWindow
 

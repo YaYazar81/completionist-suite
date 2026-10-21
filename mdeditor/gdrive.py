@@ -28,8 +28,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from PyQt6.QtCore import QObject, Qt, QThread, QTimer, pyqtSignal, pyqtSlot
-from PyQt6.QtWidgets import QToolButton
+from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
+from PySide6.QtWidgets import QToolButton
 
 from core.drive import (
     FOLDER_MIME, AuthRequired, Cancelled, DriveClient, NotFound, Offline, SyncError,
@@ -240,18 +240,18 @@ def run_sync(client, source: Path, folder_name: str, hashes: HashCache,
 
 
 class SyncWorker(QObject):
-    planned = pyqtSignal(int)
-    progress = pyqtSignal(int, int)
-    finished = pyqtSignal(dict)
-    failed = pyqtSignal(str, str)      # Art (auth/offline/error/cancelled), Meldung
-    linkFinished = pyqtSignal(bool, str)
+    planned = Signal(int)
+    progress = Signal(int, int)
+    finished = Signal(dict)
+    failed = Signal(str, str)      # Art (auth/offline/error/cancelled), Meldung
+    linkFinished = Signal(bool, str)
 
     def __init__(self, store: TokenStore) -> None:
         super().__init__()
         self.store = store
         self.cancel = threading.Event()
 
-    @pyqtSlot(str, str)
+    @Slot(str, str)
     def sync(self, source: str, folder_name: str) -> None:
         try:
             creds = self.store.credentials()
@@ -270,7 +270,7 @@ class SyncWorker(QObject):
         else:
             self.finished.emit(result)
 
-    @pyqtSlot()
+    @Slot()
     def link(self) -> None:
         try:
             self.store.link()
@@ -293,10 +293,10 @@ class GDriveSync(QObject):
     """Haelt Thread, Timer und Status. ``statusChanged(state, text, tooltip)``
     mit state in off/idle/ok/busy/offline/auth/error."""
 
-    statusChanged = pyqtSignal(str, str, str)
-    linkFinished = pyqtSignal(bool, str)
-    _doSync = pyqtSignal(str, str)
-    _doLink = pyqtSignal()
+    statusChanged = Signal(str, str, str)
+    linkFinished = Signal(bool, str)
+    _doSync = Signal(str, str)
+    _doLink = Signal()
 
     def __init__(self, parent=None, store: TokenStore | None = None) -> None:
         super().__init__(parent)

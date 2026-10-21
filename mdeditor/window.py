@@ -8,8 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PyQt6.QtCore import QByteArray, QEventLoop, QPoint, QSize, Qt, QTimer, QUrl
-from PyQt6.QtGui import (
+from PySide6.QtCore import QByteArray, QEventLoop, QPoint, QSize, Qt, QTimer, QUrl
+from PySide6.QtGui import (
     QAction,
     QActionGroup,
     QCursor,
@@ -20,8 +20,8 @@ from PyQt6.QtGui import (
     QPainter,
     QPen,
 )
-from PyQt6.QtWebEngineCore import QWebEnginePage
-from PyQt6.QtWidgets import (
+from PySide6.QtWebEngineCore import QWebEnginePage
+from PySide6.QtWidgets import (
     QApplication,
     QDialog,
     QFileDialog,
@@ -656,6 +656,17 @@ class MainWindow(QMainWindow):
         settings_button.setAutoRaise(True)
         sb.addPermanentWidget(settings_button)
 
+        a_about = QAction("ⓘ", self)
+        a_about.setToolTip("Über CompletionistMD, Lizenz und Fremdkomponenten (F1)")
+        a_about.setShortcut(QKeySequence("F1"))
+        a_about.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
+        a_about.triggered.connect(self.show_about)
+        self.addAction(a_about)
+        about_button = QToolButton(self)
+        about_button.setDefaultAction(a_about)
+        about_button.setAutoRaise(True)
+        sb.addPermanentWidget(about_button)
+
         # Ganz rechts: Google-Drive-Status (nur sichtbar, wenn der Sync aktiv ist)
         self.gdrive_button = SyncStatusButton(self)
         self.gdrive_button.clicked.connect(self._on_gdrive_clicked)
@@ -875,6 +886,12 @@ class MainWindow(QMainWindow):
     # Gliederung
     # ------------------------------------------------------------------ #
 
+    def show_about(self) -> None:
+        from core.about_dialog import AboutDialog
+
+        AboutDialog(APP_TITLE, __version__, "WYSIWYG-Markdown-Editor der Completionist Suite",
+                    self.windowIcon(), self).exec()
+
     def toggle_outline(self) -> None:
         visible = not self.outline_panel.isVisible()
         self.outline_panel.setVisible(visible)
@@ -964,7 +981,7 @@ class MainWindow(QMainWindow):
 
     @staticmethod
     def _text_flags(case: bool):
-        from PyQt6.QtGui import QTextDocument
+        from PySide6.QtGui import QTextDocument
 
         return QTextDocument.FindFlag.FindCaseSensitively if case else QTextDocument.FindFlag(0)
 
