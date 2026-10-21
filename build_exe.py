@@ -95,7 +95,7 @@ DROP_COMMON = [
     # Software-OpenGL (20 MB): Notloesung fuer Rechner ohne OpenGL-Treiber.
     # Die Widgets-Oberflaeche zeichnet ohne OpenGL, QtWebEngine ueber Direct3D.
     "PySide6/opengl32sw.dll",
-    # Qt-Uebersetzungen: keine der Apps installiert einen QTranslator.
+    # Qt-Uebersetzungen ausser KEEP_QT_TRANSLATIONS (core/qt_translations.py)
     "PySide6/translations/*.qm",
     # TLS, Netzwerkstatus, Standort, Touch-Eingabegeraete
     "PySide6/plugins/tls/*", "PySide6/plugins/networkinformation/*",
@@ -103,6 +103,9 @@ DROP_COMMON = [
 ]
 # Pythons OpenSSL -- von den Qt-Apps geht nur MD ins Netz (Google-Drive-Sync, core/drive.py);
 # QR nimmt den Filter nicht (install_file_filter nur fuer pdf/md) und behaelt OpenSSL
+# Diese Kataloge laedt core/qt_translations.py -- alle Sprachen, damit Ja/Nein und
+# Kontextmenues in jeder Systemsprache stimmen (zusammen rund 2 MB).
+KEEP_QT_TRANSLATIONS = ("qtbase_", "qtwebengine_")
 DROP_NO_TLS = ["libcrypto-*.dll", "libssl-*.dll"]
 DROP_MD = [
     # Nur fuer Debug-Builds von Qt bzw. fuer die Chromium-Entwicklerwerkzeuge
@@ -271,6 +274,9 @@ def install_file_filter(app: str) -> None:
         dest = dest.replace("\\", "/").lower()
         if dest.startswith(locales_dir):
             return dest[len(locales_dir):] not in keep_locales
+        if dest.startswith("pyside6/translations/") and dest.endswith(".qm") \
+                and dest.rsplit("/", 1)[1].startswith(KEEP_QT_TRANSLATIONS):
+            return False
         return any(fnmatchcase(dest, p) for p in patterns)
 
     class FilteredAnalysis(build_main.Analysis):

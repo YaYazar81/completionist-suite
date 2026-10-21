@@ -1,7 +1,8 @@
 """PDF drucken: Seiten aus einem QPdfDocument ueber den Windows-Druckdialog.
 
-QtPdf rendert jede Seite als Bild in Druckaufloesung (hoechstens 300 dpi,
-damit grosse Dokumente den Speicher nicht sprengen) und setzt es
+QtPdf rendert jede Seite als Bild in Druckaufloesung (hoechstens 600 dpi:
+scharfe Schrift auch auf Laserdruckern; eine A4-Seite braucht dabei rund
+140 MB, gerendert wird immer nur eine Seite auf einmal) und setzt es
 seitenfuellend, mit erhaltenem Seitenverhaeltnis, auf das Blatt.
 """
 
@@ -10,7 +11,7 @@ from __future__ import annotations
 from PySide6.QtCore import QRectF, QSize, Qt
 from PySide6.QtWidgets import QApplication, QMessageBox, QWidget
 
-MAX_DPI = 300
+MAX_DPI = 600
 
 
 def print_document(parent: QWidget, doc, title: str) -> None:

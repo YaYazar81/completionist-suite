@@ -100,7 +100,7 @@ Der Programmordner ist von 507 auf 282 MB geschrumpft. Gut 200 MB davon sind
 | `qtwebengine_locales` außer `de`, `en-US`, `en-GB` | 42 | Texte von Kontextmenü und Fehlerseiten; fehlt die Systemsprache, nimmt Chromium Englisch |
 | `opengl32sw.dll` | 20 | Software-OpenGL. QtWebEngine zeichnet unter Windows über Direct3D (geprüft: der alte Build lädt die DLL nie, auch nicht mit `--disable-gpu`; mit erzwungenem `QT_OPENGL=software` + OpenGL-Backend stürzt er trotz DLL ab) |
 | `qtwebengine_devtools_resources.pak` | 11 | Chromium-Entwicklerwerkzeuge, die App öffnet sie nicht |
-| Qt-Übersetzungen (`.qm`) | 9 | die App installiert keinen QTranslator |
+| Qt-Übersetzungen außer `qtbase_*`, `qtwebengine_*` | – | geladen werden nur diese beiden (`core/qt_translations.py`): Ja/Nein/Abbrechen, Kontextmenüs von Textfeldern und Editor auf Deutsch. Seit dem 21.10.2026 wieder dabei (rund 6 MB der früher gesparten 9 MB) |
 | `qml/` | 8 | QML-Module; `QWebEngineView` ist ein Widget |
 | TLS-Plugins von Qt | – | Chromium bringt sein eigenes TLS (BoringSSL) mit. Pythons OpenSSL (`_ssl`) bleibt dagegen drin: der Google-Drive-Sync spricht HTTPS |
 | PySide6-Module Quick, Qml, OpenGL, Positioning … | 3 | `QtWebEngineWidgets` lädt auf Python-Seite nur QtNetwork, QtWebChannel und QtPrintSupport nach |

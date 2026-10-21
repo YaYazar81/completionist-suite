@@ -339,12 +339,14 @@ class Controls(ctk.CTkTabview):
             child.destroy()
         self._thumbs = []
         user = presets.user()
+        scale = self._get_widget_scaling()  # scharf auch bei 125/150 % Windows-Skalierung
         for i, (name, style) in enumerate(presets.all_presets().items()):
             d = QRDesign(payload="CompletionistQR").apply_style(style)
             d.caption = style.get("caption", "SCAN ME" if d.frame.startswith("banner") or
                                   d.frame == "ticket" else "")
-            img = render(d, 76, supersample=2)
-            thumb = ctk.CTkImage(light_image=img, dark_image=img, size=img.size)
+            img = render(d, round(76 * scale), supersample=2)
+            thumb = ctk.CTkImage(light_image=img, dark_image=img,
+                                 size=(round(img.width / scale), round(img.height / scale)))
             self._thumbs.append(thumb)
             label = name + (" ★" if name in user else "")
             ctk.CTkButton(self.gallery, image=thumb, text=label, compound="top", width=96,

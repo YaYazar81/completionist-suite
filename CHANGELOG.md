@@ -14,6 +14,19 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Online
 (Ordner `QR-Online/`) zählt die Version in `QR-Online/qronline/__init__.py`.
 
+## 21.10.2026 – Qualität vor Größe (PDF · MD · QR)
+
+Neuer Grundsatz der Suite: Qualität hat Vorrang vor Programmgröße. Was bisher zugunsten
+der Größe wegfiel und sichtbar schlechter war, ist zurück:
+
+* **PDF · MD: Qt-Dialoge auf Deutsch.** Knöpfe wie Ja/Nein/OK/Abbrechen/Schließen und die
+  Kontextmenüs der Textfelder (Kopieren, Einfügen …) erschienen auf Englisch, weil die
+  Qt-Übersetzungen nicht mitgepackt und nicht geladen wurden. Jetzt lädt
+  `core/qt_translations.py` sie in der Systemsprache; MD auch die der Editor-Ansicht.
+* **PDF: Drucken mit bis zu 600 dpi** statt 300 dpi, für scharfe Schrift auf Laserdruckern.
+* **QR: scharfe Vorschau bei Windows-Skalierung** (125 %, 150 % …). Vorschau und
+  Vorlagen-Galerie werden in echten Bildschirmpixeln gerendert, statt hochgezogen zu werden.
+
 ## 21.10.2026 – QR-Online 1.0.0
 
 * **Neues Projekt QR-Online:** QR-Codes mit Scan-Statistik. Der Code enthält einen kurzen

@@ -52,7 +52,7 @@ wird dabei gelöscht, sonst hinge „Öffnen mit“ in einer Schleife. **In Edit
 
 - **Drucken …** (Strg+P) druckt im Viewer-Modus das PDF, im Markdown-Modus die aktuelle
   Vorschau. Seitenbereich, Drucker und Kopien kommen aus dem Windows-Druckdialog; jede
-  Seite wird mit höchstens 300 dpi gerastert und seitenfüllend gesetzt.
+  Seite wird mit höchstens 600 dpi gerastert und seitenfüllend gesetzt.
 - **Zuletzt ▾** listet die letzten 15 geöffneten Markdown- und PDF-Dateien
   (`%APPDATA%\CompletionistPDF\completionistpdf_recent.json`).
 - **Zusammenführen …** fügt mehrere Markdown-Dateien zu einer neuen zusammen, getrennt
@@ -86,7 +86,7 @@ Der Programmordner ist von 166 auf 119 MB geschrumpft. Das meiste davon ist Typs
 | :--- | :--- |
 | **opengl32sw.dll** (20 MB) | Software-OpenGL als Notlösung für Rechner ohne Grafiktreiber. Die Oberfläche besteht aus Qt-Widgets, die Vorschau aus QtPdf — beides zeichnet ohne OpenGL. |
 | **Pillow** (11 MB, davon 7,5 MB AVIF-Decoder) | wurde nur gebraucht, um beim Emoji-Test die farbigen Pixel eines Probebilds zu zählen. Das macht jetzt `count_saturated_pixels` in `core/typst_engine.py` mit QImage — bei 18 Proben (6 Schriften × 3 Auflösungen) exakt dieselben Zahlen wie mit Pillow. |
-| **Qt-Übersetzungen** (6,4 MB) | Die App installiert keinen QTranslator, die `.qm`-Dateien wurden nie gelesen. |
+| **Qt-Übersetzungen** außer `qtbase_*` | Die App lädt nur `qtbase` (`core/qt_translations.py`), damit Ja/Nein/Abbrechen und die Kontextmenüs der Textfelder auf Deutsch erscheinen. `qtbase_*` sind seit dem 21.10.2026 wieder dabei (rund 6 MB, der größte Teil der früher hier gesparten 6,4 MB). |
 | **OpenSSL** (6 MB) | kommt über `_ssl` und `_hashlib` herein. Die App geht nie ins Netz, `hashlib.sha1` (Bildnamen) ist auch ohne `_hashlib` da. Mit OpenSSL entfallen die TLS-Plugins von Qt. |
 | **assets/** bis auf Schriften und Icon | Editor-Bundle und Icons der anderen Apps lagen bisher mit drin. |
 
