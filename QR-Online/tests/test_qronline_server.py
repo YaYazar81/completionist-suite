@@ -54,11 +54,17 @@ def server(tmp_path):
     proc = subprocess.Popen([*php_args(), "-S", f"127.0.0.1:{port}", "-t", str(root), str(root / "index.php")],
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     base = f"http://127.0.0.1:{port}"
-    for _ in range(50):
+    # Warten, bis der Server antwortet. Die erste Anfrage legt die Datenbank an und
+    # braucht auf langsamen Rechnern (Windows-Runner) laenger -- auch Timeouts abwarten.
+    deadline = time.monotonic() + 20
+    while True:
         try:
-            requests.get(base, timeout=0.5)
+            requests.get(base, timeout=5)
             break
-        except requests.ConnectionError:
+        except requests.RequestException:
+            if time.monotonic() > deadline or proc.poll() is not None:
+                proc.kill()
+                pytest.fail("PHP-Server ist nicht angelaufen")
             time.sleep(0.1)
     yield base, root
     proc.terminate()
