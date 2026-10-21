@@ -54,7 +54,7 @@ jobs:
         working-directory: QR-Online
         run: .\build_setup.ps1
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Setups
           path: |
