@@ -11,7 +11,50 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 | CompletionistMD | `mdeditor/__init__.py` |
 | CompletionistQR | `completionistqr/__init__.py` |
 
-CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
+CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Online
+(Ordner `QR-Online/`) zählt die Version in `QR-Online/qronline/__init__.py`.
+
+## 21.10.2026 – PDF 1.4.1 · MD 1.4.1 · QR 1.3.0 – Qualität vor Größe
+
+Neuer Grundsatz der Suite: Qualität hat Vorrang vor Programmgröße. Was bisher zugunsten
+der Größe wegfiel und sichtbar schlechter war, ist zurück.
+
+### CompletionistPDF 1.4.1 · CompletionistMD 1.4.1
+* **Qt-Dialoge auf Deutsch.** Knöpfe wie Ja/Nein/OK/Abbrechen/Schließen und die
+  Kontextmenüs der Textfelder (Kopieren, Einfügen …) erschienen auf Englisch, weil die
+  Qt-Übersetzungen nicht mitgepackt und nicht geladen wurden. Jetzt lädt
+  `core/qt_translations.py` sie in der Systemsprache; MD auch die der Editor-Ansicht.
+* **PDF: Drucken mit bis zu 600 dpi** statt 300 dpi, für scharfe Schrift auf Laserdruckern.
+
+### CompletionistQR 1.3.0
+* **PDF-Export als echte Vektorgrafik** statt eines eingebetteten Rasterbilds: Module,
+  Augen, Rahmen und Farbverläufe als Pfade, die Beschriftung als Schriftkontur (gesetzt mit
+  HarfBuzz, samt Unterschneidung), das Logo in Originalauflösung. In jeder Druckgröße
+  randscharf, keine Schriftabhängigkeit. Neue Abhängigkeit: `uharfbuzz`.
+* **Behoben: Stil „Abgerundet (fließend)“ mit falschen Ecken** in PNG, Vorschau,
+  Zwischenablage und Stapel-Export. Bei Radius = halbe Modulbreite landeten eckige Ecken
+  auf der falschen Seite; statt durchgehender Bahnen gab es Kerben und halbe Kappen.
+  Betraf den Modulstil „Abgerundet“ (Vorlagen „Rounded Soft“, „Scan-Me Banner“,
+  „Midnight“) und die Pupille „Blatt“ („Neon Gradient“).
+* **Behoben: Schlitze im SVG**, wo sich Formen überlappen (z. B. Augen-Pupille „Punkte“,
+  Rauten-Spitzen). Das SVG füllte nach evenodd; jetzt nach nonzero wie Pillow, aus
+  derselben Kontur wie das PDF.
+* **Scharfe Vorschau bei Windows-Skalierung** (125 %, 150 % …). Vorschau und
+  Vorlagen-Galerie werden in echten Bildschirmpixeln gerendert, statt hochgezogen zu werden.
+* **Logos auch als AVIF.** Der AVIF-Decoder von Pillow wurde bisher aus Platzgründen
+  weggelassen und ist wieder dabei.
+* Build: `PIL._tkinter_finder` wird ausdrücklich mitgepackt. Ohne stürzte der gebaute
+  Programmordner (geprüft unter Linux) beim Aufbau der Vorlagen-Galerie ab.
+
+## 21.10.2026 – QR-Online 1.0.0
+
+* **Neues Projekt QR-Online:** QR-Codes mit Scan-Statistik. Der Code enthält einen kurzen
+  Link auf den eigenen Webspace; `server/index.php` (PHP + SQLite) zählt jeden Scan und
+  leitet weiter. Gespeichert werden nur Zeit, Gerätetyp, Betriebssystem und Sprache, keine
+  IP-Adresse. Die App zeigt Scans pro Tag/Woche, Uhrzeit, Wochentag, Gerät, Betriebssystem
+  und Sprache als Graphen (matplotlib). Das Ziel eines Links lässt sich nachträglich ändern.
+* Eigenes Programmsymbol im Stil der Suite (Violett, mit Balkendiagramm), erzeugt von
+  `QR-Online/tools/make_icon.py`.
 
 ## 21.10.2026 – PDF 1.4.0 · MD 1.4.0 · QR 1.2.0
 

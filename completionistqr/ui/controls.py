@@ -91,8 +91,8 @@ DEFAULTS = {("url", "url"): "https://example.com", ("wifi", "security"): "WPA",
             ("payment", "kind"): "epc", ("geo", "mode"): "maps", ("social", "platform"): "instagram",
             ("app", "store"): "android", ("feedback", "subject"): "Feedback"}
 
-LOGO_TYPES = [("Bilder", "*.png *.jpg *.jpeg *.webp *.bmp *.gif"), ("Alle Dateien", "*.*")]
-LOGO_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"}
+LOGO_TYPES = [("Bilder", "*.png *.jpg *.jpeg *.webp *.avif *.bmp *.gif"), ("Alle Dateien", "*.*")]
+LOGO_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".avif", ".bmp", ".gif"}
 
 
 class Controls(ctk.CTkTabview):
@@ -339,12 +339,14 @@ class Controls(ctk.CTkTabview):
             child.destroy()
         self._thumbs = []
         user = presets.user()
+        scale = self._get_widget_scaling()  # scharf auch bei 125/150 % Windows-Skalierung
         for i, (name, style) in enumerate(presets.all_presets().items()):
             d = QRDesign(payload="CompletionistQR").apply_style(style)
             d.caption = style.get("caption", "SCAN ME" if d.frame.startswith("banner") or
                                   d.frame == "ticket" else "")
-            img = render(d, 76, supersample=2)
-            thumb = ctk.CTkImage(light_image=img, dark_image=img, size=img.size)
+            img = render(d, round(76 * scale), supersample=2)
+            thumb = ctk.CTkImage(light_image=img, dark_image=img,
+                                 size=(round(img.width / scale), round(img.height / scale)))
             self._thumbs.append(thumb)
             label = name + (" ★" if name in user else "")
             ctk.CTkButton(self.gallery, image=thumb, text=label, compound="top", width=96,
@@ -527,8 +529,9 @@ class Controls(ctk.CTkTabview):
         self.fmt = ctk.CTkSegmentedButton(tab, values=list(export.FORMATS))
         self.fmt.set("PNG")
         self.fmt.pack(anchor="w", padx=4, pady=4)
-        ctk.CTkLabel(tab, text="PNG für Web und Office, SVG für Grafikprogramme (beliebig "
-                               "skalierbar), PDF für den Druck.",
+        ctk.CTkLabel(tab, text="PNG für Web und Office, SVG für Grafikprogramme, PDF für den "
+                               "Druck. SVG und PDF sind Vektorgrafiken und in jeder Größe scharf; "
+                               "beim PDF legen Breite und dpi nur die Seitengröße fest.",
                      text_color=("gray35", "gray65"), anchor="w", justify="left",
                      wraplength=380).pack(fill="x", padx=4)
 

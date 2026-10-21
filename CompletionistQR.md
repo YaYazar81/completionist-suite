@@ -21,9 +21,9 @@ auf, nicht auf Qt wie die beiden anderen Programme.
 | :--- | :--- |
 | **Inhalt** | Website, Kontakt (vCard), WLAN, E-Mail, SMS, WhatsApp, Telefon, Zahlung (SEPA-GiroCode oder PayPal.me), Standort (Kartenlink oder `geo:`), Social Media (Instagram, TikTok, YouTube …), App-Link, Feedback (Formular oder E-Mail), PDF/Bild/Video als Link, Freitext; Fehlerkorrektur L/M/Q/H |
 | **Design** | 8 Vorlagen + eigene Vorlagen speichern; Modulform (Quadrate, Punkte, abgerundet, Rauten, Balken …), Farbe oder Verlauf (linear/radial), Hintergrund oder transparent, Ruhezone; Ecken-Marker mit eigener Form und Farbe |
-| **Logo** | PNG/JPG/WebP in der Mitte (wählen, ins Fenster ziehen oder Strg+V), Größe 10–30 %, farbige Unterlage mit Eckenradius und Innenabstand |
+| **Logo** | PNG/JPG/WebP/AVIF in der Mitte (wählen, ins Fenster ziehen oder Strg+V), Größe 10–30 %, farbige Unterlage mit Eckenradius und Innenabstand |
 | **Beschriftung** | Rahmen (Linie, Karte, Banner oben/unten, Ticket), ein- oder zweizeiliger Text, 10 Schriftarten, fett, Größe, Farbe |
-| **Export** | PNG, SVG oder PDF in 512–4096 px, 150/300/600 dpi (Strg+S); in die Zwischenablage (Strg+C); Stapel-Export aus einer CSV-Liste |
+| **Export** | PNG in 512–4096 px und 150/300/600 dpi, SVG und PDF als echte Vektorgrafik (Strg+S); in die Zwischenablage (Strg+C); Stapel-Export aus einer CSV-Liste |
 
 Design, Inhaltstyp und Formularwerte merkt sich die App bis zum nächsten Start.
 
@@ -75,9 +75,14 @@ Inter, Montserrat, Poppins, Oswald, Bebas Neue, Anton, Playfair Display, Lora, R
 Caveat – alle von Google Fonts unter der SIL Open Font License (Lizenztexte liegen jeweils neben
 den Dateien in `completionistqr\assets\fonts\`).
 
+Das **PDF** ist eine echte Vektorgrafik: Module, Augen, Rahmen und Farbverläufe sind Pfade,
+die Beschriftung steht als Schriftkontur darin (gesetzt mit HarfBuzz, samt Unterschneidung),
+das Logo in Originalauflösung. Damit ist der Code in jeder Druckgröße randscharf und sieht in
+jedem Programm gleich aus, auch ohne installierte Schrift. Breite und dpi legen beim PDF
+nur die Seitengröße fest (1024 px bei 300 dpi = 86,7 mm). Für den Druck ist PDF die beste Wahl.
+
 Im **SVG** ist die gewählte Schrift eingebettet. Browser und Inkscape zeigen sie korrekt an,
-manche Office-Programme ignorieren eingebettete Schriften jedoch. Für den Druck sind PDF oder
-PNG die sichere Wahl.
+manche Office-Programme ignorieren eingebettete Schriften jedoch.
 
 ## Entwicklung
 
@@ -103,22 +108,25 @@ daneben; `python tools\make_icon.py` macht daraus `icon.ico` mit allen Windows-G
 Skript läuft nicht automatisch beim Build mit — es überschreibt `icon.ico`.
 
 Aufbau: `completionistqr/core` enthält Encoder (`matrix.py`), Geometrie (`geometry.py`, `shapes.py`),
-die Renderer für Raster (`render_pil.py`) und Vektor (`render_svg.py`) sowie Export und Vorlagen.
-Beide Renderer zeichnen dieselbe Szene, deshalb sehen PNG, PDF und SVG identisch aus.
+die Renderer für Raster (`render_pil.py`) und Vektor (`render_svg.py`, `render_pdf.py`) sowie
+Export und Vorlagen. Alle drei zeichnen dieselbe Szene, deshalb sehen PNG, PDF und SVG identisch
+aus; SVG und PDF bekommen ihre Pfade aus derselben Kontur (`shapes.py`) und füllen wie Pillow
+nach der Regel nonzero. `tests/test_vector_export.py` rastert jedes Vorlagen-PDF mit QtPdf und
+prüft es auf Lesbarkeit.
 `completionistqr/ui` enthält die Oberfläche (CustomTkinter), `ui/drive_upload.py` den Knopf
 zum Hochladen. Anmeldung und Drive-Aufrufe liegen ohne Qt in `core/drive.py` im Hauptordner;
 CompletionistMD nutzt dieselben (`mdeditor/gdrive.py`).
 
 ### Was nicht mitgepackt wird
 
-Die App kommt mit Pillow, qrcode, CustomTkinter und zxing-cpp aus, dazu google-auth und
-requests für das Hochladen nach Google Drive. Zwei Brocken sind bewusst draußen, zusammen
-rund 33 MB:
+Die App kommt mit Pillow, qrcode, CustomTkinter, zxing-cpp und uharfbuzz (Beschriftung im
+Vektor-PDF) aus, dazu google-auth und requests für das Hochladen nach Google Drive. Bewusst
+draußen ist nur NumPy, weil es ohne Einbuße an Qualität ersetzt ist:
 
 | | Grund |
 | :--- | :--- |
 | **NumPy** (26 MB) | wurde nur für den Farbverlauf gebraucht. `core/colors.py` zieht stattdessen eine kleine Vorlage mit einer affinen Abbildung auf die Zielgröße — das rechnet Pillow in C. |
-| **AVIF-Decoder** (7,5 MB) | Pillow bringt ihn mit; gelesen werden nur PNG, JPG und WebP. |
+| ~~**AVIF-Decoder** (7,5 MB)~~ | war bis 1.2.0 draußen. Seit 1.3.0 dürfen Logos auch AVIF sein. |
 | ~~**OpenSSL** (6 MB)~~ | war bis 1.1.0 draußen. Seit dem Hochladen nach Google Drive spricht die App HTTPS und braucht `ssl`, `_ssl` und `_hashlib` wieder. |
 
 Gemessen am 21.10.2026: Mit dem Upload wuchs das Setup von 14,6 auf 21,1 MB und

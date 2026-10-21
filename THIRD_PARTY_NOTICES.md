@@ -31,5 +31,6 @@ Installation im Ordner `Lizenzen` des Programms; der Dialog *Über …* (F1) zei
 | qrcode | QR | BSD |
 | customtkinter | QR | MIT |
 | zxing-cpp | QR | Apache 2.0 |
+| uharfbuzz (mit HarfBuzz) | QR | Apache 2.0 (uharfbuzz), MIT (HarfBuzz) |
 | Python | alle | PSF License |
 | PyInstaller (nur zum Bauen; Bootloader in den .exe) | alle | GPL v2 mit Ausnahme für gebaute Programme |

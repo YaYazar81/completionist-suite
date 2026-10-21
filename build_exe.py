@@ -95,7 +95,7 @@ DROP_COMMON = [
     # Software-OpenGL (20 MB): Notloesung fuer Rechner ohne OpenGL-Treiber.
     # Die Widgets-Oberflaeche zeichnet ohne OpenGL, QtWebEngine ueber Direct3D.
     "PySide6/opengl32sw.dll",
-    # Qt-Uebersetzungen: keine der Apps installiert einen QTranslator.
+    # Qt-Uebersetzungen ausser KEEP_QT_TRANSLATIONS (core/qt_translations.py)
     "PySide6/translations/*.qm",
     # TLS, Netzwerkstatus, Standort, Touch-Eingabegeraete
     "PySide6/plugins/tls/*", "PySide6/plugins/networkinformation/*",
@@ -103,6 +103,9 @@ DROP_COMMON = [
 ]
 # Pythons OpenSSL -- von den Qt-Apps geht nur MD ins Netz (Google-Drive-Sync, core/drive.py);
 # QR nimmt den Filter nicht (install_file_filter nur fuer pdf/md) und behaelt OpenSSL
+# Diese Kataloge laedt core/qt_translations.py -- alle Sprachen, damit Ja/Nein und
+# Kontextmenues in jeder Systemsprache stimmen (zusammen rund 2 MB).
+KEEP_QT_TRANSLATIONS = ("qtbase_", "qtwebengine_")
 DROP_NO_TLS = ["libcrypto-*.dll", "libssl-*.dll"]
 DROP_MD = [
     # Nur fuer Debug-Builds von Qt bzw. fuer die Chromium-Entwicklerwerkzeuge
@@ -119,15 +122,14 @@ DROP_MD = [
 KEEP_WEBENGINE_LOCALES = {"de.pak", "en-US.pak", "en-GB.pak"}
 
 # CompletionistQR braucht Tkinter, aber kein Qt und nichts aus der PDF-Kette.
-# Dazu ein Brocken, den Pillow sonst mitschleppt:
-#   PIL._avif        AVIF-Decoder, 7,5 MB -- die App liest PNG/JPG/WebP
 # numpy wurde ganz abgeloest, siehe completionistqr/core/colors.py.
+# Der AVIF-Decoder von Pillow (PIL._avif) bleibt seit QR 1.3.0 drin: Logos
+# duerfen auch .avif sein.
 # ssl/_ssl/_hashlib bleiben (frueher ausgeschlossen): "Datei in Google Drive
 # hochladen" spricht HTTPS (core/drive.py, completionistqr/ui/drive_upload.py).
 EXCLUDES_QR = [
     "PySide6", "shiboken6", "typst", "markdown_it", "mdit_py_plugins",
     "numpy",
-    "PIL.AvifImagePlugin", "PIL._avif",
     "pytest", "unittest", "pydoc",
 ]
 
@@ -162,7 +164,7 @@ LICENSE_PACKAGES = {
     "pdf": _QT + ["typst", "markdown-it-py", "mdit-py-plugins", "mdurl", "pyinstaller"],
     "md": _QT + _NET + ["pyinstaller"],
     "qr": ["pillow", "qrcode", "customtkinter", "darkdetect", "packaging", "zxing-cpp",
-           "pyinstaller"] + _NET,
+           "uharfbuzz", "pyinstaller"] + _NET,
 }
 
 
@@ -271,6 +273,9 @@ def install_file_filter(app: str) -> None:
         dest = dest.replace("\\", "/").lower()
         if dest.startswith(locales_dir):
             return dest[len(locales_dir):] not in keep_locales
+        if dest.startswith("pyside6/translations/") and dest.endswith(".qm") \
+                and dest.rsplit("/", 1)[1].startswith(KEEP_QT_TRANSLATIONS):
+            return False
         return any(fnmatchcase(dest, p) for p in patterns)
 
     class FilteredAnalysis(build_main.Analysis):
@@ -407,6 +412,9 @@ def main() -> int:
             # Erweiterung -- beides findet PyInstaller nicht von allein.
             "--collect-data", "customtkinter",
             "--collect-binaries", "zxingcpp",
+            # Pillow laedt es erst, wenn Tk ein Bild zeigt (ImageTk) -- ohne stuerzt
+            # der Aufbau der Vorlagen-Galerie mit ModuleNotFoundError ab
+            "--hidden-import", "PIL._tkinter_finder",
         ]
         excludes = EXCLUDES_QR
     for d in data_dirs:

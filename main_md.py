@@ -34,6 +34,10 @@ def main() -> int:
 
     app = QApplication(sys.argv)
     app.setApplicationName("CompletionistMD")
+    # Ja/Nein/Abbrechen und Kontextmenues (auch im Editor) auf Deutsch statt Englisch
+    from core import qt_translations
+
+    qt_translations.install(app, ("qtbase", "qtwebengine"))
     app.setApplicationDisplayName("CompletionistMD")
     app.setStyle("Fusion")
     app.setPalette(theme.dark_palette())

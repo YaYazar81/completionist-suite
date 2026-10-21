@@ -66,24 +66,28 @@ class PreviewPanel(ctk.CTkFrame):
         self._generation += 1
         gen = self._generation
         logo = self._logo(design.logo_path)
-        threading.Thread(target=self._work, args=(gen, design, logo), daemon=True).start()
+        # Windows-Skalierung (z. B. 150 %): in echten Bildschirmpixeln rendern, sonst
+        # vergroessert CTkImage das Bild und die Vorschau wird unscharf
+        scale = self._get_widget_scaling()
+        threading.Thread(target=self._work, args=(gen, design, logo, scale), daemon=True).start()
 
-    def _work(self, gen: int, design: QRDesign, logo) -> None:
+    def _work(self, gen: int, design: QRDesign, logo, scale: float = 1.0) -> None:
         try:
             scene = build_scene(design, logo)
             longest = max(scene.width, scene.height)
-            width_px = round(PREVIEW_PX * scene.width / longest)
+            width_px = round(PREVIEW_PX * scale * scene.width / longest)
             img = render_scene(scene, width_px, supersample=2)
             readable = export.decode(img) == (design.payload or " ")
-            result = (img, scene, readable, None)
+            result = (img, scene, readable, None, scale)
         except Exception as exc:  # Darstellungsfehler nie die App abstürzen lassen
-            result = (None, None, False, exc)
+            result = (None, None, False, exc, scale)
         try:
             self.after(0, lambda: self._show(gen, design, *result))
         except RuntimeError:
             pass  # Fenster wurde inzwischen geschlossen
 
-    def _show(self, gen: int, design: QRDesign, img, scene, readable: bool, error) -> None:
+    def _show(self, gen: int, design: QRDesign, img, scene, readable: bool, error,
+              scale: float = 1.0) -> None:
         if gen != self._generation:
             return  # Inzwischen wurde schon eine neuere Vorschau angefordert
         self.readable = None if error is not None else readable
@@ -92,11 +96,12 @@ class PreviewPanel(ctk.CTkFrame):
                                   text_color=("#B91C1C", "#F87171"))
             return
         if design.transparent_bg:  # Schachbrett zeigt, wo das Bild durchsichtig ist
-            shown = _checkerboard(img.size)
+            shown = _checkerboard(img.size, round(12 * scale))
             shown.alpha_composite(img)
         else:
             shown = img
-        self._ctk_image = ctk.CTkImage(light_image=shown, dark_image=shown, size=img.size)
+        size = (round(img.width / scale), round(img.height / scale))  # in Oberflaechen-Einheiten
+        self._ctk_image = ctk.CTkImage(light_image=shown, dark_image=shown, size=size)
         self.image_label.configure(image=self._ctk_image)
 
         m = scene.matrix

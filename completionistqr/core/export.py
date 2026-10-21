@@ -5,7 +5,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from . import render_pil, render_svg
+from . import render_pdf, render_pil, render_svg
 from .config import QRDesign
 
 FORMATS = {"PNG": ".png", "SVG": ".svg", "PDF": ".pdf"}
@@ -17,8 +17,17 @@ def save(design: QRDesign, path: str | Path, width_px: int = 1024, dpi: int = 30
     if ext == ".svg":
         path.write_text(render_svg.render(design, width_px), encoding="utf-8")
     elif ext == ".pdf":
-        img = render_pil.flatten(render_pil.render(design, width_px), design.bg_color)
-        img.save(path, "PDF", resolution=dpi)
+        # Vektor-PDF; Breite und dpi bestimmen nur noch die Seitengroesse
+        try:
+            data = render_pdf.render(design, width_px, dpi)
+        except (ImportError, OSError) as exc:  # HarfBuzz oder Schrift fehlt: lieber Raster als nichts
+            import logging
+
+            logging.getLogger(__name__).warning("Vektor-PDF nicht moeglich (%s), nehme Raster", exc)
+            img = render_pil.flatten(render_pil.render(design, width_px), design.bg_color)
+            img.save(path, "PDF", resolution=dpi)
+        else:
+            path.write_bytes(data)
     else:
         img = render_pil.render(design, width_px)
         if not design.transparent_bg:

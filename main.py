@@ -73,6 +73,10 @@ def main() -> int:
 
     app = QApplication(sys.argv)
     app.setApplicationName("CompletionistPDF")
+    # Ja/Nein/Abbrechen und Kontextmenues auf Deutsch statt Englisch
+    from core import qt_translations
+
+    qt_translations.install(app)
     app.setStyle("Fusion")
     app.setPalette(_dark_palette())
     app.setStyleSheet(STYLESHEET)
