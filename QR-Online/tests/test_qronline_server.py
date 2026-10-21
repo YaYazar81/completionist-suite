@@ -25,6 +25,18 @@ WINDOWS = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/1
 pytestmark = pytest.mark.skipif(shutil.which("php") is None, reason="PHP nicht installiert")
 
 
+def php_args() -> list[str]:
+    """php mit pdo_sqlite; laedt die Erweiterung bei Bedarf (z. B. das PHP der
+    Windows-Runner von GitHub hat sie nicht aktiviert)."""
+    php = shutil.which("php")
+    for extra in ([], ["-d", f"extension_dir={Path(php).resolve().parent / 'ext'}",
+                       "-d", "extension=pdo_sqlite", "-d", "extension=sqlite3"]):
+        mods = subprocess.run([php, *extra, "-m"], capture_output=True, text=True).stdout
+        if "pdo_sqlite" in mods.lower():
+            return [php, *extra]
+    pytest.skip("PHP ohne pdo_sqlite")
+
+
 def free_port() -> int:
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
@@ -39,7 +51,7 @@ def server(tmp_path):
         f"<?php return ['api_key' => '{KEY}', 'db' => __DIR__ . '/data/test.sqlite', "
         "'home' => ''];", encoding="utf-8")
     port = free_port()
-    proc = subprocess.Popen(["php", "-S", f"127.0.0.1:{port}", "-t", str(root), str(root / "index.php")],
+    proc = subprocess.Popen([*php_args(), "-S", f"127.0.0.1:{port}", "-t", str(root), str(root / "index.php")],
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     base = f"http://127.0.0.1:{port}"
     for _ in range(50):

@@ -28,6 +28,10 @@ $config = require __DIR__ . '/config.php';
 
 function db(array $config): PDO
 {
+    if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
+        throw new RuntimeException('PHP-Erweiterung pdo_sqlite fehlt (beim Hoster in den '
+            . 'PHP-Einstellungen aktivieren).');
+    }
     $dir = dirname($config['db']);
     if (!is_dir($dir)) {
         mkdir($dir, 0700, true);
