@@ -14,18 +14,35 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Online
 (Ordner `QR-Online/`) zählt die Version in `QR-Online/qronline/__init__.py`.
 
-## 21.10.2026 – Qualität vor Größe (PDF · MD · QR)
+## 21.10.2026 – PDF 1.4.1 · MD 1.4.1 · QR 1.3.0 – Qualität vor Größe
 
 Neuer Grundsatz der Suite: Qualität hat Vorrang vor Programmgröße. Was bisher zugunsten
-der Größe wegfiel und sichtbar schlechter war, ist zurück:
+der Größe wegfiel und sichtbar schlechter war, ist zurück.
 
-* **PDF · MD: Qt-Dialoge auf Deutsch.** Knöpfe wie Ja/Nein/OK/Abbrechen/Schließen und die
+### CompletionistPDF 1.4.1 · CompletionistMD 1.4.1
+* **Qt-Dialoge auf Deutsch.** Knöpfe wie Ja/Nein/OK/Abbrechen/Schließen und die
   Kontextmenüs der Textfelder (Kopieren, Einfügen …) erschienen auf Englisch, weil die
   Qt-Übersetzungen nicht mitgepackt und nicht geladen wurden. Jetzt lädt
   `core/qt_translations.py` sie in der Systemsprache; MD auch die der Editor-Ansicht.
 * **PDF: Drucken mit bis zu 600 dpi** statt 300 dpi, für scharfe Schrift auf Laserdruckern.
-* **QR: scharfe Vorschau bei Windows-Skalierung** (125 %, 150 % …). Vorschau und
+
+### CompletionistQR 1.3.0
+* **PDF-Export als echte Vektorgrafik** statt eines eingebetteten Rasterbilds: Module,
+  Augen, Rahmen und Farbverläufe als Pfade, die Beschriftung als Schriftkontur (gesetzt mit
+  HarfBuzz, samt Unterschneidung), das Logo in Originalauflösung. In jeder Druckgröße
+  randscharf, keine Schriftabhängigkeit. Neue Abhängigkeit: `uharfbuzz`.
+* **Behoben: Stil „Abgerundet (fließend)“ mit falschen Ecken** in PNG, Vorschau,
+  Zwischenablage und Stapel-Export. Bei Radius = halbe Modulbreite landeten eckige Ecken
+  auf der falschen Seite; statt durchgehender Bahnen gab es Kerben und halbe Kappen.
+  Betraf den Modulstil „Abgerundet“ (Vorlagen „Rounded Soft“, „Scan-Me Banner“,
+  „Midnight“) und die Pupille „Blatt“ („Neon Gradient“).
+* **Behoben: Schlitze im SVG**, wo sich Formen überlappen (z. B. Augen-Pupille „Punkte“,
+  Rauten-Spitzen). Das SVG füllte nach evenodd; jetzt nach nonzero wie Pillow, aus
+  derselben Kontur wie das PDF.
+* **Scharfe Vorschau bei Windows-Skalierung** (125 %, 150 % …). Vorschau und
   Vorlagen-Galerie werden in echten Bildschirmpixeln gerendert, statt hochgezogen zu werden.
+* Build: `PIL._tkinter_finder` wird ausdrücklich mitgepackt. Ohne stürzte der gebaute
+  Programmordner (geprüft unter Linux) beim Aufbau der Vorlagen-Galerie ab.
 
 ## 21.10.2026 – QR-Online 1.0.0
 

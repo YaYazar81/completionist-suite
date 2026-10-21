@@ -529,8 +529,9 @@ class Controls(ctk.CTkTabview):
         self.fmt = ctk.CTkSegmentedButton(tab, values=list(export.FORMATS))
         self.fmt.set("PNG")
         self.fmt.pack(anchor="w", padx=4, pady=4)
-        ctk.CTkLabel(tab, text="PNG für Web und Office, SVG für Grafikprogramme (beliebig "
-                               "skalierbar), PDF für den Druck.",
+        ctk.CTkLabel(tab, text="PNG für Web und Office, SVG für Grafikprogramme, PDF für den "
+                               "Druck. SVG und PDF sind Vektorgrafiken und in jeder Größe scharf; "
+                               "beim PDF legen Breite und dpi nur die Seitengröße fest.",
                      text_color=("gray35", "gray65"), anchor="w", justify="left",
                      wraplength=380).pack(fill="x", padx=4)
 

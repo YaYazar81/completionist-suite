@@ -51,7 +51,7 @@ def scene_to_svg(scene: Scene, width_px: int = 1024) -> str:
             if not item.shapes:
                 continue
             d = "".join(s.svg() for s in item.shapes)
-            body.append(f'<path fill="{_paint(item.paint, idx, defs)}" fill-rule="evenodd" d="{d}"/>')
+            body.append(f'<path fill="{_paint(item.paint, idx, defs)}" fill-rule="nonzero" d="{d}"/>')
         elif isinstance(item, ImageItem):
             buf = io.BytesIO()
             item.image.save(buf, "PNG")

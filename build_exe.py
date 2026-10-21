@@ -165,7 +165,7 @@ LICENSE_PACKAGES = {
     "pdf": _QT + ["typst", "markdown-it-py", "mdit-py-plugins", "mdurl", "pyinstaller"],
     "md": _QT + _NET + ["pyinstaller"],
     "qr": ["pillow", "qrcode", "customtkinter", "darkdetect", "packaging", "zxing-cpp",
-           "pyinstaller"] + _NET,
+           "uharfbuzz", "pyinstaller"] + _NET,
 }
 
 
@@ -413,6 +413,9 @@ def main() -> int:
             # Erweiterung -- beides findet PyInstaller nicht von allein.
             "--collect-data", "customtkinter",
             "--collect-binaries", "zxingcpp",
+            # Pillow laedt es erst, wenn Tk ein Bild zeigt (ImageTk) -- ohne stuerzt
+            # der Aufbau der Vorlagen-Galerie mit ModuleNotFoundError ab
+            "--hidden-import", "PIL._tkinter_finder",
         ]
         excludes = EXCLUDES_QR
     for d in data_dirs:
