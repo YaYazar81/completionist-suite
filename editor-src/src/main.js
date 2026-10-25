@@ -3,7 +3,11 @@
 // Python spricht ueber window.CM.<name>(...) (runJavaScript) hinein; heraus
 // gehen nur kurze Meldungen ueber die Konsolenbruecke (@@CM@@ + JSON), siehe
 // mdeditor/webview.py. Den Dokumentinhalt holt Python sich selbst mit
-// CM.getMarkdown(), wenn der Auto-Save-Debounce zuschlaegt.
+// CM.unsavedMarkdown(), wenn der Auto-Save-Debounce zuschlaegt.
+//
+// "dirty" heisst: das Markdown weicht vom zuletzt gespeicherten Stand ab.
+// Klicks, die nur Syntax auf- und zuklappen (reveal.js), aendern zwar das
+// Dokument, aber nicht das Markdown -- sie loesen kein Speichern aus.
 //
 // Markdown -> Dokument: window.MD.toHtml (assets/editor/markdown.js) erzeugt
 // HTML, das die Parse-Regeln in nodes.js lesen. Dokument -> Markdown:
@@ -35,6 +39,8 @@ const MD = window.MD;
 
 let editor = null;
 let loading = false;
+let savedMd = "";     // Markdown, wie es zuletzt geladen bzw. gespeichert wurde
+let reported = false; // "dirty" an Python gemeldet
 let imageBar = null;
 let imageSrc = null;
 let imageKey = "";
@@ -81,7 +87,7 @@ function createEditor() {
       handleDrop,
     },
     onUpdate: () => {
-      if (!loading) send({ type: "dirty" });
+      if (!loading) checkDirty();
       sendOutline();
     },
     onSelectionUpdate: () => sendState(),
@@ -360,6 +366,23 @@ function sendOutline() {
   }, 400);
 }
 
+// Weicht das Markdown vom gespeicherten Stand ab? -- kurz gedrosselt, damit
+// nicht jede Taste das ganze Dokument serialisiert.
+let dirtyTimer = null;
+function checkDirty() {
+  clearTimeout(dirtyTimer);
+  dirtyTimer = setTimeout(() => {
+    if (serialize(editor.state.doc) !== savedMd) {
+      reported = true;
+      send({ type: "dirty" });
+    } else if (reported) {
+      // z. B. zurueck bis zum gespeicherten Stand
+      reported = false;
+      send({ type: "clean" });
+    }
+  }, 80);
+}
+
 let stateTimer = null;
 function sendState() {
   clearTimeout(stateTimer);
@@ -385,6 +408,9 @@ api.setMarkdown = (md, baseUrl) => {
     EditorState.create({ doc: editor.state.doc, plugins: editor.state.plugins, schema: editor.schema })
   );
   loading = false;
+  clearTimeout(dirtyTimer);
+  savedMd = serialize(editor.state.doc);
+  reported = false;
   // Cursor in den ersten Text -- "start" waehlte ein Bild am Dokumentanfang aus.
   // Frisch geladen ist alles gerendert, bis der Nutzer klickt oder tippt.
   const first = Selection.findFrom(editor.state.doc.resolve(0), 1, true);
@@ -399,6 +425,21 @@ api.setMarkdown = (md, baseUrl) => {
 };
 
 api.getMarkdown = () => serialize(editor.state.doc);
+
+/** Markdown, falls es vom gespeicherten Stand abweicht -- sonst false
+ *  (null bekommt Python auch, wenn das Skript scheitert). */
+api.unsavedMarkdown = () => {
+  const md = serialize(editor.state.doc);
+  return md !== savedMd ? md : false;
+};
+
+/** Python hat ``md`` geschrieben: neuer Vergleichsstand. Inzwischen
+ *  Getipptes meldet sich danach wieder als "dirty". */
+api.markSaved = (md) => {
+  savedMd = md;
+  reported = false;
+  checkDirty();
+};
 
 api.setTheme = (theme) => {
   document.documentElement.setAttribute("data-theme", theme === "light" ? "light" : "dark");

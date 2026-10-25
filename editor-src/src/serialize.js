@@ -34,7 +34,14 @@ function block(node) {
   switch (node.type.name) {
     case "paragraph": {
       const text = inline(node).replace(/\s+$/, "");
-      return text.trim() ? protectLineStarts(text) : null;
+      if (!text.trim()) return null;
+      // Aufgeklappter Quelltext am Anfang ("## ", "- " vor dem Zuklappen, siehe
+      // reveal.js) ist gemeinte Syntax -- die erste Zeile nicht maskieren.
+      if (isSource(node.firstChild)) {
+        const [first, ...rest] = text.split("\n");
+        return rest.length ? first + "\n" + protectLineStarts(rest.join("\n")) : first;
+      }
+      return protectLineStarts(text);
     }
     case "heading":
       // Aufgeklappt (Cursor in der Ueberschrift) steht "## " schon als

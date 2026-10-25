@@ -19,6 +19,7 @@
 
 import { Extension, InputRule, Mark } from "@tiptap/core";
 import { NodeSelection, Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
+import { canJoin, findWrapping } from "@tiptap/pm/transform";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
 import { inlineMarkdown } from "./serialize.js";
@@ -360,6 +361,89 @@ function collapseHeading(tr, pos, schema) {
   tr.setNodeMarkup(pos, schema.nodes.paragraph);
 }
 
+/**
+ * Rueckgaengig holt Rauten an den Anfang einer zugeklappten Ueberschrift
+ * zurueck (z. B. "#" aus "## " geloescht, Zeile verlassen, Strg+Z). Das
+ * "# " davor hat das Zuklappen inzwischen zur Ebene gemacht -- die Rauten
+ * gehoeren also zur Ebene, nicht als Text vor den Titel ("#Titel").
+ */
+function restoreHeadingLevel(tr, $a, from, to, schema) {
+  const node = $a.parent;
+  if (node.type.name !== "heading" || from !== $a.start()) return false;
+  if (!/^#+$/.test(tr.doc.textBetween(from, to))) return false;
+  // Nur Syntax-Rauten; eine Raute als Text ("\#hashtag") bleibt Text.
+  if (!hasSource(tr.doc.resolve(from).nodeAfter, schema)) return false;
+  if (hasSource(tr.doc.resolve(to).nodeAfter, schema)) return false; // Praefix steht noch da
+  const level = Math.min(6, node.attrs.level + (to - from));
+  tr.delete(from, to);
+  tr.setNodeMarkup($a.before(), null, { ...node.attrs, level });
+  return true;
+}
+
+// Blocksyntax am Anfang eines Absatzes: Ueberschrift, Aufgabe, Liste, Zitat.
+const BLOCK_PREFIXES = [
+  [/^(#{1,6})[ \t]+/, (m) => ({ heading: m[1].length })],
+  [/^[-*+][ \t]+\[([ xX])\][ \t]+/, (m) => ({ list: "taskList", item: { checked: m[1] !== " " } })],
+  [/^[-*+][ \t]+/, () => ({ list: "bulletList" })],
+  [/^(\d{1,9})[.)][ \t]+/, (m) => ({ list: "orderedList", attrs: { start: parseInt(m[1], 10) } })],
+  [/^>[ \t]?/, () => ({ list: "blockquote" })],
+];
+
+/**
+ * Absatz, dessen Quelltext am Anfang Blocksyntax ist ("## ", "- ", "1. " ...),
+ * wird zu diesem Block. So entsteht Quelltext, wenn Rueckgaengig die Rauten
+ * einer inzwischen zum Absatz gewordenen Ueberschrift zurueckholt oder wenn
+ * "- " vor formatiertem Text getippt wird (dort greifen die Eingaberegeln
+ * nicht). Ohne das stuende die Syntax als Text da und ergaebe "\##" / "\- ".
+ */
+function collapseBlockPrefix(tr, pos, from, to, schema) {
+  const node = tr.doc.nodeAt(pos);
+  if (!node || node.type.name !== "paragraph" || from !== pos + 1) return false;
+  // Ganzer Absatz: das Leerzeichen nach "##" kann ausserhalb des Quelltexts
+  // stehen. Die Zeichen davor muessen aber Quelltext sein.
+  const text = tr.doc.textBetween(from, pos + node.nodeSize - 1, "\ufffc", "\ufffc");
+  let hit = null;
+  let len = 0;
+  for (const [re, make] of BLOCK_PREFIXES) {
+    const m = re.exec(text);
+    if (m && m[0].trimEnd().length <= to - from) {
+      hit = make(m);
+      len = m[0].length;
+      break;
+    }
+  }
+  if (!hit) return false;
+  const $pos = tr.doc.resolve(pos);
+  // In Tabellenzellen gibt es in Markdown keine Bloecke -- dort bleibt es Text.
+  for (let d = $pos.depth; d > 0; d--) if ($pos.node(d).type.spec.tableRole) return false;
+  const index = $pos.index();
+
+  if (hit.heading) {
+    if (!$pos.parent.canReplaceWith(index, index + 1, schema.nodes.heading)) return false;
+    tr.delete(from, from + len);
+    tr.setNodeMarkup(pos, schema.nodes.heading, { level: hit.heading });
+    return true;
+  }
+
+  const type = schema.nodes[hit.list];
+  if (!type) return false;
+  const range = tr.doc.resolve(from).blockRange();
+  const wrapping = range && findWrapping(range, type, hit.attrs || null);
+  if (!wrapping) return false;
+  if (hit.item) wrapping[wrapping.length - 1] = { ...wrapping[wrapping.length - 1], attrs: hit.item };
+  tr.delete(from, from + len);
+  const start = tr.mapping.map(pos);
+  tr.wrap(tr.doc.resolve(start + 1).blockRange(), wrapping);
+  // Mit einer gleichen Liste direkt davor/dahinter verbinden (wie die Eingaberegel).
+  const wrapped = tr.doc.resolve(start).nodeAfter;
+  const after = start + wrapped.nodeSize;
+  const next = tr.doc.resolve(after).nodeAfter;
+  if (hit.list !== "blockquote" && next && next.type === type && canJoin(tr.doc, after)) tr.join(after);
+  const prev = tr.doc.resolve(start).nodeBefore;
+  if (hit.list !== "blockquote" && prev && prev.type === type && canJoin(tr.doc, start)) tr.join(start);
+  return true;
+}
+
 function revealRule(tr, pos, schema) {
   const node = tr.doc.nodeAt(pos);
   if (!node || node.type.name !== "rule") return false;
@@ -440,6 +524,7 @@ function revealPlugin(editor) {
       for (const { a, b, undo } of inserted) {
         let from = a;
         let to = b;
+        if (undo && restoreHeadingLevel(tr, tr.doc.resolve(a), a, b, schema)) continue;
         if (undo) {
           // Rueckgaengig stellt geloeschte Syntaxzeichen wieder her -- dann den
           // formatierten Text daneben wieder aufklappen, damit "**" Syntax ist
@@ -492,13 +577,25 @@ function revealPlugin(editor) {
         }
         if (active && touches(tr.selection, r)) continue;
         const block = tr.doc.nodeAt(r.block);
-        if (block.type.name === "heading" && r.from === r.block + 1 && r.block !== heading) {
+        const lead = block.type.name === "heading" ? headingPrefix(block, schema) : null;
+        // Nur Quelltext mit Rauten ist ein Praefix -- "**Titel**" am Anfang einer
+        // eben zugeklappten Ueberschrift ("## **Titel**") ist bloss Inline-Syntax.
+        if (lead && (lead.len || /^#/.test(lead.raw)) && r.from === r.block + 1 && r.block !== heading) {
           // Praefix ohne gemerkte Ueberschrift (z. B. nach Rueckgaengig): trotzdem als Ebene lesen.
           const mark = tr.steps.length;
           collapseHeading(tr, r.block, schema);
           r.from = r.block + 1;
           r.to = tr.mapping.slice(mark).map(r.to, -1);
           if (r.from >= r.to) continue;
+        }
+        if (block.type.name === "paragraph" && r.from === r.block + 1) {
+          const mark = tr.steps.length;
+          if (collapseBlockPrefix(tr, r.block, r.from, r.to, schema)) {
+            const m = tr.mapping.slice(mark);
+            r.from = m.map(r.from, 1);
+            r.to = m.map(r.to, -1);
+            if (r.from >= r.to) continue;
+          }
         }
         collapseInline(tr, r.from, r.to, schema);
       }

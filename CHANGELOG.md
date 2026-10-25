@@ -14,6 +14,34 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Online
 (Ordner `QR-Online/`) zählt die Version in `QR-Online/qronline/__init__.py`.
 
+## 25.10.2026 – MD 1.4.3 – Kein verirrtes „\“ vor Überschriften und Listen
+
+### CompletionistMD 1.4.3
+* **Kein `\##` bzw. `\-` mehr vor Überschriften und Aufzählungen.** Zwei Wege führten
+  dahin: Rauten einer Überschrift löschen, die Zeile verlassen und mit Strg+Z
+  zurückholen (die Rauten landeten als Text im inzwischen normalen Absatz bzw. vor
+  dem Titel, z. B. `#Titel`), und `- `, `1. `, `- [ ] ` oder `> ` vor einem
+  formatierten Zeilenanfang tippen (`- **Begriff**: …`), wo die Listenerkennung nicht
+  griff. Solche Syntax am Absatzanfang wird jetzt beim Verlassen der Zeile zur
+  Überschrift, Liste, Aufgabe bzw. zum Zitat und schließt an eine Liste direkt davor an.
+  Wer wirklich einen Strich als Text will, tippt `\- ` oder macht die
+  Listenerkennung sofort mit Strg+Z rückgängig. In Tabellenzellen bleibt alles Text.
+
+## 25.10.2026 – MD 1.4.2 – Speichern nur bei Änderungen
+
+### CompletionistMD 1.4.2
+* **Gespeichert wird nur noch, wenn sich die Datei wirklich ändert.** Bisher löste
+  schon ein Klick in den Text das Auto-Save aus (das Auf- und Zuklappen der
+  Markdown-Syntax ändert intern das Dokument), und beim Schließen oder Wechseln
+  wurde die Datei neu formatiert geschrieben, auch ohne Änderung. Jetzt vergleicht
+  der Editor das Markdown mit dem gespeicherten Stand; Klicken und Lesen lassen die
+  Datei samt Zeitstempel und Drive-Sync in Ruhe.
+* **`## **Überschrift**` verliert die Rauten nicht mehr.** Ein Klick in eine
+  Überschrift, die ganz fett (oder kursiv, als Link …) ist, und wieder heraus machte
+  aus ihr einen normalen Absatz.
+* **Vault-Explorer: „Öffnen" für PDFs** im Kontextmenü öffnet die Datei im
+  Standardprogramm des Systems.
+
 ## 21.10.2026 – PDF 1.4.1 · MD 1.4.1 · QR 1.3.0 – Qualität vor Größe
 
 Neuer Grundsatz der Suite: Qualität hat Vorrang vor Programmgröße. Was bisher zugunsten

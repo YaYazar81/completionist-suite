@@ -118,6 +118,13 @@ startet. Die DLL-Auswahl passt sich von selbst an, die Dateilisten nicht.
 Jede Änderung geht rund 300 ms später in die geöffnete `.md`. YAML-Frontmatter wird
 unverändert durchgereicht.
 
+- **Nur bei echten Änderungen:** Der Editor vergleicht das Markdown mit dem zuletzt
+  geladenen bzw. gespeicherten Stand (`CM.unsavedMarkdown()`, `CM.markSaved()`).
+  Klicken, Lesen und das Auf- und Zuklappen der Syntax fassen die Datei nicht an –
+  auch nicht beim Schließen oder Dateiwechsel, wenn der Editor sie anders
+  formatieren würde (z. B. `*`-Listen). Wer bis zum gespeicherten Stand zurück
+  tippt oder rückgängig macht, sieht wieder „gespeichert", ohne dass geschrieben wird.
+
 - **Ausfallsicher:** Geschrieben wird erst in eine versteckte Zwischendatei
   `.<Name>.tmp` daneben, die dann in einem Schritt die Datei ersetzt. Ein Absturz
   oder Stromausfall mitten im Speichern hinterlässt so nie eine leere oder halbe Notiz
@@ -169,11 +176,16 @@ echten, editierbaren Text:
 | Element | Am Cursor sichtbar | Bearbeiten |
 | :--- | :--- | :--- |
 | fett, kursiv, durchgestrichen, Code, Link | `**…**`, `*…*`, `~~…~~`, `` `…` ``, `[…](url)` | Begrenzer und URL direkt ändern; beim Verlassen wird neu gelesen (`*` statt `**` macht kursiv) |
-| Überschrift | `## ` | Rauten ändern die Ebene sofort; ohne Rauten wird es Fließtext |
+| Überschrift | `## ` | Rauten ändern die Ebene sofort; ohne Rauten wird es Fließtext. Holt Strg+Z gelöschte Rauten zurück, zählen sie wieder zur Ebene |
 | Trennlinie | `***` bzw. `---` als Textzeile | Zeichen ändern (`***` ↔ `---`), Text daraus machen |
 | Bild | Markdown in der Bildleiste (`![…](…)` oder `<img …>`) | Enter übernimmt, Esc verwirft |
 | Codeblock | ` ```sprache ` oben, ` ``` ` unten | Sprache direkt im Feld ändern |
 | Zitat, Liste, Aufgabe | `> `, `- `, `1. `, `- [ ] ` vor dem Absatz | über die Tastatur wie gewohnt |
+
+Steht vor aufgeklapptem Quelltext am Absatzanfang Blocksyntax (`## `, `- `, `1. `,
+`- [ ] `, `> `, z. B. weil sie vor `**Begriff**` getippt wurde, wo Tiptaps
+Eingaberegeln nicht greifen), wird der Absatz beim Zuklappen zu diesem Block
+(`collapseBlockPrefix` in `reveal.js`). Nur in Tabellenzellen bleibt sie Text.
 
 Verlässt der Fokus den Editor, wird alles wieder gerendert. Aufgeklappter
 Quelltext trägt die Markierung `mdSource` und wird unverändert gespeichert;
@@ -195,7 +207,8 @@ Bilder; Ordner mit Punkt am Anfang (`.obsidian`, `.trash`) bleiben verborgen.
 
 - **Klick** auf eine `.md` öffnet sie, **Doppelklick** auf ein Bild öffnet es
   im Standardprogramm.
-- **Rechtsklick:** Neue Datei, Neuer Ordner, Umbenennen, Löschen (in den
+- **Rechtsklick:** bei PDFs **Öffnen** im Standardprogramm (PDF-Reader) oder in
+  einem neuen Tab; Neue Datei, Neuer Ordner, Umbenennen, Löschen (in den
   Papierkorb), Im Explorer anzeigen, Als Bookmark hinzufügen. Wird die offene
   Datei oder ihr Ordner umbenannt, zieht der Editor mit.
 - **Bookmarks** stehen als Kacheln unten im Panel. Ein Klick klappt den Baum bis

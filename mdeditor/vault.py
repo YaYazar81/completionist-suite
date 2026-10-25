@@ -544,6 +544,9 @@ class VaultPanel(QWidget):
         if index.isValid() and not is_dir and path.lower().endswith(TAB_SUFFIXES):
             if is_markdown(path):
                 menu.addAction("Hier öffnen", lambda: self.openFile.emit(path))
+            elif path.lower().endswith(".pdf"):
+                # mit dem Standardprogramm des Systems (PDF-Reader)
+                menu.addAction("Öffnen", lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(path)))
             menu.addAction("In neuem Tab öffnen", lambda: self.openInNewTab.emit(path))
             menu.addSeparator()
         # Uebergabe an die anderen Suite-Apps (Pfad kommt aus der Registry)
