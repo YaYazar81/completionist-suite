@@ -176,11 +176,16 @@ echten, editierbaren Text:
 | Element | Am Cursor sichtbar | Bearbeiten |
 | :--- | :--- | :--- |
 | fett, kursiv, durchgestrichen, Code, Link | `**…**`, `*…*`, `~~…~~`, `` `…` ``, `[…](url)` | Begrenzer und URL direkt ändern; beim Verlassen wird neu gelesen (`*` statt `**` macht kursiv) |
-| Überschrift | `## ` | Rauten ändern die Ebene sofort; ohne Rauten wird es Fließtext |
+| Überschrift | `## ` | Rauten ändern die Ebene sofort; ohne Rauten wird es Fließtext. Holt Strg+Z gelöschte Rauten zurück, zählen sie wieder zur Ebene |
 | Trennlinie | `***` bzw. `---` als Textzeile | Zeichen ändern (`***` ↔ `---`), Text daraus machen |
 | Bild | Markdown in der Bildleiste (`![…](…)` oder `<img …>`) | Enter übernimmt, Esc verwirft |
 | Codeblock | ` ```sprache ` oben, ` ``` ` unten | Sprache direkt im Feld ändern |
 | Zitat, Liste, Aufgabe | `> `, `- `, `1. `, `- [ ] ` vor dem Absatz | über die Tastatur wie gewohnt |
+
+Steht vor aufgeklapptem Quelltext am Absatzanfang Blocksyntax (`## `, `- `, `1. `,
+`- [ ] `, `> `, z. B. weil sie vor `**Begriff**` getippt wurde, wo Tiptaps
+Eingaberegeln nicht greifen), wird der Absatz beim Zuklappen zu diesem Block
+(`collapseBlockPrefix` in `reveal.js`). Nur in Tabellenzellen bleibt sie Text.
 
 Verlässt der Fokus den Editor, wird alles wieder gerendert. Aufgeklappter
 Quelltext trägt die Markierung `mdSource` und wird unverändert gespeichert;
