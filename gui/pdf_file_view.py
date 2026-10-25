@@ -597,8 +597,13 @@ class PdfFileView(QWidget):
         n = self.search.count()
         cur = self.view.currentSearchResultIndex()
         if n == 0:
-            searching = time.monotonic() - self._search_started < SEARCH_PATIENCE_MS / 1000
-            self.find_label.setText(" sucht …" if self._jump_pending and searching else " keine Treffer")
+            left_ms = SEARCH_PATIENCE_MS - (time.monotonic() - self._search_started) * 1000
+            searching = self._jump_pending and left_ms > 0
+            self.find_label.setText(" sucht …" if searching else " keine Treffer")
+            if searching:
+                # Qt-Timer duerfen bis zu 5 % zu frueh feuern -- sonst bliebe
+                # "sucht …" stehen, weil keine weitere Aktualisierung kommt
+                QTimer.singleShot(int(left_ms) + 1, self._update_find_label)
         else:
             self.find_label.setText(f" {cur + 1 if cur >= 0 else '–'} / {n}")
 

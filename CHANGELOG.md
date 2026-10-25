@@ -27,6 +27,15 @@ CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Onl
   (Texte in `core/legal.py`). CompletionistQR zeigt Lizenz, Fremdkomponenten und
   Impressum jetzt ebenfalls in Reitern.
 
+### Fehlerkorrekturen
+* **PDF-Viewer: „keine Treffer" statt dauerhaft „sucht …".** Qt-Timer dürfen bis zu
+  5 % zu früh auslösen; dann blieb bei einer Suche ohne Treffer „sucht …" stehen.
+  Das Label plant sich jetzt für die Restzeit neu ein.
+* **CompletionistMD: kein Absturz mehr durch den Drag&Drop-Filter.** Der Filter
+  hing an der ganzen Anwendung und zwang PySide, für jedes interne QtQuick-Objekt
+  von QtWebEngine einen Python-Wrapper zu bauen -- das löste neue Events aus, bis der
+  Stapel überlief. Er sitzt jetzt nur noch auf den Kindwidgets des Editors.
+
 ## 25.10.2026 – PDF 1.4.2 – Linie unter Überschrift 2
 
 ### CompletionistPDF 1.4.2

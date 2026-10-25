@@ -12,6 +12,9 @@ import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 # Ohne Bildschirm hat Chromium keinen GPU-Kontext und stuerzt beim Beenden ab
 os.environ.setdefault("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-gpu")
+# Als root (Linux-Container, CI) startet Chromium nur ohne eigene Sandbox
+if getattr(os, "geteuid", lambda: 1)() == 0:
+    os.environ.setdefault("QTWEBENGINE_DISABLE_SANDBOX", "1")
 
 from PySide6.QtCore import QEvent, Qt  # noqa: E402
 from PySide6.QtGui import QColor, QGuiApplication, QImage, QKeyEvent  # noqa: E402
@@ -229,3 +232,44 @@ def test_undo_restores_deleted_heading_hashes(qapp, window):
     js(qapp, tab, "CM.focusEditor('end')")
     settle(qapp, 0.2)
     assert "\n## Überschrift\n" in js(qapp, tab, "CM.getMarkdown()")
+
+
+def test_dropping_markdown_file_on_editor_is_caught(qapp, window, tmp_path):
+    # Der Drop landet im internen Kindwidget von QWebEngineView; der Filter
+    # sitzt dort (kein Anwendungsfilter mehr, siehe mdeditor/webview.py).
+    from PySide6.QtCore import QMimeData, QObject, QPointF, QUrl
+    from PySide6.QtGui import QDragEnterEvent, QDropEvent
+
+    win, tab, doc = window
+    other = tmp_path / "andere.md"
+    other.write_text("# Andere\n", encoding="utf-8")
+    mime = QMimeData()
+    mime.setUrls([QUrl.fromLocalFile(str(other))])
+    target = tab.view.focusProxy()
+    assert target is not None and target is not tab.view
+    got, reached_view = [], []
+
+    class Probe(QObject):
+        def eventFilter(self, obj, event):  # noqa: N802
+            if event.type() == QEvent.Type.Drop:
+                reached_view.append(obj)
+            return False
+
+    probe = Probe()
+    tab.view.installEventFilter(probe)
+    tab.view.markdownDropped.connect(got.append)
+    try:
+        enter = QDragEnterEvent(QPointF(20, 20), Qt.DropAction.CopyAction, mime,
+                                Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier)
+        QApplication.sendEvent(target, enter)
+        assert enter.isAccepted()
+        drop = QDropEvent(QPointF(20, 20), Qt.DropAction.CopyAction, mime,
+                          Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier)
+        QApplication.sendEvent(target, drop)
+    finally:
+        tab.view.markdownDropped.disconnect(got.append)
+        tab.view.removeEventFilter(probe)
+    assert len(got) == 1 and [str(p) for p in got[0]] == [str(other)]
+    # Schon im Kindwidget abgefangen (dort nimmt Chromium echte Drops sonst an),
+    # nicht erst, wenn Qt den Drop an die Ansicht weiterreicht
+    assert reached_view == []
