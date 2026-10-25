@@ -95,6 +95,7 @@ class TypographyConfig:
     lang: str = "de"
     first_line_indent: float = 0.0  # em
     link_color: str = "#1a4b8c"
+    h2_rule: bool = True  # Linie unter "##"-Ueberschriften, wie im Editor
 
 
 @dataclass

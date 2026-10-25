@@ -65,6 +65,10 @@ Eine Zeile, die mit „Zahl + Punkt“ beginnt („…am Ende↵3. Platz“), wi
 machte daraus sonst eine nummerierte Liste. `tests/test_md_converter.py` prüft solche
 Fälle am echten Typst-Compiler.
 
+Überschriften der Ebene 2 (`##`) bekommen wie in CompletionistMD eine feine Linie
+darunter. Abschalten lässt sie sich je Vorlage unter **Schriften & Typografie → Linie
+unter Überschrift 2** (`typography.h2_rule`).
+
 ## Bauen
 
 ```powershell

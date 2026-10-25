@@ -179,6 +179,20 @@
 #show heading.where(level: 2): set text(size: 1.3em)
 #show heading.where(level: 3): set text(size: 1.1em)
 
+// Linie unter Ebene 2 -- wie CompletionistMD "##" anzeigt. Der Abstand
+// sitzt am aeusseren Block, sonst ginge er im inneren verloren.
+#show heading.where(level: 2): it => if tp.at("h2_rule", default: true) {
+  block(
+    width: 100%,
+    above: 1.4em,
+    below: 0.8em,
+    inset: (bottom: 0.3em),
+    stroke: (bottom: 0.5pt + luma(190)),
+    sticky: true,
+    it,
+  )
+} else { it }
+
 #show heading.where(level: 1): it => {
   // Die Verzeichnis-Ueberschrift sitzt schon auf einer eigenen Seite; ein
   // weiterer Umbruch wuerde dort eine Leerseite erzeugen.

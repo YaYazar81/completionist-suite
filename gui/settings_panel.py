@@ -249,6 +249,7 @@ class SettingsPanel(QWidget):
         f.addRow("Erstzeileneinzug:", self._b("typography.first_line_indent", spin(0, 5, 0.1, 1, " em")))
         f.addRow("", self._b("typography.justify", QCheckBox("Blocksatz")))
         f.addRow("", self._b("typography.hyphenate", QCheckBox("Silbentrennung")))
+        f.addRow("", self._b("typography.h2_rule", QCheckBox("Linie unter Überschrift 2 (##)")))
         breaks = QCheckBox("Einfache Zeilenumbrüche übernehmen")
         breaks.setToolTip(
             "An: Jede neue Zeile in der .md beginnt auch im PDF eine neue Zeile (wie in Obsidian/MarkText).\n"
