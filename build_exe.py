@@ -245,7 +245,7 @@ def write_version_file(app: str, folder: Path) -> Path:
       StringStruct('ProductName', '{name}'),
       StringStruct('ProductVersion', '{version}'),
       StringStruct('LegalCopyright', '© 2026 Mike-Dominique Horch (Completionist Library)'),
-      StringStruct('Comments', 'Lizenz: CC BY-NC-ND 4.0{"" if app == "qr" else "; Qt/PySide6: LGPL v3"}; Kontakt: mail@mike-horch.de')])]),
+      StringStruct('Comments', 'Lizenz: CC BY-NC-ND 4.0{"" if app == "qr" else "; Qt/PySide6: LGPL v3"}; Kontakt: kontakt@completionist-library.de')])]),
     VarFileInfo([VarStruct('Translation', [0x0407, 1200])])
   ]
 )

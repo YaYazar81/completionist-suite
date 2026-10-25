@@ -273,3 +273,74 @@ def test_dropping_markdown_file_on_editor_is_caught(qapp, window, tmp_path):
     # Schon im Kindwidget abgefangen (dort nimmt Chromium echte Drops sonst an),
     # nicht erst, wenn Qt den Drop an die Ansicht weiterreicht
     assert reached_view == []
+
+
+def _png(path: Path, color: str) -> Path:
+    img = QImage(20, 20, QImage.Format.Format_RGB32)
+    img.fill(QColor(color))
+    assert img.save(str(path))
+    return path
+
+
+def test_single_click_shows_images_in_one_preview_tab(qapp, window, tmp_path):
+    win, tab, doc = window
+    a = _png(tmp_path / "a.png", "red")
+    b = _png(tmp_path / "b.png", "blue")
+    count = win.tabs.count()
+    win.vault_panel.openFile.emit(str(a))
+    assert win.tabs.count() == count + 1
+    preview = win.current_tab()
+    assert preview.path == a
+    index = win.tabs.indexOf(preview)
+    # Der naechste Einfachklick ersetzt die Vorschau an derselben Stelle
+    win.vault_panel.openFile.emit(str(b))
+    assert win.tabs.count() == count + 1
+    assert win.current_tab().path == b and win.tabs.indexOf(win.current_tab()) == index
+    # Doppelklick auf die Vorschau macht sie zum festen Tab ...
+    win.vault_panel.openInNewTab.emit(str(b))
+    assert win.tabs.count() == count + 1
+    # ... der naechste Einfachklick oeffnet daher eine neue Vorschau
+    win.vault_panel.openFile.emit(str(a))
+    assert win.tabs.count() == count + 2
+    for t in [t for t in win.all_tabs() if t.path in (a, b)]:
+        win.close_tab(t)
+    assert win._preview is None
+
+
+def _wait_for_row(qapp, panel, path: Path):
+    assert wait_for(qapp, lambda: panel._proxy_index(str(path)).isValid())
+    return panel._proxy_index(str(path))
+
+
+def test_vault_folder_expands_on_single_click(qapp, window, tmp_path):
+    win, tab, doc = window
+    panel = win.vault_panel
+    (tmp_path / "Ordner").mkdir()
+    (tmp_path / "Ordner" / "drin.md").write_text("# x\n", encoding="utf-8")
+    panel.set_root(str(tmp_path))
+    idx = _wait_for_row(qapp, panel, tmp_path / "Ordner")
+    assert not panel.tree.isExpanded(idx)
+    panel._on_clicked(idx)
+    assert panel.tree.isExpanded(idx)
+    panel._on_clicked(idx)
+    assert not panel.tree.isExpanded(idx)
+    # Einfachklick auf ein Bild oeffnet es (nach dem Doppelklick-Intervall)
+    img = _png(tmp_path / "bild.png", "red")
+    panel._on_clicked(_wait_for_row(qapp, panel, img))
+    assert wait_for(qapp, lambda: win.current_tab().path == img, 3)
+    win.close_tab(win.current_tab())
+
+
+def test_vault_menu_offers_system_open_for_all_types(qapp, window, tmp_path):
+    win, tab, doc = window
+    panel = win.vault_panel
+    files = [_png(tmp_path / "bild.png", "red"), tmp_path / "notiz.txt", tmp_path / "text.md"]
+    files[1].write_text("x", encoding="utf-8")
+    files[2].write_text("# x\n", encoding="utf-8")
+    panel.set_root(str(tmp_path))
+    for f in files:
+        idx = _wait_for_row(qapp, panel, f)
+        panel.tree.scrollTo(idx)
+        menu = panel.build_tree_menu(panel.tree.visualRect(idx).center())
+        texts = [a.text() for a in menu.actions()]
+        assert {"Öffnen", "Hier öffnen", "In neuem Tab öffnen"} <= set(texts), (f.name, texts)

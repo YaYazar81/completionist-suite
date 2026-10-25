@@ -181,6 +181,8 @@ class MainWindow(QMainWindow):
         self._emoji_dialog: EmojiDialog | None = None
         self._vault_search: VaultSearchDialog | None = None
         self._md: MdTab | None = None  # zuletzt aktiver Markdown-Tab ("Hauptfenster")
+        # Per Einfachklick geoeffnete .txt/.pdf/Bild-Datei: der naechste Einfachklick ersetzt sie
+        self._preview: BaseTab | None = None
         self._restoring = False
 
         self.setWindowTitle(WINDOW_TITLE)
@@ -200,7 +202,8 @@ class MainWindow(QMainWindow):
 
         # Links der Vault-Explorer, rechts die Tabs
         self.vault_panel = VaultPanel(self)
-        self.vault_panel.openFile.connect(self.open_file)
+        # Einfachklick im Vault: Markdown im aktiven Editor-Tab, sonst im Vorschau-Tab
+        self.vault_panel.openFile.connect(lambda p: self.open_path(p, new_tab=False))
         self.vault_panel.openInNewTab.connect(lambda p: self.open_path(p, new_tab=True))
         self.vault_panel.bookmarksChanged.connect(self._on_bookmarks_changed)
         self.vault_panel.aboutToChange.connect(self._on_vault_about_to_change)
@@ -280,8 +283,8 @@ class MainWindow(QMainWindow):
         return next((t for t in self.all_tabs() if same_path(t.path, path)
                      or (isinstance(t, MdTab) and same_path(t.pending, path))), None)
 
-    def _add_tab(self, tab: BaseTab, activate: bool = True) -> BaseTab:
-        index = self.tabs.addTab(tab, tab.title())
+    def _add_tab(self, tab: BaseTab, activate: bool = True, index: int = -1) -> BaseTab:
+        index = self.tabs.insertTab(index, tab, tab.title())
         tab.changed.connect(lambda t=tab: self._refresh_tab(t))
         self._refresh_tab(tab)
         if activate:
@@ -351,11 +354,15 @@ class MainWindow(QMainWindow):
 
         Markdown: ``new_tab`` False ersetzt den Inhalt des aktiven
         Markdown-Tabs (Einfachklick im Vault), True oeffnet einen neuen
-        (Doppelklick). Alle anderen Typen bekommen immer einen eigenen Tab.
+        (Doppelklick). Alle anderen Typen: ``new_tab`` False zeigt sie im
+        Vorschau-Tab, den der naechste Einfachklick wieder ersetzt; True gibt
+        ihnen einen eigenen Tab.
         """
         path = Path(path)
         existing = self.find_tab(path)
         if existing is not None:
+            if new_tab and existing is self._preview:
+                self._preview = None  # Doppelklick: die Vorschau wird ein fester Tab
             if activate:
                 self.tabs.setCurrentWidget(existing)
             return existing
@@ -386,7 +393,20 @@ class MainWindow(QMainWindow):
         except (OSError, ImportError) as exc:
             QMessageBox.critical(self, APP_TITLE, f"Datei konnte nicht geöffnet werden:\n{path}\n\n{exc}")
             return None
-        return self._add_tab(tab, activate)
+        if new_tab:
+            return self._add_tab(tab, activate)
+        index = -1
+        old = self._preview if self._preview is not None and self.tabs.indexOf(self._preview) >= 0 else None
+        if old is not None:
+            # Die bisherige Vorschau weicht an derselben Stelle der neuen Datei
+            index = self.tabs.indexOf(old)
+            old.flush()
+            self.tabs.removeTab(index)
+            old.deleteLater()
+        self._preview = tab
+        self._add_tab(tab, activate, index)
+        self._save_settings()
+        return tab
 
     def close_tab(self, tab: BaseTab | None) -> None:
         if tab is None:
@@ -397,6 +417,8 @@ class MainWindow(QMainWindow):
         else:
             tab.flush()
         self.tabs.removeTab(self.tabs.indexOf(tab))
+        if tab is self._preview:
+            self._preview = None
         if tab is self._md:
             self._md = next((t for t in self.all_tabs() if isinstance(t, MdTab)), None)
         tab.deleteLater()
@@ -847,7 +869,7 @@ class MainWindow(QMainWindow):
 
     def open_file(self, path: str | Path) -> None:
         """Markdown im aktiven Editor-Tab (wie bisher), alles andere im eigenen Tab."""
-        self.open_path(path, new_tab=False)
+        self.open_path(path, new_tab=kind_of(path) != "md")
 
     def _load_md(self, tab: MdTab, path: str | Path, flush: bool = True) -> None:
         """``flush`` False: den Editorinhalt vorher nicht speichern (Neu laden

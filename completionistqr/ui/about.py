@@ -30,7 +30,7 @@ class AboutWindow(ctk.CTkToplevel):
         self.transient(master)
         legal = _legal()
         copyright_ = legal.COPYRIGHT if legal else "© 2026 Mike-Dominique Horch (Completionist Library)"
-        copyright_ += "\nKontakt: " + (legal.CONTACT if legal else "mail@mike-horch.de")
+        copyright_ += "\nKontakt: " + (legal.CONTACT if legal else "kontakt@completionist-library.de")
 
         # Unten zuerst packen, damit die Knoepfe bei kleinem Fenster sichtbar bleiben
         bar = ctk.CTkFrame(self, fg_color="transparent")

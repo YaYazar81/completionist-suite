@@ -10,7 +10,7 @@ from pathlib import Path
 
 COPYRIGHT = "© 2026 Mike-Dominique Horch (Completionist Library)"
 PUBLISHER = "Completionist Library"
-CONTACT = "mail@mike-horch.de"
+CONTACT = "kontakt@completionist-library.de"
 LICENSE_NAME = "CC BY-NC-ND 4.0"
 LICENSE_URL = "https://creativecommons.org/licenses/by-nc-nd/4.0/deed.de"
 LICENSE_SUMMARY = (
@@ -45,7 +45,7 @@ IMPRESSUM_NOTE = (
     "kommerzieller Zweck verfolgt und kein Geld mit der App verdient."
 )
 IMPRESSUM_DEVELOPER = "Mike-Dominique Horch [YaYazar81]"
-IMPRESSUM_EMAIL = "kontakt@completionist-library.de"
+IMPRESSUM_EMAIL = CONTACT
 IMPRESSUM_GITHUB = "https://github.com/YaYazar81/completionist-suite"
 
 

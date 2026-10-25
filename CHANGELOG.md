@@ -26,6 +26,16 @@ CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Onl
   dem Hinweis, dass die Apps ein privates, kostenloses Freizeitprojekt sind
   (Texte in `core/legal.py`). CompletionistQR zeigt Lizenz, Fremdkomponenten und
   Impressum jetzt ebenfalls in Reitern.
+* **Kontakt-Adresse** ist jetzt überall kontakt@completionist-library.de (Über-Dialog,
+  Setups, Dateieigenschaften der `.exe`, LICENSE, README).
+
+### CompletionistMD 1.5.0 – Vault-Explorer
+* **Einfachklick öffnet auch Bilder, Textdateien und PDFs** – in einem Vorschau-Tab,
+  den der nächste Einfachklick ersetzt. Doppelklick öffnet wie bisher einen eigenen
+  Tab (auch für eine Datei, die gerade in der Vorschau steht).
+* **„Öffnen" im Kontextmenü für alle unterstützten Dateitypen** öffnet die Datei mit
+  dem Standardprogramm des Systems; dazu „Hier öffnen" und „In neuem Tab öffnen".
+* **Ordner klappen mit einem Klick auf und zu.**
 
 ### Fehlerkorrekturen
 * **PDF-Viewer: „keine Treffer" statt dauerhaft „sucht …".** Qt-Timer dürfen bis zu

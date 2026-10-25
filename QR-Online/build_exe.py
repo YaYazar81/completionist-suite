@@ -51,7 +51,7 @@ def write_version_file(folder: Path) -> Path:
       StringStruct('ProductName', '{NAME}'),
       StringStruct('ProductVersion', '{version}'),
       StringStruct('LegalCopyright', '© 2026 Mike-Dominique Horch (Completionist Library)'),
-      StringStruct('Comments', 'Lizenz: CC BY-NC-ND 4.0; Kontakt: mail@mike-horch.de')])]),
+      StringStruct('Comments', 'Lizenz: CC BY-NC-ND 4.0; Kontakt: kontakt@completionist-library.de')])]),
     VarFileInfo([VarStruct('Translation', [0x0407, 1200])])
   ]
 )
