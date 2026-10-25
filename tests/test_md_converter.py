@@ -134,3 +134,24 @@ def test_missing_image_is_reported(tmp_path):
 def test_line_map_points_to_markdown_lines(tmp_path):
     res = MarkdownToTypst(root_dir=tmp_path).convert("# Titel\n\nText\n", tmp_path)
     assert sorted(res.line_map.values()) == [1, 3]
+
+
+def test_h2_rule_can_be_switched(tmp_path):
+    """"##" bekommt wie im Editor eine Linie darunter; abschaltbar je Vorlage."""
+    from core.typst_engine import TypstEngine
+
+    md = tmp_path / "doc.md"
+    md.write_text("# Titel\n\n## Überschrift\n\nText.\n", encoding="utf-8")
+    pages = {}
+    for on in (True, False):
+        cfg = DocumentConfig.load(ROOT / "presets" / "Standard.json")
+        assert cfg.typography.h2_rule
+        cfg.markdown_path = str(md)
+        cfg.cover.enabled = False
+        cfg.toc.enabled = False
+        cfg.typography.h2_rule = on
+        out = tmp_path / f"h2_{on}.png"
+        res = TypstEngine(ROOT).compile(cfg, output=out, fmt="png", ppi=30)
+        assert res.ok, [d.format() for d in res.errors]
+        pages[on] = out.read_bytes()
+    assert pages[True] != pages[False]

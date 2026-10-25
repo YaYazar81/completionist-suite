@@ -34,7 +34,8 @@
     "hyphenate": true,
     "lang": "de",
     "first_line_indent": 0.0,
-    "link_color": "#1a4b8c"
+    "link_color": "#1a4b8c",
+    "h2_rule": true
   },
   "header_footer": {
     "header_enabled": true,

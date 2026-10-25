@@ -14,6 +14,13 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Online
 (Ordner `QR-Online/`) zählt die Version in `QR-Online/qronline/__init__.py`.
 
+## 25.10.2026 – PDF 1.4.2 – Linie unter Überschrift 2
+
+### CompletionistPDF 1.4.2
+* **`##`-Überschriften haben im PDF eine Linie darunter**, wie CompletionistMD sie
+  anzeigt. Neue Einstellung unter Schriften & Typografie: „Linie unter Überschrift 2"
+  (an in allen mitgelieferten Vorlagen; ältere eigene Vorlagen bekommen sie ebenfalls).
+
 ## 25.10.2026 – MD 1.4.3 – Kein verirrtes „\“ vor Überschriften und Listen
 
 ### CompletionistMD 1.4.3
