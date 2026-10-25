@@ -492,7 +492,10 @@ function revealPlugin(editor) {
         }
         if (active && touches(tr.selection, r)) continue;
         const block = tr.doc.nodeAt(r.block);
-        if (block.type.name === "heading" && r.from === r.block + 1 && r.block !== heading) {
+        const lead = block.type.name === "heading" ? headingPrefix(block, schema) : null;
+        // Nur Quelltext mit Rauten ist ein Praefix -- "**Titel**" am Anfang einer
+        // eben zugeklappten Ueberschrift ("## **Titel**") ist bloss Inline-Syntax.
+        if (lead && (lead.len || /^#/.test(lead.raw)) && r.from === r.block + 1 && r.block !== heading) {
           // Praefix ohne gemerkte Ueberschrift (z. B. nach Rueckgaengig): trotzdem als Ebene lesen.
           const mark = tr.steps.length;
           collapseHeading(tr, r.block, schema);

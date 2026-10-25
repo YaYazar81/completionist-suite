@@ -148,3 +148,36 @@ def test_save_keeps_older_version(qapp, window, monkeypatch):
     assert snaps and snaps[0].read_text(encoding="utf-8") == before
     assert snaps[0].parent.parent.parent.name == ".completionistmd"
     assert not list(doc.parent.glob(".*.tmp"))  # keine Zwischendatei liegen geblieben
+
+
+def test_clicking_around_does_not_touch_the_file(qapp, window):
+    """Nur echte Aenderungen speichern -- auch nicht "neu formatiert" beim
+    Schliessen, wenn der Editor das Markdown anders schreiben wuerde."""
+    win, tab, doc = window
+    raw = "# Titel\n\n* Punkt eins\n* Punkt zwei\n\n## **Fett** im Titel\n\nText __dick__.\n"
+    doc.write_text(raw, encoding="utf-8")
+    win._load_md(tab, doc, flush=False)
+    assert wait_for(qapp, lambda: not tab.loading)
+    settle(qapp)
+    stamp = doc.stat().st_mtime_ns
+    for heading in ("Fett", "Titel"):
+        js(qapp, tab, f"(()=>{{const o=CM.outline().find(i=>i.text.includes('{heading}'));"
+                      "CM.gotoPos(o.pos + 3); CM.focusEditor();})()")
+        settle(qapp, 0.5)
+    assert not tab.dirty
+    win._flush_save(tab)
+    assert doc.read_text(encoding="utf-8") == raw
+    assert doc.stat().st_mtime_ns == stamp
+
+
+def test_bold_heading_keeps_its_level_after_leaving_it(qapp, window):
+    win, tab, doc = window
+    doc.write_text("Davor\n\n## **Überschrift**\n\nDanach\n", encoding="utf-8")
+    win._load_md(tab, doc, flush=False)
+    assert wait_for(qapp, lambda: not tab.loading)
+    settle(qapp)
+    js(qapp, tab, "(()=>{const o=CM.outline()[0]; CM.gotoPos(o.pos + 4); CM.focusEditor();})()")
+    settle(qapp, 0.3)
+    js(qapp, tab, "CM.focusEditor('end')")
+    settle(qapp, 0.3)
+    assert "## **Überschrift**" in js(qapp, tab, "CM.getMarkdown()")

@@ -118,6 +118,13 @@ startet. Die DLL-Auswahl passt sich von selbst an, die Dateilisten nicht.
 Jede Änderung geht rund 300 ms später in die geöffnete `.md`. YAML-Frontmatter wird
 unverändert durchgereicht.
 
+- **Nur bei echten Änderungen:** Der Editor vergleicht das Markdown mit dem zuletzt
+  geladenen bzw. gespeicherten Stand (`CM.unsavedMarkdown()`, `CM.markSaved()`).
+  Klicken, Lesen und das Auf- und Zuklappen der Syntax fassen die Datei nicht an –
+  auch nicht beim Schließen oder Dateiwechsel, wenn der Editor sie anders
+  formatieren würde (z. B. `*`-Listen). Wer bis zum gespeicherten Stand zurück
+  tippt oder rückgängig macht, sieht wieder „gespeichert", ohne dass geschrieben wird.
+
 - **Ausfallsicher:** Geschrieben wird erst in eine versteckte Zwischendatei
   `.<Name>.tmp` daneben, die dann in einem Schritt die Datei ersetzt. Ein Absturz
   oder Stromausfall mitten im Speichern hinterlässt so nie eine leere oder halbe Notiz
@@ -195,7 +202,8 @@ Bilder; Ordner mit Punkt am Anfang (`.obsidian`, `.trash`) bleiben verborgen.
 
 - **Klick** auf eine `.md` öffnet sie, **Doppelklick** auf ein Bild öffnet es
   im Standardprogramm.
-- **Rechtsklick:** Neue Datei, Neuer Ordner, Umbenennen, Löschen (in den
+- **Rechtsklick:** bei PDFs **Öffnen** im Standardprogramm (PDF-Reader) oder in
+  einem neuen Tab; Neue Datei, Neuer Ordner, Umbenennen, Löschen (in den
   Papierkorb), Im Explorer anzeigen, Als Bookmark hinzufügen. Wird die offene
   Datei oder ihr Ordner umbenannt, zieht der Editor mit.
 - **Bookmarks** stehen als Kacheln unten im Panel. Ein Klick klappt den Baum bis

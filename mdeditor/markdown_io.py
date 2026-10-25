@@ -1,6 +1,7 @@
 """Lesen und Schreiben der .md-Datei.
 
-Der Editor speichert aggressiv (alle ~300 ms nach der letzten Taste). Dabei gilt:
+Der Editor speichert aggressiv (~300 ms nach der letzten Taste, aber nur, wenn
+sich das Markdown wirklich geaendert hat). Dabei gilt:
 
 * Geschrieben wird ausfallsicher: erst in eine versteckte Zwischendatei
   daneben, dann ersetzt sie die Datei in einem Schritt. Ein Absturz mitten im

@@ -810,7 +810,7 @@ class MainWindow(QMainWindow):
             "in einem neuen Tab -- auch Textdateien, PDFs und Bilder\n\n"
             "***\n\n"
             "Sobald eine Datei geöffnet ist, speichert der Editor jede Änderung nach "
-            "etwa 300 ms von selbst.\n",
+            "etwa 300 ms von selbst -- bloßes Klicken oder Lesen fasst die Datei nicht an.\n",
             "",
         )
         QTimer.singleShot(60, lambda: setattr(tab, "loading", False))
@@ -1212,14 +1212,20 @@ class MainWindow(QMainWindow):
             return
         if tab.loading:
             return
-        tab.view.run("CM.getMarkdown()", lambda body, t=tab: self._write_body(t, body))
+        tab.view.run("CM.unsavedMarkdown()", lambda body, t=tab: self._write_body(t, body))
 
     def _write_body(self, tab: MdTab, body) -> None:
-        if not isinstance(body, str) or tab.file is None or tab.file.path is None:
+        """``body`` False: der Editor meldet keine Abweichung vom gespeicherten
+        Stand -- die Datei bleibt unangetastet (auch nicht neu formatiert)."""
+        if tab.file is None or tab.file.path is None:
             return
-        if body == tab.last_saved_text:
+        if body is False or body == tab.last_saved_text:
+            if body is not False:
+                tab.view.call("markSaved", body)  # Stand der Datei, nur anders erreicht
             tab.dirty = False
             tab.changed.emit()
+            return
+        if not isinstance(body, str):
             return
         try:
             tab.file.save(body)
@@ -1231,6 +1237,7 @@ class MainWindow(QMainWindow):
         tab.last_saved_text = body
         tab.dirty = False
         tab.error = False
+        tab.view.call("markSaved", body)
         tab.watch_path(tab.file.path)  # eigenes Speichern ist keine Aenderung von aussen
         tab.changed.emit()
         self.gdrive.notify_saved()
@@ -1302,12 +1309,13 @@ class MainWindow(QMainWindow):
         if tab is None or tab.file is None or tab.file.path is None or tab.loading or not tab.ready:
             return
         tab.autosave.stop()
-        body = self._fetch_body(tab)
+        body = self._fetch_body(tab, "CM.unsavedMarkdown()")
         if body is not None:
             self._write_body(tab, body)
 
-    def _fetch_body(self, tab: MdTab) -> str | None:
-        """Markdown des Editors synchron abholen (hoechstens 1,5 s warten)."""
+    def _fetch_body(self, tab: MdTab, script: str = "CM.getMarkdown()"):
+        """Markdown des Editors synchron abholen (hoechstens 1,5 s warten).
+        Mit ``CM.unsavedMarkdown()`` heisst False: nichts zu speichern."""
         if not tab.ready:
             return None
         loop = QEventLoop()
@@ -1317,11 +1325,11 @@ class MainWindow(QMainWindow):
             result["body"] = body
             loop.quit()
 
-        tab.view.run("CM.getMarkdown()", done)
+        tab.view.run(script, done)
         QTimer.singleShot(1500, loop.quit)  # nie haengen bleiben
         loop.exec()
         body = result.get("body")
-        return body if isinstance(body, str) else None
+        return body if isinstance(body, str) or body is False else None
 
     def _set_state(self, state: str, text: str) -> None:
         self.state_label.setText(text)
@@ -1343,6 +1351,13 @@ class MainWindow(QMainWindow):
             tab.dirty = True
             tab.changed.emit()
             tab.autosave.start()
+        elif kind == "clean":
+            # Zurueck zum gespeicherten Stand (z. B. Rueckgaengig) -- nichts zu schreiben.
+            if tab.loading or tab.file is None:
+                return
+            tab.autosave.stop()
+            tab.dirty = False
+            tab.changed.emit()
         elif kind == "state":
             stats = data.get("stats") or {}
             if stats:
