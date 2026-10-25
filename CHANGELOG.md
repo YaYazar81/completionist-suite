@@ -14,6 +14,19 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Online
 (Ordner `QR-Online/`) zählt die Version in `QR-Online/qronline/__init__.py`.
 
+## 25.10.2026 – PDF 1.5.0, MD 1.5.0, QR 1.4.0 – Startbild und Impressum
+
+### CompletionistPDF 1.5.0, CompletionistMD 1.5.0, CompletionistQR 1.4.0
+* **Startbild beim Programmstart.** Jede App zeigt rund 1,2 Sekunden ihr eigenes
+  Bild (`assets/splash_pdf.jpg`, `assets/splash_md.jpg`,
+  `completionistqr/assets/splash.jpg`); das Hauptfenster wird in der Zeit schon
+  aufgebaut und erscheint danach.
+* **„Über …" zeigt das App-Bild** links neben den Reitern, bei jedem Reiter.
+* **Neuer Reiter „Impressum"** im Fenster „Über …" mit Kontakt (E-Mail, GitHub) und
+  dem Hinweis, dass die Apps ein privates, kostenloses Freizeitprojekt sind
+  (Texte in `core/legal.py`). CompletionistQR zeigt Lizenz, Fremdkomponenten und
+  Impressum jetzt ebenfalls in Reitern.
+
 ## 25.10.2026 – PDF 1.4.2 – Linie unter Überschrift 2
 
 ### CompletionistPDF 1.4.2

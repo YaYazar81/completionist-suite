@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -20,11 +21,13 @@ from . import legal
 
 
 class AboutDialog(QDialog):
+    IMAGE_SIZE = 300  # Kantenlaenge des App-Bildes links neben den Reitern
+
     def __init__(self, app_name: str, version: str, description: str,
-                 icon: QIcon | None = None, parent=None) -> None:
+                 icon: QIcon | None = None, parent=None, image: Path | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle(f"Über {app_name}")
-        self.resize(640, 560)
+        self.resize(980, 600)
 
         head = QHBoxLayout()
         if icon is not None and not icon.isNull():
@@ -56,6 +59,10 @@ class AboutDialog(QDialog):
         notes.setOpenExternalLinks(True)
         notes.setMarkdown(legal.notices_text())
         tabs.addTab(notes, "Fremdkomponenten")
+        imprint = QTextBrowser(self)
+        imprint.setOpenExternalLinks(True)
+        imprint.setHtml(legal.impressum_html())
+        tabs.addTab(imprint, "Impressum")
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close, self)
         if folder:
@@ -63,7 +70,23 @@ class AboutDialog(QDialog):
             open_b.clicked.connect(lambda: os.startfile(str(folder)))  # type: ignore[attr-defined]
         buttons.rejected.connect(self.reject)
 
+        right = QVBoxLayout()
+        right.addLayout(head)
+        right.addWidget(tabs, 1)
+        body = QHBoxLayout()
+        # Das App-Bild steht links neben den Reitern und bleibt bei jedem Reiter sichtbar
+        pix = QPixmap(str(image)) if image is not None else QPixmap()
+        if not pix.isNull():
+            dpr = self.devicePixelRatioF()
+            side = round(self.IMAGE_SIZE * dpr)
+            pix = pix.scaled(side, side, Qt.AspectRatioMode.KeepAspectRatio,
+                             Qt.TransformationMode.SmoothTransformation)
+            pix.setDevicePixelRatio(dpr)
+            art = QLabel(self)
+            art.setPixmap(pix)
+            body.addWidget(art, 0, Qt.AlignmentFlag.AlignTop)
+        body.addLayout(right, 1)
+
         lay = QVBoxLayout(self)
-        lay.addLayout(head)
-        lay.addWidget(tabs, 1)
+        lay.addLayout(body, 1)
         lay.addWidget(buttons)

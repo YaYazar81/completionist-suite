@@ -890,7 +890,8 @@ class MainWindow(QMainWindow):
         from core.about_dialog import AboutDialog
 
         AboutDialog(APP_TITLE, __version__, "WYSIWYG-Markdown-Editor der Completionist Suite",
-                    self.windowIcon(), self).exec()
+                    self.windowIcon(), self,
+                    image=self.app_dir / "assets" / "splash_md.jpg").exec()
 
     def toggle_outline(self) -> None:
         visible = not self.outline_panel.isVisible()
