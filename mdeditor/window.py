@@ -726,7 +726,8 @@ class MainWindow(QMainWindow):
         visible = bool(self._settings.get("vault_visible", True))
         self.vault_panel.setVisible(visible)
         self.a_vault.setChecked(visible)
-        outline = bool(self._settings.get("outline_visible", False))
+        # Gliederung von Anfang an sichtbar; ausblenden mit ☰ bzw. Strg+Umschalt+G
+        outline = bool(self._settings.get("outline_visible", True))
         self.outline_panel.setVisible(outline)
         self.a_outline.setChecked(outline)
         self.gdrive.configure(self._settings.get("gdrive", {}), self.vault_panel.vault, startup=True)
@@ -756,7 +757,7 @@ class MainWindow(QMainWindow):
             "vault_visible": self.vault_panel.isVisible() if self.isVisible()
             else self._settings.get("vault_visible", True),
             "outline_visible": self.outline_panel.isVisible() if self.isVisible()
-            else self._settings.get("outline_visible", False),
+            else self._settings.get("outline_visible", True),
         }
         if not self.secondary:
             update.update({
@@ -927,8 +928,11 @@ class MainWindow(QMainWindow):
         if isinstance(tab, MdTab) and tab.ready:
             tab.view.call("outline", callback=lambda items: self.outline_panel.set_items(
                 items if isinstance(items, list) and tab is self.current_tab() else []))
+            tab.view.call("currentHeading", callback=lambda pos: self.outline_panel.set_current(
+                pos if isinstance(pos, int) and tab is self.current_tab() else None))
         else:
             self.outline_panel.set_items([])
+            self.outline_panel.set_current(None)
 
     # ------------------------------------------------------------------ #
     # Suchen und Ersetzen
@@ -1390,6 +1394,10 @@ class MainWindow(QMainWindow):
         elif kind == "outline":
             if tab is self.current_tab():
                 self.outline_panel.set_items(data.get("items") or [])
+        elif kind == "outlineCurrent":
+            if tab is self.current_tab():
+                pos = data.get("pos")
+                self.outline_panel.set_current(pos if isinstance(pos, int) else None)
         elif kind == "pasteImage":
             # Strg+V mit Bild, von Chromium statt von der QAction verarbeitet
             QTimer.singleShot(0, lambda t=tab: self._paste_image(t))

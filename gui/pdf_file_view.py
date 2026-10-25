@@ -20,13 +20,11 @@ from PySide6.QtCore import (
     QPoint,
     QPointF,
     QRect,
-    QSize,
-    QSizeF,
     Qt,
     QTimer,
     Signal,
 )
-from PySide6.QtGui import QDesktopServices, QGuiApplication, QKeySequence, QShortcut
+from PySide6.QtGui import QDesktopServices, QKeySequence, QShortcut
 from PySide6.QtPdf import QPdfBookmarkModel, QPdfDocument, QPdfLink, QPdfLinkModel, QPdfSearchModel
 from PySide6.QtPdfWidgets import QPdfView
 from PySide6.QtWidgets import (
@@ -43,6 +41,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core import pdf_select
 from core.watcher import DebouncedWatcher
 
 PDF_SUFFIXES = (".pdf",)
@@ -81,6 +80,8 @@ class PdfFileView(QWidget):
         self._press_pos: QPoint | None = None
         self.view.viewport().setMouseTracking(True)
         self.view.viewport().installEventFilter(self)
+        # Text markieren und kopieren; den Mauszeiger (Hand ueber Links) setzt die Auswahl
+        self.selector = pdf_select.PdfTextSelector(self.view, lambda: self.doc, self.link_at)
 
         # Inhaltsverzeichnis aus den Lesezeichen des PDFs
         self.bookmarks = QPdfBookmarkModel(self)
@@ -254,6 +255,7 @@ class PdfFileView(QWidget):
             buf.deleteLater()
             return False
 
+        self.selector.reset()
         old_doc, old_buf = self.doc, self._buffer
         self.doc, self._buffer = doc, buf
         self.view.setDocument(doc)
@@ -273,6 +275,7 @@ class PdfFileView(QWidget):
         return True
 
     def close_document(self) -> None:
+        self.selector.reset()
         self.path = None
         self.watcher.set_paths([])
         self.doc.close()
@@ -335,58 +338,12 @@ class PdfFileView(QWidget):
 
     def page_rects(self, *, scrolled: bool = True) -> list[QRect]:
         """Lage jeder Seite in Pixeln -- im Viewport (``scrolled``) oder im
-        ganzen Dokument.
-
-        QPdfView gibt seine Seitengeometrie nicht heraus. Die Rechnung bildet
-        ``QPdfViewPrivate::calculateDocumentLayout`` (Qt 6.11) nach; ein Test
-        vergleicht sie mit dem gerenderten Bild.
-        """
-        doc, view = self.doc, self.view
-        vp = view.viewport().size()
-        m = view.documentMargins()
-        spacing = view.pageSpacing()
-        mode = view.zoomMode()
-        screen = QGuiApplication.primaryScreen()
-        res = (screen.logicalDotsPerInch() if screen else 96.0) / 72.0
-
-        sizes: list[QSize] = []
-        for page in range(doc.pageCount()):
-            pt = doc.pagePointSize(page)
-            if mode == QPdfView.ZoomMode.Custom:
-                size = QSizeF(pt.width() * res * view.zoomFactor(), pt.height() * res * view.zoomFactor()).toSize()
-            else:
-                size = QSizeF(pt.width() * res, pt.height() * res).toSize()
-                if size.width() <= 0 or size.height() <= 0:
-                    sizes.append(QSize())
-                    continue
-                if mode == QPdfView.ZoomMode.FitToWidth:
-                    size = size * ((vp.width() - m.left() - m.right()) / size.width())
-                else:  # FitInView
-                    avail = QSize(vp.width() - m.left() - m.right(), vp.height() - spacing)
-                    size = size.scaled(avail, Qt.AspectRatioMode.KeepAspectRatio)
-            sizes.append(size)
-
-        total_w = max((s.width() for s in sizes), default=0) + m.left() + m.right()
-        dx = view.horizontalScrollBar().value() if scrolled else 0
-        dy = view.verticalScrollBar().value() if scrolled else 0
-        rects: list[QRect] = []
-        y = m.top()
-        for size in sizes:
-            x = (max(total_w, vp.width()) - size.width()) // 2
-            rects.append(QRect(QPoint(x - dx, y - dy), size))
-            y += size.height() + spacing
-        return rects
+        ganzen Dokument (siehe core/pdf_select.py)."""
+        return pdf_select.page_rects(self.view, self.doc, scrolled=scrolled)
 
     def page_at(self, pos: QPoint) -> tuple[int, QPointF] | None:
         """Seite und Stelle in PDF-Punkten unter ``pos`` (Viewport-Pixel)."""
-        for page, rect in enumerate(self.page_rects()):
-            if rect.contains(pos):
-                pt = self.doc.pagePointSize(page)
-                if rect.width() <= 0 or rect.height() <= 0:
-                    return None
-                return page, QPointF((pos.x() - rect.left()) * pt.width() / rect.width(),
-                                     (pos.y() - rect.top()) * pt.height() / rect.height())
-        return None
+        return pdf_select.page_at(self.view, self.doc, pos)
 
     # ------------------------------------------------------------------ #
     # Links
@@ -425,14 +382,10 @@ class PdfFileView(QWidget):
             et = event.type()
             if et == QEvent.Type.MouseMove:
                 link = self.link_at(event.position().toPoint())
-                vp = self.view.viewport()
-                if link is not None:
-                    vp.setCursor(Qt.CursorShape.PointingHandCursor)
-                    url = link.url()
-                    if not url.isEmpty():
-                        QToolTip.showText(event.globalPosition().toPoint(), url.toString(), vp)
+                url = link.url() if link is not None else None
+                if url is not None and not url.isEmpty():
+                    QToolTip.showText(event.globalPosition().toPoint(), url.toString(), self.view.viewport())
                 else:
-                    vp.unsetCursor()
                     QToolTip.hideText()
             elif et == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
                 self._press_pos = event.position().toPoint()

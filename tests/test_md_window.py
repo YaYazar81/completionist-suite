@@ -344,3 +344,31 @@ def test_vault_menu_offers_system_open_for_all_types(qapp, window, tmp_path):
         menu = panel.build_tree_menu(panel.tree.visualRect(idx).center())
         texts = [a.text() for a in menu.actions()]
         assert {"Öffnen", "Hier öffnen", "In neuem Tab öffnen"} <= set(texts), (f.name, texts)
+
+
+def test_outline_is_visible_by_default_and_highlights_current_section(qapp, window, tmp_path):
+    win, tab, doc = window
+    assert win.a_outline.isChecked() == win.outline_panel.isVisible()
+    if not win.outline_panel.isVisible():
+        win.toggle_outline()  # ein frueherer Test hat sie ausgeblendet
+    long_doc = tmp_path / "kapitel.md"
+    parts = ["# Kapitel"]
+    for i in range(1, 6):
+        parts.append(f"## Abschnitt {i}")
+        parts += [f"Absatz {i}.{k} mit etwas Text, damit die Seite lang wird." for k in range(25)]
+    long_doc.write_text("\n\n".join(parts) + "\n", encoding="utf-8")
+    win._load_md(tab, long_doc)
+    assert wait_for(qapp, lambda: tab.file is not None and tab.file.path == long_doc and not tab.loading)
+    assert wait_for(qapp, lambda: win.outline_panel.tree.topLevelItemCount() == 1)
+
+    # Cursor in Abschnitt 3 -> Abschnitt 3 ist hervorgehoben
+    items = js(qapp, tab, "CM.outline()")
+    pos3 = next(i["pos"] for i in items if i["text"] == "Abschnitt 3")
+    tab.view.call("gotoPos", pos3 + 5)
+    assert wait_for(qapp, lambda: win.outline_panel.current_text() == "Abschnitt 3")
+
+    # Weggescrollt (Cursor nicht mehr zu sehen): die oberste Ueberschrift im Sichtfeld
+    js(qapp, tab, "(window.scrollTo(0, document.body.scrollHeight), true)")
+    assert wait_for(qapp, lambda: win.outline_panel.current_text() == "Abschnitt 5")
+    win._load_md(tab, doc)
+    assert wait_for(qapp, lambda: tab.file is not None and tab.file.path == doc and not tab.loading)

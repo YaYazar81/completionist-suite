@@ -36,6 +36,19 @@ CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Onl
 * **„Öffnen" im Kontextmenü für alle unterstützten Dateitypen** öffnet die Datei mit
   dem Standardprogramm des Systems; dazu „Hier öffnen" und „In neuem Tab öffnen".
 * **Ordner klappen mit einem Klick auf und zu.**
+* **Gliederung von Anfang an sichtbar** (ausblenden wie bisher mit ☰ bzw.
+  Strg+Umschalt+G) und **hebt das aktuelle Kapitel hervor**: nach Tippen, Klicken
+  oder einem Sprung die Überschrift am Cursor, beim Scrollen die oberste im
+  Sichtfeld, solange der Cursor nicht zu sehen ist.
+
+### CompletionistPDF 1.5.0, CompletionistMD 1.5.0 – Text in PDFs markieren
+* **Text in PDFs markieren und kopieren** – in der Vorschau und im Reader von
+  CompletionistPDF sowie im PDF-Tab von CompletionistMD: Ziehen markiert (auch über
+  Seitengrenzen), Doppelklick ein Wort, Dreifachklick eine Zeile, Strg+A alles,
+  Strg+C oder Rechtsklick → „Kopieren“, Esc bzw. ein Klick hebt die Auswahl auf.
+  Auf Links folgt ein Klick weiterhin, Ziehen markiert auch dort. Beim Kopieren
+  wird Silbentrennung wieder zum ganzen Wort, Emojis bleiben in ihrem Satz
+  (`core/pdf_select.py`).
 
 ### Fehlerkorrekturen
 * **PDF-Viewer: „keine Treffer" statt dauerhaft „sucht …".** Qt-Timer dürfen bis zu

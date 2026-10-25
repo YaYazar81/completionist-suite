@@ -67,6 +67,9 @@ class PdfPreview(QWidget):
             self._view.setPageMode(QPdfView.PageMode.MultiPage)
             self._view.setZoomMode(QPdfView.ZoomMode.FitInView)
             self._view.setPageSpacing(12)
+            from core.pdf_select import PdfTextSelector
+
+            self.selector = PdfTextSelector(self._view, lambda: self._doc)  # markieren, Strg+C
             layout.addWidget(self._view, 1)
         else:
             self._scroll = QScrollArea(self)
@@ -94,6 +97,7 @@ class PdfPreview(QWidget):
         bar = self._view.verticalScrollBar()
         old_value, old_max = bar.value(), max(bar.maximum(), 1)
 
+        self.selector.reset()
         old_buffer = self._buffer
         buffer = QBuffer(self)
         buffer.setData(QByteArray(data))
@@ -132,6 +136,7 @@ class PdfPreview(QWidget):
 
     def clear(self) -> None:
         if HAS_QTPDF:
+            self.selector.reset()
             self._doc.close()
         else:
             self.show_pngs([])
