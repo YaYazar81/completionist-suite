@@ -77,6 +77,39 @@ Die App spricht den Server über eine kleine JSON-API an. Der Schlüssel steht i
 | `GET` / `POST` / `DELETE /api/links/<CODE>` | lesen, Ziel/Name ändern, löschen (samt Scans) |
 | `GET /api/scans/<CODE>?since=YYYY-MM-DD` | einzelne Scans, Zeit in UTC |
 
+## Web-Dashboard in WordPress
+
+Dieselben Links und Graphen gibt es auch im Browser: das Plugin
+`wordpress/qr-online-dashboard/` zeigt im WordPress-Admin unter **QR-Online** die Liste der
+Links, Kennzahlen, alle Graphen und den QR-Code als PNG, und legt Links an, ändert und löscht
+sie. Es zählt nichts selbst, sondern spricht dieselbe API wie die App. Der Server von oben
+bleibt also nötig, App und Plugin können ihn gleichzeitig benutzen.
+
+1. Plugin als Zip packen: `python wordpress/build_zip.py` (legt
+   `dist/qr-online-dashboard.zip` an) oder den Ordner `qr-online-dashboard/` selbst zippen.
+2. In WordPress **Plugins → Installieren → Plugin hochladen**, die Zip-Datei wählen,
+   aktivieren.
+3. **QR-Online → Einstellungen**: Server-Adresse und API-Schlüssel eintragen und speichern.
+   Die Seite meldet sofort, ob die Verbindung steht.
+
+Wer die Zugangsdaten nicht in der Datenbank haben will, trägt sie stattdessen in die
+`wp-config.php` ein; die Felder in den Einstellungen sind dann gesperrt:
+
+```php
+define('QR_ONLINE_SERVER', 'https://qr.example.de');
+define('QR_ONLINE_API_KEY', '…');
+```
+
+Sicherheit: Der API-Schlüssel bleibt auf dem WordPress-Server. Der Browser ruft nur
+`/wp-json/qr-online/v1/…` auf, und das nur mit Anmeldung als Administrator
+(Recht `manage_options`) und gültiger WordPress-Nonce. Das Plugin reicht die Aufrufe dann
+mit dem Schlüssel an den QR-Server weiter. Auf der WordPress-Startseite zeigt ein kleines
+Widget die fünf meistgescannten Links (5 Minuten zwischengespeichert).
+
+Die Graphen zählen nach der Zeitzone des Browsers, wie die App nach der von Windows.
+Voraussetzung: WordPress 6.0 und PHP 8.0 oder neuer; die Seite funktioniert mit und ohne
+„schöne“ Permalinks.
+
 ## Starten
 
 - **Installiert:** `QR-Online-Setup-<Version>.exe`, ohne Adminrechte.
@@ -101,7 +134,8 @@ Die Server-Tests starten `server/index.php` mit dem eingebauten PHP-Server und g
 ganzen Weg: Link anlegen, scannen mit iPhone-, Android- und Windows-Kennung, Statistik
 abrufen, Ziel ändern, löschen. Ohne PHP werden sie übersprungen.
 
-Aufbau: `server/index.php` (Weiterleitung und API, eine Datei), `qronline/client.py`
+Aufbau: `server/index.php` (Weiterleitung und API, eine Datei),
+`wordpress/qr-online-dashboard/` (WordPress-Plugin, PHP und JavaScript ohne Build-Schritt), `qronline/client.py`
 (API-Aufrufe), `qronline/stats.py` (Auswertung nach lokaler Zeit), `qronline/charts.py`
 (Diagramme mit matplotlib), `qronline/app.py` (Oberfläche, CustomTkinter),
 `qronline/settings.py` (Einstellungen unter `%APPDATA%\QR-Online`, der API-Schlüssel per
