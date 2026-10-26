@@ -34,13 +34,15 @@ ICON = ROOT / "assets" / "icon.ico"
 
 # Was je App gebaut wird: Startskript, Name, Datenordner, eigenes Icon
 # Aus assets/ nimmt jede App nur, was sie zur Laufzeit liest: PDF die Schriften,
-# MD das Editor-Bundle, beide ihr eigenes Fenster-Icon.
+# MD das Editor-Bundle, beide ihr eigenes Fenster-Icon und Startbild (Splash).
 APPS = {
     "pdf": {"script": "main.py", "name": "CompletionistPDF",
-            "data": ["templates", "presets", "assets/fonts", "assets/icon_pdf.ico"],
+            "data": ["templates", "presets", "assets/fonts", "assets/icon_pdf.ico",
+                     "assets/splash_pdf.jpg"],
             "icon": "assets/icon_pdf.ico"},
     "md": {"script": "main_md.py", "name": "CompletionistMD",
-           "data": ["assets/editor", "assets/filetypes", "assets/icon_md.ico"],
+           "data": ["assets/editor", "assets/filetypes", "assets/icon_md.ico",
+                    "assets/splash_md.jpg"],
            "icon": "assets/icon_md.ico"},
     "qr": {"script": "run_completionistqr.py", "name": "CompletionistQR",
            "data": ["completionistqr/assets"],
@@ -243,7 +245,7 @@ def write_version_file(app: str, folder: Path) -> Path:
       StringStruct('ProductName', '{name}'),
       StringStruct('ProductVersion', '{version}'),
       StringStruct('LegalCopyright', '© 2026 Mike-Dominique Horch (Completionist Library)'),
-      StringStruct('Comments', 'Lizenz: CC BY-NC-ND 4.0{"" if app == "qr" else "; Qt/PySide6: LGPL v3"}; Kontakt: mail@mike-horch.de')])]),
+      StringStruct('Comments', 'Lizenz: CC BY-NC-ND 4.0{"" if app == "qr" else "; Qt/PySide6: LGPL v3"}; Kontakt: kontakt@completionist-library.de')])]),
     VarFileInfo([VarStruct('Translation', [0x0407, 1200])])
   ]
 )

@@ -50,3 +50,16 @@ def test_search_enter_right_after_typing_jumps_to_first_hit(qapp):
     assert tab.find_label.text().strip() == "1 / 2"
     tab.find_prev()
     assert tab.find_label.text().strip() == "2 / 2"
+
+
+def test_text_can_be_selected_and_copied(qapp):
+    from PySide6.QtGui import QGuiApplication
+
+    tab = PdfTab(ROOT / "examples" / "demo.pdf")
+    tab.resize(800, 600)
+    tab.show()
+    tab.selector.select_all()
+    assert "Zweites Kapitel" in tab.selector.text()
+    tab.selector.copy()
+    assert "Zweites Kapitel" in QGuiApplication.clipboard().text()
+    tab.close()

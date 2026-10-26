@@ -52,8 +52,18 @@ def _register_fonts() -> None:
 
 
 class CompletionistQRApp(ctk.CTk):
-    def __init__(self):
+    def __init__(self, splash: bool = False):
         super().__init__()
+        # Startbild zeigen, solange das Hauptfenster (versteckt) aufgebaut wird
+        self._splash = None
+        if splash:
+            self.withdraw()
+            try:
+                from .ui.splash import Splash
+
+                self._splash = Splash(self)
+            except Exception:
+                self.deiconify()
         self.title(f"CompletionistQR {__version__}")
         self.geometry("1180x820")
         self.minsize(1000, 700)
@@ -102,6 +112,8 @@ class CompletionistQRApp(ctk.CTk):
             self.controls.restore_content(saved["content"])
         self.controls.refresh()
         self.changed()
+        if self._splash is not None:
+            self._splash.finish(self.deiconify)
 
     def show_about(self) -> None:
         from .ui.about import AboutWindow
@@ -166,4 +178,4 @@ def main() -> None:
     ctk.set_appearance_mode(_load_settings().get("appearance", "system"))
     ctk.set_default_color_theme("blue")
     _register_fonts()
-    CompletionistQRApp().mainloop()
+    CompletionistQRApp(splash=True).mainloop()

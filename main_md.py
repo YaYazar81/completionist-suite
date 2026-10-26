@@ -49,6 +49,11 @@ def main() -> int:
 
         app.setWindowIcon(QIcon(str(icon_path)))
 
+    # Startbild, waehrend das Hauptfenster (samt Editor) aufgebaut wird
+    from core import splash
+
+    splash_screen = splash.show(app, APP_DIR / "assets" / "splash_md.jpg")
+
     # Mehrere Fenster sind ausdruecklich erlaubt (Alt+Tab zwischen Dateien).
     # Nur das erste stellt die letzten Tabs wieder her und merkt sie sich.
     from PySide6.QtCore import QLockFile
@@ -69,7 +74,7 @@ def main() -> int:
             win.queue_open(arg)
             break
 
-    win.show()
+    splash.finish(splash_screen, win)
     return app.exec()
 
 

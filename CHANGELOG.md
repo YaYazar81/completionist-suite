@@ -14,6 +14,51 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Online
 (Ordner `QR-Online/`) zählt die Version in `QR-Online/qronline/__init__.py`.
 
+## 25.10.2026 – PDF 1.5.0, MD 1.5.0, QR 1.4.0 – Startbild und Impressum
+
+### CompletionistPDF 1.5.0, CompletionistMD 1.5.0, CompletionistQR 1.4.0
+* **Startbild beim Programmstart.** Jede App zeigt rund 1,2 Sekunden ihr eigenes
+  Bild (`assets/splash_pdf.jpg`, `assets/splash_md.jpg`,
+  `completionistqr/assets/splash.jpg`); das Hauptfenster wird in der Zeit schon
+  aufgebaut und erscheint danach.
+* **„Über …" zeigt das App-Bild** links neben den Reitern, bei jedem Reiter.
+* **Neuer Reiter „Impressum"** im Fenster „Über …" mit Kontakt (E-Mail, GitHub) und
+  dem Hinweis, dass die Apps ein privates, kostenloses Freizeitprojekt sind
+  (Texte in `core/legal.py`). CompletionistQR zeigt Lizenz, Fremdkomponenten und
+  Impressum jetzt ebenfalls in Reitern.
+* **Kontakt-Adresse** ist jetzt überall kontakt@completionist-library.de (Über-Dialog,
+  Setups, Dateieigenschaften der `.exe`, LICENSE, README).
+
+### CompletionistMD 1.5.0 – Vault-Explorer
+* **Einfachklick öffnet auch Bilder, Textdateien und PDFs** – in einem Vorschau-Tab,
+  den der nächste Einfachklick ersetzt. Doppelklick öffnet wie bisher einen eigenen
+  Tab (auch für eine Datei, die gerade in der Vorschau steht).
+* **„Öffnen" im Kontextmenü für alle unterstützten Dateitypen** öffnet die Datei mit
+  dem Standardprogramm des Systems; dazu „Hier öffnen" und „In neuem Tab öffnen".
+* **Ordner klappen mit einem Klick auf und zu.**
+* **Gliederung von Anfang an sichtbar** (ausblenden wie bisher mit ☰ bzw.
+  Strg+Umschalt+G) und **hebt das aktuelle Kapitel hervor**: nach Tippen, Klicken
+  oder einem Sprung die Überschrift am Cursor, beim Scrollen die oberste im
+  Sichtfeld, solange der Cursor nicht zu sehen ist.
+
+### CompletionistPDF 1.5.0, CompletionistMD 1.5.0 – Text in PDFs markieren
+* **Text in PDFs markieren und kopieren** – in der Vorschau und im Reader von
+  CompletionistPDF sowie im PDF-Tab von CompletionistMD: Ziehen markiert (auch über
+  Seitengrenzen), Doppelklick ein Wort, Dreifachklick eine Zeile, Strg+A alles,
+  Strg+C oder Rechtsklick → „Kopieren“, Esc bzw. ein Klick hebt die Auswahl auf.
+  Auf Links folgt ein Klick weiterhin, Ziehen markiert auch dort. Beim Kopieren
+  wird Silbentrennung wieder zum ganzen Wort, Emojis bleiben in ihrem Satz
+  (`core/pdf_select.py`).
+
+### Fehlerkorrekturen
+* **PDF-Viewer: „keine Treffer" statt dauerhaft „sucht …".** Qt-Timer dürfen bis zu
+  5 % zu früh auslösen; dann blieb bei einer Suche ohne Treffer „sucht …" stehen.
+  Das Label plant sich jetzt für die Restzeit neu ein.
+* **CompletionistMD: kein Absturz mehr durch den Drag&Drop-Filter.** Der Filter
+  hing an der ganzen Anwendung und zwang PySide, für jedes interne QtQuick-Objekt
+  von QtWebEngine einen Python-Wrapper zu bauen -- das löste neue Events aus, bis der
+  Stapel überlief. Er sitzt jetzt nur noch auf den Kindwidgets des Editors.
+
 ## 25.10.2026 – PDF 1.4.2 – Linie unter Überschrift 2
 
 ### CompletionistPDF 1.4.2

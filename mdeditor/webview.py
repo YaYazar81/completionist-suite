@@ -22,7 +22,7 @@ from PySide6.QtCore import QMimeData, QPoint, Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
 from PySide6.QtWebEngineWidgets import QWebEngineView
-from PySide6.QtWidgets import QApplication, QWidget
+from PySide6.QtWidgets import QWidget
 
 from . import images
 
@@ -78,11 +78,21 @@ class EditorView(QWebEngineView):
         s.setAttribute(QWebEngineSettings.WebAttribute.ShowScrollBars, True)
         s.setAttribute(QWebEngineSettings.WebAttribute.PdfViewerEnabled, False)
 
-        # Der Drop landet in einem internen Kindwidget von QWebEngineView;
-        # ueber den Anwendungsfilter bekommen wir ihn trotzdem zu sehen.
-        app = QApplication.instance()
-        if app is not None:
-            app.installEventFilter(self)
+        # Der Drop landet in einem internen Kindwidget von QWebEngineView; der
+        # Filter sitzt deshalb auf jedem Kindwidget (siehe childEvent). Kein
+        # Anwendungsfilter: Der zwang PySide, fuer jedes interne QtQuick-Objekt
+        # von QtWebEngine einen Python-Wrapper zu bauen, was erneut Events
+        # ausloest -- Endlosschleife und Absturz.
+        self.installEventFilter(self)
+
+    def childEvent(self, event) -> None:  # noqa: N802 (Qt-API)
+        super().childEvent(event)
+        # ChildPolished statt ChildAdded: erst dann ist das Kindwidget fertig gebaut
+        if event.type() == event.Type.ChildPolished:
+            child = event.child()
+            if isinstance(child, QWidget):
+                for w in (child, *child.findChildren(QWidget)):
+                    w.installEventFilter(self)  # doppeltes Installieren ist harmlos
 
     # ------------------------------------------------------------------ #
 

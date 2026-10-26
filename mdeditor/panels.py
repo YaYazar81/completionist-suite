@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QToolButton,
     QTreeWidget,
     QTreeWidgetItem,
+    QTreeWidgetItemIterator,
     QVBoxLayout,
     QWidget,
 )
@@ -61,6 +62,7 @@ class OutlinePanel(QWidget):
         lay.addWidget(self.tree, 1)
         lay.addWidget(self.empty, 1)
         self._sig = None
+        self._current: int | None = None  # Position der Ueberschrift, in der man gerade ist
         self.set_items([])
 
     def set_items(self, items: list[dict]) -> None:
@@ -83,6 +85,34 @@ class OutlinePanel(QWidget):
         self.tree.expandAll()
         self.tree.setVisible(bool(items))
         self.empty.setVisible(not items)
+        self.set_current(self._current)
+
+    def set_current(self, pos: int | None) -> None:
+        """Hebt die Ueberschrift an Dokumentposition ``pos`` hervor (fett,
+        ausgewaehlt) und scrollt sie ins Bild; ``None`` hebt nichts hervor."""
+        self._current = pos
+        found = None
+        it = QTreeWidgetItemIterator(self.tree)
+        while it.value():
+            item = it.value()
+            hit = pos is not None and int(item.data(0, Qt.ItemDataRole.UserRole)) == pos
+            if item.font(0).bold() != hit:
+                font = item.font(0)
+                font.setBold(hit)
+                item.setFont(0, font)
+            if hit:
+                found = item
+            it += 1
+        if found is not None:
+            self.tree.setCurrentItem(found)
+            self.tree.scrollToItem(found)
+        else:
+            self.tree.clearSelection()
+
+    def current_text(self) -> str:
+        """Titel der hervorgehobenen Ueberschrift (leer, wenn keine)."""
+        item = self.tree.currentItem()
+        return item.text(0) if item is not None and item.font(0).bold() else ""
 
 
 # ---------------------------------------------------------------------- #

@@ -419,6 +419,9 @@ class PdfTab(BaseTab):
         self.search.setDocument(self.doc)
         self.view.setSearchModel(self.search)
         self._QPdfView = QPdfView
+        from core.pdf_select import PdfTextSelector
+
+        self.selector = PdfTextSelector(self.view, lambda: self.doc)  # markieren, Strg+C
 
         bar = QToolBar(self)
         bar.setObjectName("tabBar")
@@ -489,6 +492,7 @@ class PdfTab(BaseTab):
         buf = QBuffer(self)
         buf.setData(data)
         buf.open(QIODevice.OpenModeFlag.ReadOnly)
+        self.selector.reset()
         self.doc.load(buf)
         if self._buffer is not None:
             self._buffer.deleteLater()

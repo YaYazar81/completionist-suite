@@ -363,6 +363,8 @@ class VaultPanel(QWidget):
         self.tree.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self._tree_menu)
+        # Ordner klappen mit einem Klick auf und zu (siehe _on_clicked)
+        self.tree.setExpandsOnDoubleClick(False)
         self.tree.clicked.connect(self._on_clicked)
         self.tree.doubleClicked.connect(self._on_double_clicked)
 
@@ -486,17 +488,21 @@ class VaultPanel(QWidget):
             self.tree.setCurrentIndex(idx)
             self.tree.scrollTo(idx)
 
-    # Einfachklick auf .md: im aktiven Editor-Tab oeffnen (wie bisher).
-    # Doppelklick: in einem neuen Tab (auch .txt, .pdf, Bilder). Der Einfachklick
-    # wartet deshalb das Doppelklick-Intervall ab -- sonst wuerde ein Doppelklick
-    # erst den aktiven Tab umstellen und dann noch einen neuen oeffnen.
+    # Einfachklick: .md im aktiven Editor-Tab, .txt/.pdf/Bilder im Vorschau-Tab
+    # (den ersetzt der naechste Einfachklick), Ordner auf-/zuklappen.
+    # Doppelklick: in einem neuen Tab. Der Einfachklick auf Dateien wartet
+    # deshalb das Doppelklick-Intervall ab -- sonst wuerde ein Doppelklick erst
+    # den aktiven Tab umstellen und dann noch einen neuen oeffnen.
 
     def _on_clicked(self, index: QModelIndex) -> None:
         mods = QApplication.keyboardModifiers()
         if mods & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier):
             return  # Mehrfachauswahl, nichts oeffnen
+        if self.model.isDir(self.proxy.mapToSource(index)):
+            self.tree.setExpanded(index, not self.tree.isExpanded(index))
+            return
         path = self._path_of(index)
-        if is_markdown(path) and Path(path).is_file():
+        if path.lower().endswith(TAB_SUFFIXES) and Path(path).is_file():
             self._click_path = path
             self._click_timer.start(QApplication.styleHints().mouseDoubleClickInterval())
 
@@ -528,8 +534,13 @@ class VaultPanel(QWidget):
         return [p for p in paths if is_markdown(p) and Path(p).is_file()]
 
     def _tree_menu(self, pos: QPoint) -> None:
+        menu = self.build_tree_menu(pos)
+        if menu is not None:
+            menu.exec(self.tree.viewport().mapToGlobal(pos))
+
+    def build_tree_menu(self, pos: QPoint) -> QMenu | None:
         if not self._root:
-            return
+            return None
         index = self.tree.indexAt(pos)
         path = self._path_of(index) if index.isValid() else self._root
         is_dir = Path(path).is_dir()
@@ -542,11 +553,9 @@ class VaultPanel(QWidget):
                            lambda: self.mergeRequested.emit(selected))
             menu.addSeparator()
         if index.isValid() and not is_dir and path.lower().endswith(TAB_SUFFIXES):
-            if is_markdown(path):
-                menu.addAction("Hier öffnen", lambda: self.openFile.emit(path))
-            elif path.lower().endswith(".pdf"):
-                # mit dem Standardprogramm des Systems (PDF-Reader)
-                menu.addAction("Öffnen", lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(path)))
+            # "Öffnen": mit dem Standardprogramm des Systems (Bildbetrachter, PDF-Reader …)
+            menu.addAction("Öffnen", lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(path)))
+            menu.addAction("Hier öffnen", lambda: self.openFile.emit(path))
             menu.addAction("In neuem Tab öffnen", lambda: self.openInNewTab.emit(path))
             menu.addSeparator()
         # Uebergabe an die anderen Suite-Apps (Pfad kommt aus der Registry)
@@ -571,7 +580,7 @@ class VaultPanel(QWidget):
         menu.addAction("Im Windows Explorer anzeigen", lambda: reveal_in_explorer(path))
         if is_dir:
             menu.addAction("Als Bookmark hinzufügen …", lambda: self.add_bookmark(path))
-        menu.exec(self.tree.viewport().mapToGlobal(pos))
+        return menu
 
     def _ask_name(self, title: str, label: str, text: str = "") -> str | None:
         name, ok = QInputDialog.getText(self, title, label, QLineEdit.EchoMode.Normal, text)

@@ -90,7 +90,10 @@ function createEditor() {
       if (!loading) checkDirty();
       sendOutline();
     },
-    onSelectionUpdate: () => sendState(),
+    onSelectionUpdate: () => {
+      sendState();
+      sendCurrentHeading(true);
+    },
     onTransaction: () => updateImageBar(),
   });
 }
@@ -363,7 +366,56 @@ function sendOutline() {
     const changed = sig !== lastOutline;
     lastOutline = sig;
     send({ type: "outline", items, changed });
+    sendCurrentHeading();
   }, 400);
+}
+
+// Aktuelle Ueberschrift fuer die Gliederung: nach einer Cursorbewegung (Tippen,
+// Klicken, Sprung aus der Gliederung) die vor dem Cursor; beim Scrollen ebenso,
+// solange der Cursor zu sehen ist -- sonst die oberste im Sichtfeld.
+const HEADING_TOP = 80; // px: Ueberschrift gilt als "oben", bis sie so weit hinausgescrollt ist
+let currentTimer = null;
+let lastCurrent;
+function currentHeading(atCaret = false) {
+  const items = outline(editor);
+  if (!items.length) return null;
+  const view = editor.view;
+  const head = view.state.selection.head;
+  let caretVisible = atCaret;
+  if (!atCaret) {
+    try {
+      const c = view.coordsAtPos(head);
+      caretVisible = c.top >= 0 && c.bottom <= window.innerHeight;
+    } catch (e) {
+      caretVisible = false;
+    }
+  }
+  let found = null;
+  for (const it of items) {
+    if (caretVisible) {
+      if (it.pos > head) break;
+    } else {
+      const dom = view.nodeDOM(it.pos);
+      if (!dom || !dom.getBoundingClientRect || dom.getBoundingClientRect().top > HEADING_TOP) break;
+    }
+    found = it.pos;
+  }
+  return found;
+}
+
+let currentAtCaret = false;
+function sendCurrentHeading(atCaret = false) {
+  // Eine Cursorbewegung gewinnt gegen das Scrollen, das sie selbst ausloest
+  currentAtCaret = currentAtCaret || atCaret === true;
+  clearTimeout(currentTimer);
+  currentTimer = setTimeout(() => {
+    const pos = currentHeading(currentAtCaret);
+    currentAtCaret = false;
+    if (pos !== lastCurrent) {
+      lastCurrent = pos;
+      send({ type: "outlineCurrent", pos });
+    }
+  }, 120);
 }
 
 // Weicht das Markdown vom gespeicherten Stand ab? -- kurz gedrosselt, damit
@@ -421,6 +473,7 @@ api.setMarkdown = (md, baseUrl) => {
   window.scrollTo(0, 0);
   sendState();
   lastOutline = "";
+  lastCurrent = undefined;
   sendOutline();
 };
 
@@ -549,6 +602,7 @@ api.replace = (text) => replace(editor, text);
 api.replaceAll = (text) => replaceAll(editor, text);
 api.clearFind = () => clearFind(editor);
 api.outline = () => outline(editor);
+api.currentHeading = () => currentHeading();
 api.gotoPos = (pos) => gotoPos(editor, pos);
 /** Selektierten Text (fuer das Suchfeld) */
 api.selectedText = () => {
@@ -564,6 +618,7 @@ function bind() {
   document.addEventListener("contextmenu", onContextMenu);
   window.addEventListener("resize", updateImageBar);
   document.addEventListener("scroll", updateImageBar, true);
+  document.addEventListener("scroll", () => sendCurrentHeading(false), true);
 
   editor.view.dom.addEventListener("dblclick", (ev) => {
     if (ev.target.tagName === "IMG") {

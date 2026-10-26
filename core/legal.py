@@ -10,7 +10,7 @@ from pathlib import Path
 
 COPYRIGHT = "© 2026 Mike-Dominique Horch (Completionist Library)"
 PUBLISHER = "Completionist Library"
-CONTACT = "mail@mike-horch.de"
+CONTACT = "kontakt@completionist-library.de"
 LICENSE_NAME = "CC BY-NC-ND 4.0"
 LICENSE_URL = "https://creativecommons.org/licenses/by-nc-nd/4.0/deed.de"
 LICENSE_SUMMARY = (
@@ -37,6 +37,41 @@ def lgpl_notice() -> str:
     except Exception:
         v = "6"
     return LGPL_NOTICE.replace("{pyside}", v)
+
+
+# Impressum (freiwillig): privates, kostenloses Freizeitprojekt
+IMPRESSUM_NOTE = (
+    "Diese App ist ein rein privates, kostenloses Freizeitprojekt. Es wird keinerlei "
+    "kommerzieller Zweck verfolgt und kein Geld mit der App verdient."
+)
+IMPRESSUM_DEVELOPER = "Mike-Dominique Horch [YaYazar81]"
+IMPRESSUM_EMAIL = CONTACT
+IMPRESSUM_GITHUB = "https://github.com/YaYazar81/completionist-suite"
+
+
+def impressum_html() -> str:
+    """Impressum fuer den Reiter im Qt-Dialog "Über …"."""
+    return (
+        "<h3>Impressum</h3>"
+        "<h4>Kontakt &amp; Support</h4>"
+        f"<p>{IMPRESSUM_NOTE}</p>"
+        "<h4>Entwickler</h4>"
+        f"<p>{IMPRESSUM_DEVELOPER}</p>"
+        "<h4>Kontakt</h4>"
+        f"<p><b>E-Mail:</b> <a href='mailto:{IMPRESSUM_EMAIL}'>{IMPRESSUM_EMAIL}</a> oder via<br>"
+        f"<b>GitHub:</b> <a href='{IMPRESSUM_GITHUB}'>{IMPRESSUM_GITHUB}</a></p>"
+    )
+
+
+def impressum_text() -> str:
+    """Impressum als reiner Text (CompletionistQR, Tkinter)."""
+    return (
+        "Impressum\n\n"
+        f"Kontakt & Support\n{IMPRESSUM_NOTE}\n\n"
+        f"Entwickler\n{IMPRESSUM_DEVELOPER}\n\n"
+        f"Kontakt\nE-Mail: {IMPRESSUM_EMAIL} oder via\nGitHub: {IMPRESSUM_GITHUB}\n"
+    )
+
 
 NOTICES_FILE = "THIRD_PARTY_NOTICES.md"
 LICENSES_DIR = "Lizenzen"

@@ -347,7 +347,8 @@ class MainWindow(QMainWindow):
         from core.about_dialog import AboutDialog
 
         AboutDialog("CompletionistPDF", __version__, "Markdown zu PDF mit Typst · PDF-Viewer",
-                    self.windowIcon(), self).exec()
+                    self.windowIcon(), self,
+                    image=self.app_dir / "assets" / "splash_pdf.jpg").exec()
 
     def print_pdf(self) -> None:
         from .printing import print_document

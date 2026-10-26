@@ -441,3 +441,133 @@ def test_start_with_broken_pdf_falls_back_to_markdown_mode(qapp, tmp_path, isola
     assert not win.is_viewer_mode()
     QThreadPool.globalInstance().waitForDone(60000)
     win.close()
+
+
+# ---------------------------------------------------------------------- #
+# Text markieren und kopieren (core/pdf_select.py)
+# ---------------------------------------------------------------------- #
+
+# demo.pdf, Index 1: "Guide" steht bei (184, 109) und ist 33 x 9 Punkte gross
+GUIDE_PAGE = 1
+
+
+def _mouse(vp, kind, pos, buttons):
+    from PySide6.QtCore import QPointF, Qt
+    from PySide6.QtGui import QMouseEvent
+
+    button = Qt.MouseButton.LeftButton if kind != QMouseEvent.Type.MouseMove else Qt.MouseButton.NoButton
+    ev = QMouseEvent(kind, QPointF(pos), vp.mapToGlobal(QPointF(pos)), button, buttons,
+                     Qt.KeyboardModifier.NoModifier)
+    QApplication.sendEvent(vp, ev)
+
+
+def drag(vp, start, end):
+    from PySide6.QtCore import QEvent, Qt
+
+    left, none = Qt.MouseButton.LeftButton, Qt.MouseButton.NoButton
+    _mouse(vp, QEvent.Type.MouseButtonPress, start, left)
+    for k in range(1, 6):
+        _mouse(vp, QEvent.Type.MouseMove, start + (end - start) * k / 5, left)
+    _mouse(vp, QEvent.Type.MouseButtonRelease, end, none)
+
+
+def test_drag_selects_text_and_ctrl_c_copies_it(qapp):
+    from PySide6.QtCore import QPointF, Qt
+    from PySide6.QtGui import QGuiApplication
+    from PySide6.QtTest import QTest
+
+    view = demo_view(qapp)
+    view.go_to(GUIDE_PAGE)
+    wait_for(qapp, lambda: False, 0.2)
+    vp = view.view.viewport()
+    drag(vp, point_to_viewport(view, GUIDE_PAGE, QPointF(185, 113)),
+         point_to_viewport(view, GUIDE_PAGE, QPointF(218, 113)))
+    assert view.selector.text() == "Guide"
+    QGuiApplication.clipboard().clear()
+    QTest.keyClick(view.view, Qt.Key.Key_C, Qt.KeyboardModifier.ControlModifier)
+    assert QGuiApplication.clipboard().text() == "Guide"
+    # Ein einfacher Klick hebt die Auswahl auf, Esc ebenso
+    QTest.mouseClick(vp, Qt.MouseButton.LeftButton, pos=point_to_viewport(view, GUIDE_PAGE, QPointF(300, 400)))
+    assert view.selector.text() == ""
+    view.close()
+
+
+def test_double_click_selects_word_and_select_all(qapp):
+    from PySide6.QtCore import QPointF, Qt
+    from PySide6.QtTest import QTest
+
+    view = demo_view(qapp)
+    view.go_to(2)  # Fliesstext, kein Link ("Dies ist ein Testdokument ...")
+    wait_for(qapp, lambda: False, 0.2)
+    # "Testdokument" ueber die Suche finden; doppelgeklickt wird mitten ins Wort
+    hit = view.doc.getSelection(2, QPointF(0, 0), QPointF(0, 0))
+    whole = view.doc.getAllText(2).text()
+    assert "Testdokument" in whole and not hit.isValid()
+    view.find_edit.setText("Testdokument")
+    view.find_next()
+    assert wait_for(qapp, lambda: view.search.count() > 0)
+    rect = view.search.resultAtIndex(0).rectangles()[0]
+    QTest.mouseDClick(view.view.viewport(), Qt.MouseButton.LeftButton,
+                      pos=point_to_viewport(view, 2, rect.center()))
+    assert view.selector.text() == "Testdokument"
+    QTest.keyClick(view.view, Qt.Key.Key_A, Qt.KeyboardModifier.ControlModifier)
+    text = view.selector.text()
+    assert "Zweites Kapitel" in text and "\r" not in text
+    QTest.keyClick(view.view, Qt.Key.Key_Escape)
+    assert view.selector.text() == ""
+    view.close()
+
+
+def test_selection_runs_across_pages(qapp):
+    from PySide6.QtCore import QPointF
+
+    view = demo_view(qapp)
+    view.fit_width()
+    view.go_to(GUIDE_PAGE, QPointF(0, 780))
+    wait_for(qapp, lambda: False, 0.3)
+    rects = view.page_rects()
+    start = point_to_viewport(view, GUIDE_PAGE, QPointF(60, 800))
+    end = point_to_viewport(view, GUIDE_PAGE + 1, QPointF(300, 60))
+    assert 0 <= start.y() < end.y() <= view.view.viewport().height(), rects
+    drag(view.view.viewport(), start, end)
+    assert [p for p, _s in view.selector.parts][-1] == GUIDE_PAGE + 1
+    assert view.selector.text()
+    view.close()
+
+
+def test_link_click_still_follows_link_with_selection(qapp):
+    from PySide6.QtCore import QPointF, Qt
+    from PySide6.QtTest import QTest
+
+    view = demo_view(qapp)
+    view.go_to(1)
+    wait_for(qapp, lambda: False, 0.2)
+    view.selector.select_all()
+    QTest.mouseClick(view.view.viewport(), Qt.MouseButton.LeftButton,
+                     pos=point_to_viewport(view, 1, QPointF(200, 163)))
+    assert wait_for(qapp, lambda: view.current_page() == 3)
+    view.close()
+
+
+def test_preview_in_main_window_can_select_text(qapp):
+    from gui.pdf_viewer import HAS_QTPDF, PdfPreview
+
+    if not HAS_QTPDF:
+        pytest.skip("QtPdf fehlt")
+    preview = PdfPreview()
+    preview.resize(800, 600)
+    preview.show()
+    preview.show_pdf((ROOT / "examples" / "demo.pdf").read_bytes())
+    preview.selector.select_all()
+    assert "Zweites Kapitel" in preview.selector.text()
+    preview.show_pdf((ROOT / "examples" / "demo.pdf").read_bytes())  # Neu laden hebt sie auf
+    assert preview.selector.text() == ""
+    preview.close()
+
+
+def test_copied_text_joins_hyphenation_and_emoji_runs():
+    from core.pdf_select import tidy_text
+
+    raw = "die der Kon\n\u00ad\nverter beherrschen muss — wie \n🚨, \n🏆 und \n💎\n.\nNeue Zeile"
+    assert tidy_text(raw) == "die der Konverter beherrschen muss — wie 🚨, 🏆 und 💎.\nNeue Zeile"
+    assert tidy_text("Zeile eins\nZeile zwei\n\nAbsatz") == "Zeile eins\nZeile zwei\n\nAbsatz"

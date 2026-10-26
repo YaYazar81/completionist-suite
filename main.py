@@ -88,11 +88,16 @@ def main() -> int:
 
         app.setWindowIcon(QIcon(str(icon_path)))
 
+    # Startbild, waehrend das Hauptfenster aufgebaut wird
+    from core import splash
+
+    splash_screen = splash.show(app, APP_DIR / "assets" / "splash_pdf.jpg")
+
     # Datei als Argument (z. B. per "Öffnen mit"): .md startet den
     # Markdown-Modus, .pdf den Viewer-Modus ohne Typst
     path = sys.argv[1] if len(sys.argv) > 1 and Path(sys.argv[1]).is_file() else None
     win = MainWindow(APP_DIR, path)
-    win.show()
+    splash.finish(splash_screen, win)
 
     return app.exec()
 
