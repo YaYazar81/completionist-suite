@@ -48,6 +48,17 @@ Gemessen mit einem Guide aus 300 Kapiteln (rund 1 MB Markdown):
   Der Editor schreibt sie mit längerem Zaun (` ```` `), las sie aber schon am ersten
   ` ``` ` als beendet.
 
+## 26.10.2026 – QR-Online: Web-Dashboard für WordPress
+
+### QR-Online-Dashboard 1.0.0 (WordPress-Plugin)
+* **Neues Plugin** `QR-Online/wordpress/qr-online-dashboard/`: das Dashboard der
+  QR-Online-App im WordPress-Admin – Links anlegen, Ziel und Namen ändern, löschen,
+  Kennzahlen, Graphen (pro Tag/Woche, Uhrzeit, Wochentag, Gerät, Betriebssystem, Sprache),
+  QR-Code als PNG, Link kopieren, Suche in der Liste. Funktioniert auch am Smartphone.
+* Spricht dieselbe API wie die App; der API-Schlüssel bleibt auf dem WordPress-Server
+  (Einstellungsseite oder `wp-config.php`), nur Administratoren sehen das Dashboard.
+* Widget auf der WordPress-Startseite mit den fünf meistgescannten Links.
+
 ## 25.10.2026 – PDF 1.5.0, MD 1.5.0, QR 1.4.0 – Startbild und Impressum
 
 ### CompletionistPDF 1.5.0, CompletionistMD 1.5.0, CompletionistQR 1.4.0
