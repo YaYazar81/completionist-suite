@@ -32,7 +32,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core import __version__, qr_launcher
+from core import __version__, design, qr_launcher
 from core.config import DocumentConfig
 from core.presets import PresetStore, user_data_dir
 from core.watcher import DebouncedWatcher
@@ -228,11 +228,14 @@ class MainWindow(QMainWindow):
     def _build_toolbar(self) -> None:
         tb = QToolBar("Werkzeuge")
         tb.setMovable(False)
-        tb.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+        tb.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        tb.setIconSize(design.ICON_SIZE)
         self.addToolBar(tb)
 
-        def act(text: str, slot, shortcut: str | None = None, tip: str = "") -> QAction:
+        def act(text: str, slot, shortcut: str | None = None, tip: str = "", icon: str = "") -> QAction:
             a = QAction(text, self)
+            if icon:
+                a.setIcon(design.icon(icon))
             a.triggered.connect(slot)
             if shortcut:
                 a.setShortcut(QKeySequence(shortcut))
@@ -240,31 +243,38 @@ class MainWindow(QMainWindow):
             tb.addAction(a)
             return a
 
-        act("Öffnen …", self.open_file, "Ctrl+O", "Markdown- oder PDF-Datei öffnen")
+        act("Öffnen …", self.open_file, "Ctrl+O", "Markdown- oder PDF-Datei öffnen", "folder-open")
         recent_button = QToolButton(self)
         recent_button.setText("Zuletzt ▾")
+        recent_button.setIcon(design.icon("history"))
+        recent_button.setIconSize(design.ICON_SIZE)
+        recent_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         recent_button.setToolTip("Zuletzt geöffnete Dateien")
         recent_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.recent_menu = QMenu(recent_button)
         self.recent_menu.aboutToShow.connect(self._fill_recent_menu)
         recent_button.setMenu(self.recent_menu)
         tb.addWidget(recent_button)
-        act("Drucken …", self.print_pdf, "Ctrl+P", "PDF bzw. Vorschau drucken")
+        act("Drucken …", self.print_pdf, "Ctrl+P", "PDF bzw. Vorschau drucken", "printer")
         act("Zusammenführen …", self.merge_files, None,
-            "Mehrere Markdown-Dateien zu einer zusammenführen (getrennt durch *** = Seitenumbruch)")
+            "Mehrere Markdown-Dateien zu einer zusammenführen (getrennt durch *** = Seitenumbruch)", "merge")
         # Ein F5 fuer beide Modi: Viewer laedt neu, Markdown-Modus kompiliert
-        self._act_refresh = act("Neu kompilieren", self.refresh, "F5")
-        self._act_export = act("PDF exportieren …", self.export_pdf, "Ctrl+S", "PDF speichern unter …")
+        self._act_refresh = act("Neu kompilieren", self.refresh, "F5", icon="refresh-cw")
+        self._act_export = act("PDF exportieren …", self.export_pdf, "Ctrl+S", "PDF speichern unter …", "file-down")
         self._sep_editor = tb.addSeparator()
-        self._act_editor = act("In Editor öffnen", self._open_md_in_editor, "Ctrl+E")
+        self._act_editor = act("In Editor öffnen", self._open_md_in_editor, "Ctrl+E", icon="file-pen-line")
         self._act_view_pdf = act("PDF ansehen", self.view_output_pdf, None,
-                                 "Das exportierte PDF im Viewer-Modus öffnen")
-        self._act_markdown = act("◀ Markdown → PDF", self._show_editor, None,
-                                 "Zurück zum Markdown-Modus (Einstellungen und Vorschau)")
-        act("Ordner öffnen", self._open_output_dir, None, "Ordner der Datei im Explorer öffnen")
+                                 "Das exportierte PDF im Viewer-Modus öffnen", "eye")
+        self._act_markdown = act("► Markdown", self._show_editor, None,
+                                 "Zurück zum Markdown-Modus (Einstellungen und Vorschau)", "file-text")
+        act("Ordner öffnen", self._open_output_dir, None, "Ordner der Datei im Explorer öffnen", "folder")
         tb.addSeparator()
-        act("▣ QR", self.open_qr, None, "CompletionistQR starten (eigenes Fenster)")
-        act("ⓘ", self.show_about, "F1", "Über CompletionistPDF, Lizenz und Fremdkomponenten")
+        a_qr = act("► QR", self.open_qr, None, "CompletionistQR starten (eigenes Fenster)", "qr-code")
+        # Uebergabe-Knoepfe im einheitlichen Pro-Button-Look (theme.qss: handoff)
+        for a in (self._act_markdown, a_qr):
+            tb.widgetForAction(a).setProperty("handoff", True)
+        a_about = act("Info", self.show_about, "F1", "Über CompletionistPDF, Lizenz und Fremdkomponenten", "info")
+        tb.widgetForAction(a_about).setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
 
     def _update_mode(self) -> None:
         viewer = self.is_viewer_mode()

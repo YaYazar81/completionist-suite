@@ -4,7 +4,7 @@ Windows-App für gestaltete QR-Codes: Logo in der Mitte, verschiedene Designs, R
 Beschriftung in wählbarer Schriftart. Mit Live-Vorschau und automatischer Scan-Prüfung.
 
 Eigenständiges Fenster neben CompletionistPDF und CompletionistMD; aus beiden lässt es sich
-über den Knopf **▣ QR** in der Werkzeugleiste starten. Die Oberfläche baut auf CustomTkinter
+über den Knopf **► QR** in der Werkzeugleiste starten. Die Oberfläche baut auf CustomTkinter
 auf, nicht auf Qt wie die beiden anderen Programme.
 
 ## Starten

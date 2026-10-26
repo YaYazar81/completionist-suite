@@ -14,6 +14,37 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Online
 (Ordner `QR-Online/`) zählt die Version in `QR-Online/qronline/__init__.py`.
 
+## 26.10.2026 – PDF 1.6.0, MD 1.6.0, QR 1.5.0 – Design-System „Completionist Pro"
+
+### Alle Apps
+* **Neues, einheitliches Erscheinungsbild „Completionist Pro"**: dunkler Schiefer
+  (`#121619` Fenster, `#1C2329` Panels, Rahmen `#27323D`) mit Smaragd-Akzent
+  (`#10B981`/`#34D399`, Auswahl `#112C27`) und 6-px-Radien statt Petrol und Grau.
+  Die Farben stehen als Tokens an einer Stelle: `core/design.py` (Qt-Apps, dazu das
+  Stylesheet `assets/theme/theme.qss`) und gleichlautend in
+  `completionistqr/ui/style.py` bzw. `completionistqr/assets/theme/completionist_pro.json`.
+* **Lucide-Icons** (2 px Strich, 20 px) statt Textsymbolen in allen Werkzeugleisten.
+  Ruhezustand gedämpft, Hover hell, aktives Werkzeug in Smaragd; das helle Thema
+  von MD und QR färbt sie passend um.
+* **Übergabe-Knöpfe** (► PDF, ► QR, ► IMG, ► Markdown) überall im gleichen
+  abgesetzten Pro-Button mit Icon.
+
+### CompletionistMD 1.6.0
+* Vault-Explorer als eigenes Panel; Dateitypen mit farbigen Icons (Markdown
+  Smaragd, PDF Rot, Bilder Violett, Text Grau).
+* Bookmarks als entgratete Kacheln; der zuletzt angeklickte bleibt markiert.
+* Editor-Inhalt, Tabs und Statusleiste in den neuen Farben.
+
+### CompletionistPDF 1.6.0
+* Viewer-Leiste mit Icons für Zoom, Seiten und Suche; Inhaltsverzeichnis mit
+  Smaragd-Auswahl wie die Bäume in MD.
+
+### CompletionistQR 1.5.0
+* Einstellungen und Vorschau als Karten mit feinem Rahmen; Eingabefelder bekommen
+  beim Fokus einen Smaragd-Rahmen.
+* Unter der Scan-Prüfung ein Statusbalken: Smaragd = lesbar, Gelb = nicht lesbar.
+* „QR-Code speichern …" als hervorgehobene Hauptaktion, Knöpfe mit Icons.
+
 ## 25.10.2026 – PDF 1.5.0, MD 1.5.0, QR 1.4.0 – Startbild und Impressum
 
 ### CompletionistPDF 1.5.0, CompletionistMD 1.5.0, CompletionistQR 1.4.0

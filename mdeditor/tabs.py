@@ -44,6 +44,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core import design
+
 from .markdown_io import MarkdownFile, snapshot, write_safely
 
 # Auf Modulebene: QtWebEngine muss importiert sein, bevor die QApplication
@@ -373,9 +375,15 @@ class FileWatch(QObject):
             self.changed.emit()
 
 
-def _tool(bar: QToolBar, text: str, tip: str, slot, shortcut: str | None = None) -> QToolButton:
+def _tool(bar: QToolBar, text: str, tip: str, slot, shortcut: str | None = None,
+          icon: str | None = None, show_text: bool = False) -> QToolButton:
     b = QToolButton(bar)
     b.setText(text)
+    if icon:
+        b.setIcon(design.icon(icon))
+        b.setIconSize(design.ICON_SIZE)
+        b.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon if show_text
+                             else Qt.ToolButtonStyle.ToolButtonIconOnly)
     b.setToolTip(tip + (f"  ({shortcut})" if shortcut else ""))
     b.setAutoRaise(True)
     b.clicked.connect(slot)
@@ -426,14 +434,14 @@ class PdfTab(BaseTab):
         bar = QToolBar(self)
         bar.setObjectName("tabBar")
         self.toolbar = bar
-        _tool(bar, "−", "Verkleinern", self.zoom_out, "Ctrl+-")
-        _tool(bar, "+", "Vergrößern", self.zoom_in, "Ctrl++")
-        _tool(bar, "↔ Breite", "An Fensterbreite anpassen", self.fit_width, "Ctrl+0")
+        _tool(bar, "−", "Verkleinern", self.zoom_out, "Ctrl+-", "zoom-out")
+        _tool(bar, "+", "Vergrößern", self.zoom_in, "Ctrl++", "zoom-in")
+        _tool(bar, "Breite", "An Fensterbreite anpassen", self.fit_width, "Ctrl+0", "move-horizontal")
         self.zoom_label = QLabel(bar)
         self.zoom_label.setMinimumWidth(48)
         bar.addWidget(self.zoom_label)
         bar.addSeparator()
-        _tool(bar, "◀", "Vorige Seite", self.prev_page, "PgUp")
+        _tool(bar, "◀", "Vorige Seite", self.prev_page, "PgUp", "chevron-left")
         self.page_spin = QSpinBox(bar)
         self.page_spin.setMinimum(1)
         self.page_spin.setKeyboardTracking(False)
@@ -442,7 +450,7 @@ class PdfTab(BaseTab):
         bar.addWidget(self.page_spin)
         self.page_total = QLabel(bar)
         bar.addWidget(self.page_total)
-        _tool(bar, "▶", "Nächste Seite", self.next_page, "PgDown")
+        _tool(bar, "▶", "Nächste Seite", self.next_page, "PgDown", "chevron-right")
         bar.addSeparator()
         self.find_edit = QLineEdit(bar)
         self.find_edit.setPlaceholderText("Im PDF suchen …")
@@ -451,8 +459,8 @@ class PdfTab(BaseTab):
         self.find_edit.returnPressed.connect(self.find_next)
         self.find_edit.textChanged.connect(lambda _t: self._find_timer.start())
         bar.addWidget(self.find_edit)
-        _tool(bar, "▲", "Vorheriger Treffer", self.find_prev, "Shift+F3")
-        _tool(bar, "▼", "Nächster Treffer", self.find_next, "F3")
+        _tool(bar, "▲", "Vorheriger Treffer", self.find_prev, "Shift+F3", "chevron-up")
+        _tool(bar, "▼", "Nächster Treffer", self.find_next, "F3", "chevron-down")
         self.find_label = QLabel(bar)
         bar.addWidget(self.find_label)
         find_sc = QShortcut(QKeySequence("Ctrl+F"), self)
@@ -673,17 +681,18 @@ class ImageTab(BaseTab):
         bar = QToolBar(self)
         bar.setObjectName("tabBar")
         self.toolbar = bar
-        _tool(bar, "−", "Verkleinern", self.zoom_out, "Ctrl+-")
-        _tool(bar, "+", "Vergrößern", self.zoom_in, "Ctrl++")
+        _tool(bar, "−", "Verkleinern", self.zoom_out, "Ctrl+-", "zoom-out")
+        _tool(bar, "+", "Vergrößern", self.zoom_in, "Ctrl++", "zoom-in")
         _tool(bar, "100 %", "Originalgröße", self.actual_size, "Ctrl+1")
-        _tool(bar, "⤢ Einpassen", "An die Tab-Größe anpassen", self.fit_to_view, "Ctrl+0")
+        _tool(bar, "Einpassen", "An die Tab-Größe anpassen", self.fit_to_view, "Ctrl+0", "maximize")
         self.zoom_label = QLabel(bar)
         bar.addWidget(self.zoom_label)
         _spacer(bar)
         self.img_button = _tool(
             bar, "► IMG", "In CompletionistIMG bearbeiten – die Vorschau aktualisiert sich "
             "beim Speichern von selbst",
-            lambda: self.handoffRequested.emit("CompletionistIMG", str(self.path)))
+            lambda: self.handoffRequested.emit("CompletionistIMG", str(self.path)),
+            icon="image", show_text=True)
         self.img_button.setObjectName("handoffButton")
 
         self.label = QLabel(self)

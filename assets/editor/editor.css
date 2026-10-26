@@ -1,33 +1,36 @@
 /* editor.css -- Aussehen des Schreibbereichs.
  *
- * Zwei Themen ueber data-theme am <html>; die Farben entsprechen der
- * CompletionistPDF-Suite (Petrol-Akzent #00897b).
+ * Zwei Themen ueber data-theme am <html>; die Farben sind die Tokens des
+ * Completionist-Pro-Designs (core/design.py): Schiefer und Smaragd.
  */
 
 :root {
-  --cm-accent: #00897b;
+  --cm-accent: #10b981;
+  --cm-accent-line: rgba(16, 185, 129, 0.4);
   --cm-font-size: 11.5pt;
 
-  --cm-bg: #1e1e1e;
-  --cm-paper: #232323;
-  --cm-fg: #e6e6e6;
-  --cm-dim: #9a9a9a;
-  --cm-line: #3a3a3a;
-  --cm-code-bg: #2c2c2c;
-  --cm-quote-bg: #262626;
-  --cm-sel: rgba(0, 137, 123, 0.35);
-  --cm-chrome: #2f2f2f;
+  --cm-bg: #121619;
+  --cm-paper: #1c2329;
+  --cm-fg: #e2e8f0;
+  --cm-dim: #94a3b8;
+  --cm-line: #27323d;
+  --cm-code-bg: #161b20;
+  --cm-quote-bg: #112c27;
+  --cm-sel: rgba(16, 185, 129, 0.32);
+  --cm-chrome: #1c2329;
 }
 
 :root[data-theme="light"] {
-  --cm-bg: #f4f4f4;
+  --cm-accent: #059669;
+  --cm-accent-line: rgba(5, 150, 105, 0.4);
+  --cm-bg: #f1f5f9;
   --cm-paper: #ffffff;
-  --cm-fg: #1f1f1f;
-  --cm-dim: #6b6b6b;
-  --cm-line: #dcdcdc;
-  --cm-code-bg: #f1f1f1;
-  --cm-quote-bg: #f7f7f7;
-  --cm-sel: rgba(0, 137, 123, 0.22);
+  --cm-fg: #0f172a;
+  --cm-dim: #475569;
+  --cm-line: #cbd5e1;
+  --cm-code-bg: #f8fafc;
+  --cm-quote-bg: #ecfdf5;
+  --cm-sel: rgba(5, 150, 105, 0.22);
   --cm-chrome: #ffffff;
 }
 
@@ -90,7 +93,7 @@ body {
 
 .cm-doc p { margin: 0 0 0.9em; }
 
-.cm-doc a { color: var(--cm-accent); text-decoration: none; border-bottom: 1px solid rgba(0, 137, 123, 0.4); }
+.cm-doc a { color: var(--cm-accent); text-decoration: none; border-bottom: 1px solid var(--cm-accent-line); }
 .cm-doc a:hover { border-bottom-color: var(--cm-accent); }
 
 .cm-doc code {
@@ -304,7 +307,7 @@ body {
   padding: 4px;
   background: var(--cm-chrome);
   border: 1px solid var(--cm-line);
-  border-radius: 7px;
+  border-radius: 6px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
 }
 .cm-imagebar button {
@@ -317,7 +320,7 @@ body {
   font-size: 13px;
   cursor: pointer;
 }
-.cm-imagebar button:hover { background: rgba(0, 137, 123, 0.22); }
+.cm-imagebar button:hover { background: var(--cm-sel); }
 .cm-imagebar button.on { background: var(--cm-accent); color: #fff; }
 .cm-imagebar .cm-sep {
   width: 1px;

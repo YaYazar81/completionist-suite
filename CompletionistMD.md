@@ -106,7 +106,7 @@ Der Programmordner ist von 507 auf 282 MB geschrumpft. Gut 200 MB davon sind
 | PySide6-Module Quick, Qml, OpenGL, Positioning … | 3 | `QtWebEngineWidgets` lädt auf Python-Seite nur QtNetwork, QtWebChannel und QtPrintSupport nach |
 
 Geprüft am fertigen Build und nach Installation per Setup: Datei öffnen, tippen, Strg+S,
-Bild über **Bild ▾** einfügen (landet in `images/`), **▶ PDF** startet das installierte
+Bild über **Bild ▾** einfügen (landet in `images/`), **► PDF** startet das installierte
 CompletionistPDF mit der Datei.
 
 Die Listen stehen in `build_exe.py` (`EXCLUDES_MD`, `DROP_COMMON`, `DROP_MD`,
@@ -201,7 +201,7 @@ usw. wie bisher.
 ## Vault-Explorer und Bookmarks
 
 **📁** (Strg + Shift + E) blendet links den Verzeichnisbaum ein und aus. Das
-Hauptverzeichnis steht unter **⚙ Einstellungen** in der Statusleiste
+Hauptverzeichnis steht unter **Einstellungen** (Zahnrad) in der Statusleiste
 (Ordnerdialog) und wird beim Start geladen. Der Baum zeigt Ordner, `.md` und
 Bilder; Ordner mit Punkt am Anfang (`.obsidian`, `.trash`) bleiben verborgen.
 
@@ -304,7 +304,7 @@ Die Suite unterscheidet zwei Linien, der Editor zeigt sie verschieden an:
 
 ## CompletionistPDF starten
 
-**▶ PDF** speichert und startet CompletionistPDF mit der aktuellen Datei.
+**► PDF** speichert und startet CompletionistPDF mit der aktuellen Datei.
 Gesucht wird `CompletionistPDF.exe` neben der App, in `dist/` (auch als
 Programmordner), unter `%LOCALAPPDATA%\Programs\CompletionistPDF` und zuletzt
 über den Uninstall-Eintrag des Setups; aus dem Quellcode heraus sonst

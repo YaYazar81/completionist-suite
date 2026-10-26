@@ -12,6 +12,7 @@ from ..core import export
 from ..core.config import QRDesign
 from ..core.geometry import build_scene, load_logo
 from ..core.render_pil import render_scene
+from . import style
 
 PREVIEW_PX = 520
 DEBOUNCE_MS = 250
@@ -28,16 +29,21 @@ def _checkerboard(size: tuple[int, int], cell: int = 12) -> Image.Image:
 
 class PreviewPanel(ctk.CTkFrame):
     def __init__(self, master):
-        super().__init__(master, corner_radius=12)
+        # Abgehobene Vorschau-Karte (Panel-Flaeche mit feinem Rahmen)
+        super().__init__(master, corner_radius=6, border_width=1, fg_color=style.PANEL,
+                         border_color=style.BORDER)
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.image_label = ctk.CTkLabel(self, text="", width=PREVIEW_PX, height=PREVIEW_PX)
         self.image_label.grid(row=0, column=0, padx=20, pady=(20, 8))
-        self.info = ctk.CTkLabel(self, text="", text_color=("gray35", "gray65"))
+        self.info = ctk.CTkLabel(self, text="", text_color=style.MUTED)
         self.info.grid(row=1, column=0)
         self.status = ctk.CTkLabel(self, text="", font=ctk.CTkFont(size=13, weight="bold"),
                                    wraplength=PREVIEW_PX)
-        self.status.grid(row=2, column=0, pady=(2, 18))
+        self.status.grid(row=2, column=0, pady=(2, 6))
+        # Scan-Checker (zxing-cpp): schmaler Statusbalken, Smaragd = lesbar
+        self.indicator = ctk.CTkFrame(self, height=4, corner_radius=2, fg_color=style.BORDER)
+        self.indicator.grid(row=3, column=0, sticky="ew", padx=20, pady=(0, 16))
 
         self._pending = None
         self._generation = 0
@@ -93,7 +99,8 @@ class PreviewPanel(ctk.CTkFrame):
         self.readable = None if error is not None else readable
         if error is not None:
             self.status.configure(text=f"Fehler bei der Darstellung: {error}",
-                                  text_color=("#B91C1C", "#F87171"))
+                                  text_color=style.DANGER)
+            self.indicator.configure(fg_color=style.DANGER)
             return
         if design.transparent_bg:  # Schachbrett zeigt, wo das Bild durchsichtig ist
             shown = _checkerboard(img.size, round(12 * scale))
@@ -109,7 +116,8 @@ class PreviewPanel(ctk.CTkFrame):
                                  f"Fehlerkorrektur {design.ecc}")
         if readable:
             self.status.configure(text="✓  Scan-Prüfung bestanden – der Code ist lesbar",
-                                  text_color=("#15803D", "#4ADE80"))
+                                  text_color=style.ACCENT)
+            self.indicator.configure(fg_color=style.ACCENT)
         else:
             tips = []
             if design.logo_path and design.logo_size > 0.2:
@@ -118,4 +126,5 @@ class PreviewPanel(ctk.CTkFrame):
                 tips.append("Fehlerkorrektur auf H stellen")
             tips.append("Kontrast erhöhen oder eckigere Augen wählen")
             self.status.configure(text="⚠  Scan-Prüfung nicht bestanden – " + ", ".join(tips),
-                                  text_color=("#B45309", "#FBBF24"))
+                                  text_color=style.WARN)
+            self.indicator.configure(fg_color=style.WARN)
