@@ -9,9 +9,11 @@ from dataclasses import asdict, dataclass, fields
 
 MODULE_STYLES = ["square", "gapped_square", "circle", "rounded", "diamond",
                  "vertical_bars", "horizontal_bars"]
-EYE_STYLES = ["square", "rounded", "circle", "leaf", "dots"]
+EYE_STYLES = ["square", "rounded", "circle", "leaf", "drop", "dots"]
 GRADIENTS = ["none", "linear", "radial"]
-FRAMES = ["none", "thin", "card", "banner_bottom", "banner_top", "ticket"]
+FRAMES = ["none", "thin", "card", "banner_bottom", "banner_top", "ticket", "arrow"]
+# Beschriftung über oder unter dem Code (Rahmen ohne, Linie, Karte und Pfeil; Banner haben je zwei Varianten)
+CAPTION_POSITIONS = ["bottom", "top"]
 ECC_LEVELS = ["L", "M", "Q", "H"]
 
 # Felder, die zum Inhalt gehören und beim Anwenden eines Presets erhalten bleiben.
@@ -57,6 +59,8 @@ class QRDesign:
     caption_bold: bool = True
     caption_size: int = 100  # Prozent der automatisch berechneten Maximalgröße
     caption_color: str = "#000000"
+    caption_position: str = "bottom"
+    arrow_color: str = "#000000"  # Rahmen "arrow": der handgezeichnete Pfeil
 
     def to_dict(self) -> dict:
         return asdict(self)

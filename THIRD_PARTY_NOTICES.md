@@ -9,7 +9,8 @@ Lizenzen. Sie sind von der Lizenz in `LICENSE` ausgenommen.
 | :--- | :--- | :--- |
 | Tiptap, ProseMirror (gebündelt) | `assets/editor/tiptap.bundle.js` (Lizenzhinweise am Dateiende) | MIT |
 | Lucide Icons (Auswahl, unverändert bzw. eingefärbt) | `assets/icons/lucide/` (`LICENSE.txt`), gerastert in `completionistqr/assets/icons/` | ISC |
-| Inter, Montserrat, Poppins, Oswald, Bebas Neue, Anton, Playfair Display, Lora, Roboto Mono, Caveat | `completionistqr/assets/fonts/` (je `OFL.txt`) | SIL Open Font License 1.1 |
+| Inter, Montserrat, Poppins, Oswald, Bebas Neue, Anton, Playfair Display, Lora, Roboto Mono, Caveat, Kaushan Script, Dancing Script, Pacifico, Great Vibes | `completionistqr/assets/fonts/` (je `OFL.txt`) | SIL Open Font License 1.1 |
+| Satisfy, Permanent Marker | `completionistqr/assets/fonts/` (je `LICENSE.txt`) | Apache License 2.0 |
 
 ## LGPL v3 (Qt, PySide6)
 

@@ -58,5 +58,41 @@
     "regular": "Caveat[wght].ttf",
     "bold": null,
     "variable": true
+  },
+  "Satisfy": {
+    "dir": "satisfy",
+    "regular": "Satisfy-Regular.ttf",
+    "bold": null,
+    "variable": false
+  },
+  "Kaushan Script": {
+    "dir": "kaushanscript",
+    "regular": "KaushanScript-Regular.ttf",
+    "bold": null,
+    "variable": false
+  },
+  "Dancing Script": {
+    "dir": "dancingscript",
+    "regular": "DancingScript[wght].ttf",
+    "bold": null,
+    "variable": true
+  },
+  "Pacifico": {
+    "dir": "pacifico",
+    "regular": "Pacifico-Regular.ttf",
+    "bold": null,
+    "variable": false
+  },
+  "Great Vibes": {
+    "dir": "greatvibes",
+    "regular": "GreatVibes-Regular.ttf",
+    "bold": null,
+    "variable": false
+  },
+  "Permanent Marker": {
+    "dir": "permanentmarker",
+    "regular": "PermanentMarker-Regular.ttf",
+    "bold": null,
+    "variable": false
   }
 }

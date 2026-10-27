@@ -17,10 +17,12 @@ MODULE_LABELS = {"square": "Quadrate", "gapped_square": "Quadrate mit Abstand",
                  "circle": "Punkte", "rounded": "Abgerundet (fließend)", "diamond": "Rauten",
                  "vertical_bars": "Vertikale Balken", "horizontal_bars": "Horizontale Balken"}
 EYE_LABELS = {"square": "Eckig", "rounded": "Abgerundet", "circle": "Kreis",
-              "leaf": "Blatt", "dots": "Punkte"}
+              "leaf": "Blatt", "drop": "Tropfen", "dots": "Punkte"}
 GRADIENT_LABELS = {"none": "Kein Verlauf", "linear": "Linear", "radial": "Radial"}
 FRAME_LABELS = {"none": "Ohne Rahmen", "thin": "Feine Linie", "card": "Karte",
-                "banner_bottom": "Banner unten", "banner_top": "Banner oben", "ticket": "Ticket"}
+                "banner_bottom": "Banner unten", "banner_top": "Banner oben", "ticket": "Ticket",
+                "arrow": "Handschrift mit Pfeil"}
+POSITION_LABELS = {"bottom": "Unter dem Code", "top": "Über dem Code"}
 CONTENT_LABELS = {"url": "Website", "vcard": "Kontakt (vCard)", "wifi": "WLAN-Zugang",
                   "email": "E-Mail", "sms": "SMS", "whatsapp": "WhatsApp", "phone": "Telefon",
                   "payment": "Zahlung (GiroCode / PayPal)", "geo": "Standort",
@@ -372,7 +374,8 @@ class Controls(ctk.CTkTabview):
         scale = self._get_widget_scaling()  # scharf auch bei 125/150 % Windows-Skalierung
         for i, (name, preset) in enumerate(presets.all_presets().items()):
             d = QRDesign(payload="CompletionistQR").apply_style(preset)
-            d.caption = preset.get("caption", "SCAN ME" if d.frame.startswith("banner") or
+            d.caption = preset.get("caption", "Scan mich!" if d.frame == "arrow" else
+                                  "SCAN ME" if d.frame.startswith("banner") or
                                   d.frame == "ticket" else "")
             img = render(d, round(76 * scale), supersample=2)
             thumb = ctk.CTkImage(light_image=img, dark_image=img,
@@ -506,6 +509,9 @@ class Controls(ctk.CTkTabview):
         section(tab, "Rahmen")
         self._choice(tab, "Stil", "frame", FRAME_LABELS)
         self._color(tab, "Rahmenfarbe", "frame_color")
+        self._color(tab, "Pfeilfarbe", "arrow_color")
+        ctk.CTkLabel(tab, text="Die Pfeilfarbe gilt für „Handschrift mit Pfeil“.",
+                     text_color=style.MUTED, anchor="w").pack(fill="x", padx=4)
 
         section(tab, "Text")
         box = ctk.CTkTextbox(tab, height=64, wrap="word")
@@ -520,6 +526,10 @@ class Controls(ctk.CTkTabview):
         self._on_refresh(refresh_box)
         ctk.CTkLabel(tab, text="Zeilenumbruch mit Enter ergibt zwei Zeilen.",
                      text_color=style.MUTED, anchor="w").pack(fill="x", padx=4)
+        self._choice(tab, "Position", "caption_position", POSITION_LABELS)
+        ctk.CTkLabel(tab, text="Die Banner haben ihre Position im Namen; beim Pfeil dreht "
+                               "sich die Richtung mit.", text_color=style.MUTED, anchor="w",
+                     justify="left", wraplength=380).pack(fill="x", padx=4)
 
         section(tab, "Schrift")
         families = fonts.families()

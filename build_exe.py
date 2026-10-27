@@ -201,8 +201,8 @@ def collect_licenses(app: str, target: Path) -> Path:
                 shutil.copyfile(src, folder / src.name)
     if app == "qr":
         fonts = ROOT / "completionistqr" / "assets" / "fonts"
-        for ofl in fonts.glob("*/OFL.txt"):
-            shutil.copyfile(ofl, out / f"Schrift {ofl.parent.name} - OFL.txt")
+        for lic in [*fonts.glob("*/OFL.txt"), *fonts.glob("*/LICENSE.txt")]:
+            shutil.copyfile(lic, out / f"Schrift {lic.parent.name} - {lic.name}")
     if app == "md":
         # Editor-Bundle: Lizenztexte von Tiptap und ProseMirror aus editor-src/node_modules
         nm = ROOT / "editor-src" / "node_modules"
