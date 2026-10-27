@@ -540,3 +540,24 @@ def test_replace_markdown_random_edits_follow_source(qapp, window):
       return bad.slice(0, 2);
     })()"""
     assert js(qapp, tab, script) == []
+
+
+def test_emoji_grid_is_not_elided_by_the_theme(qapp):
+    """theme.qss gibt Listeneintraegen Innenabstand; im Emoji-Raster kuerzte Qt sonst zu "…"."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QFontMetrics
+
+    from mdeditor.emoji_dialog import EmojiDialog
+
+    dlg = EmojiDialog()
+    dlg.show()
+    qapp.processEvents()
+    try:
+        grid = dlg.grid
+        assert grid.textElideMode() == Qt.TextElideMode.ElideNone
+        item = grid.item(0)
+        rect = grid.visualItemRect(item)
+        assert QFontMetrics(grid.font()).horizontalAdvance(item.text()) <= rect.width()
+        assert "padding: 0px" in dlg.styleSheet()
+    finally:
+        dlg.close()

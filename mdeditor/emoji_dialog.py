@@ -225,6 +225,11 @@ class EmojiDialog(QDialog):
         emoji_font = QFont(EMOJI_FONT)
         emoji_font.setPointSize(20)
         self.grid = QListWidget(self)
+        # Ohne den Innenabstand der Listen aus theme.qss: sonst bleibt fuer das Emoji in
+        # der Zelle zu wenig Breite, und Qt kuerzt es zu "…"
+        self.grid.setObjectName("emojiGrid")
+        self.setStyleSheet("QListView#emojiGrid::item { padding: 0px; }")
+        self.grid.setTextElideMode(Qt.TextElideMode.ElideNone)
         self.grid.setViewMode(QListView.ViewMode.IconMode)
         self.grid.setMovement(QListView.Movement.Static)
         self.grid.setResizeMode(QListView.ResizeMode.Adjust)
