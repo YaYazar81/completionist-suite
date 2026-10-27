@@ -8,6 +8,9 @@ startet sofort, weil nichts bei jedem Aufruf in den Temp-Ordner entpackt wird.
 Verteilt wird der Ordner ueber das Setup (build_setup.ps1).
 
 Das Programmsymbol (assets\icon.ico) erzeugt tools\make_icon.py.
+
+Der Gestalter kommt aus dem Paket completionistqr der Suite (eine Ebene hoeher), samt
+dessen Assets (Schriften, Vorlagen) und core/legal.py fuer das Fenster "Über".
 """
 from __future__ import annotations
 
@@ -18,12 +21,14 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+SUITE = ROOT.parent  # completionistqr/ und core/ liegen dort
 NAME = "QR-Online"
 ICON = ROOT / "assets" / "icon.ico"
 # Pakete, deren Lizenztexte in den Ordner Lizenzen kommen
 LICENSED = ["requests", "urllib3", "certifi", "idna", "charset-normalizer", "customtkinter",
             "darkdetect", "qrcode", "pillow", "matplotlib", "contourpy", "cycler", "fonttools",
-            "kiwisolver", "numpy", "packaging", "pyparsing", "python-dateutil", "six"]
+            "kiwisolver", "numpy", "packaging", "pyparsing", "python-dateutil", "six",
+            "zxing-cpp", "uharfbuzz"]
 
 
 def app_version() -> str:
@@ -68,7 +73,11 @@ def collect_licenses(target: Path) -> Path:
 
     out = target / "Lizenzen"
     out.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(ROOT.parent / "LICENSE", out / "QR-Online - LICENSE.txt")
+    shutil.copyfile(SUITE / "LICENSE", out / "QR-Online - LICENSE.txt")
+    # Liest das Fenster "Über" (core/legal.py: Lizenzen/THIRD_PARTY_NOTICES.md)
+    shutil.copyfile(SUITE / "THIRD_PARTY_NOTICES.md", out / "THIRD_PARTY_NOTICES.md")
+    for ofl in (SUITE / "completionistqr" / "assets" / "fonts").glob("*/OFL.txt"):
+        shutil.copyfile(ofl, out / f"Schrift {ofl.parent.name} - OFL.txt")
     for pkg in LICENSED:
         try:
             dist = metadata.distribution(pkg)
@@ -95,6 +104,7 @@ def main() -> int:
         print("PyInstaller fehlt:  pip install pyinstaller", file=sys.stderr)
         return 1
 
+    sep = ";" if sys.platform == "win32" else ":"
     cmd = [
         str(ROOT / "run_qronline.py"),
         "--name", NAME,
@@ -108,12 +118,24 @@ def main() -> int:
         "--workpath", str(args.workpath),
         "--specpath", str(args.workpath),
         "--paths", str(ROOT),
-        # Fenstersymbol (qronline/app.py liest es zur Laufzeit)
-        "--add-data", f"{ICON}{';' if sys.platform == 'win32' else ':'}assets",
-        # CustomTkinter laedt seine Themes als Dateien
+        "--paths", str(SUITE),
+        # Fenstersymbol und Bild fuer "Über" (qronline/design.py liest sie zur Laufzeit)
+        "--add-data", f"{ICON}{sep}assets",
+        "--add-data", f"{ROOT / 'assets' / 'icon_source.png'}{sep}assets",
+        # Gestalter: Schriften, Vorlagen und Icon von CompletionistQR
+        "--add-data", f"{SUITE / 'completionistqr' / 'assets'}{sep}completionistqr/assets",
+        "--add-data", f"{SUITE / 'THIRD_PARTY_NOTICES.md'}{sep}.",
+        # CustomTkinter laedt seine Themes als Dateien, zxing-cpp (Scan-Pruefung) ist
+        # eine native Erweiterung -- beides findet PyInstaller nicht von allein.
         "--collect-data", "customtkinter",
-        # charts.py wird erst nach dem Fensteraufbau importiert
+        "--collect-binaries", "zxingcpp",
+        # Pillow laedt es erst, wenn Tk ein Bild zeigt (ImageTk)
+        "--hidden-import", "PIL._tkinter_finder",
+        # erst bei Bedarf importiert: Graphen, Gestalter, Fenster "Über"
         "--hidden-import", "qronline.charts",
+        "--hidden-import", "qronline.design",
+        "--hidden-import", "completionistqr.ui.about",
+        "--hidden-import", "core.legal",
         "--hidden-import", "matplotlib.backends.backend_tkagg",
     ]
     # Andere matplotlib-Oberflaechen braucht die App nicht

@@ -116,7 +116,10 @@ aus; SVG und PDF bekommen ihre Pfade aus derselben Kontur (`shapes.py`) und fül
 nach der Regel nonzero. `tests/test_vector_export.py` rastert jedes Vorlagen-PDF mit QtPdf und
 prüft es auf Lesbarkeit.
 `completionistqr/ui` enthält die Oberfläche (CustomTkinter), `ui/drive_upload.py` den Knopf
-zum Hochladen. Anmeldung und Drive-Aufrufe liegen ohne Qt in `core/drive.py` im Hauptordner;
+zum Hochladen. Der Gestalter selbst (Bedienleiste, Vorschau, Kürzel, Fenster „Über") steckt
+in `ui/designer.py` – QR-Online nutzt genau diesen Code für sein Fenster „QR-Code gestalten"
+(mit dem Kurzlink als festem Inhalt). Änderungen hier landen also in beiden Programmen;
+`QR-Online/tests/test_qronline_design.py` prüft das. Anmeldung und Drive-Aufrufe liegen ohne Qt in `core/drive.py` im Hauptordner;
 CompletionistMD nutzt dieselben (`mdeditor/gdrive.py`).
 
 ### Was nicht mitgepackt wird

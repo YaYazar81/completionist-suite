@@ -7,7 +7,7 @@ import sys
 import threading
 from datetime import date, datetime, timezone
 from pathlib import Path
-from tkinter import filedialog, messagebox
+from tkinter import messagebox
 from typing import Callable
 
 import customtkinter as ctk
@@ -125,11 +125,13 @@ class QROnlineApp(ctk.CTk):
         self.scans: list[stats.Scan] = []
         self._inbox: queue.Queue = queue.Queue()
         self._busy = 0
+        self._design_windows: dict = {}  # Code -> offenes Fenster "QR-Code gestalten"
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(1, weight=1)
         self._build_toolbar()
         self._build_list()
         self._build_details()
+        self.bind("<F1>", lambda _e: self.show_about())
         self.after(100, self._poll)
         if self.client():
             self.refresh()
@@ -206,6 +208,7 @@ class QROnlineApp(ctk.CTk):
                       command=self.refresh).pack(side="left", padx=8)
         ctk.CTkButton(bar, text="Server …", width=90, fg_color="transparent", border_width=1,
                       text_color=("gray20", "gray85"), command=self.edit_server).pack(side="left")
+        ctk.CTkButton(bar, text="ⓘ", width=34, command=self.show_about).pack(side="right")
         self.status = ctk.CTkLabel(bar, text="", anchor="w")
         self.status.pack(side="left", fill="x", expand=True, padx=12)
 
@@ -238,13 +241,14 @@ class QROnlineApp(ctk.CTk):
         ctk.CTkButton(form, text="Speichern", width=110, command=self.save_link).grid(
             row=1, column=2, rowspan=2, padx=(8, 0))
         ctk.CTkLabel(d, text="Das Ziel lässt sich jederzeit ändern – der gedruckte Code bleibt "
-                             "gültig. Für gestaltete Codes (Logo, Rahmen) den Link in "
-                             "CompletionistQR einfügen.",
+                             "gültig. Gestalten (Vorlagen, Logo, Rahmen, Beschriftung) und als "
+                             "PNG, SVG oder PDF speichern wie in CompletionistQR.",
                      text_color=MUTED, anchor="w", justify="left", wraplength=760).grid(
             row=2, column=0, columnspan=3, sticky="ew", padx=6, pady=(2, 0))
         bar = ctk.CTkFrame(d, fg_color="transparent")
         bar.grid(row=3, column=0, columnspan=3, sticky="ew", padx=6, pady=(8, 4))
-        ctk.CTkButton(bar, text="QR-Code als PNG speichern …", command=self.save_qr).pack(side="left")
+        ctk.CTkButton(bar, text="QR-Code gestalten und speichern …",
+                      command=self.design_qr).pack(side="left")
         ctk.CTkButton(bar, text="Löschen …", width=90, fg_color="transparent", border_width=1,
                       text_color=ERROR, command=self.delete_link).pack(side="left", padx=8)
         self.range = ctk.CTkSegmentedButton(bar, values=list(RANGES),
@@ -392,6 +396,11 @@ class QROnlineApp(ctk.CTk):
             return
 
         def done(_):
+            win = self._design_windows.pop(link.code, None)
+            if win is not None and win.winfo_exists():
+                win.destroy()  # der Code gilt nicht mehr
+            self.settings.get("designs", {}).pop(link.code, None)
+            settings.save(self.settings)
             self.current = None
             self.refresh()
         self._run(lambda: client.delete(link.code), done, "Lösche …")
@@ -402,21 +411,27 @@ class QROnlineApp(ctk.CTk):
             self.clipboard_append(self.current.url)
             self.set_status("✓ Link kopiert", OK)
 
-    def save_qr(self) -> None:
-        if not self.current:
+    def design_qr(self) -> None:
+        """Der Gestalter von CompletionistQR mit dem Kurzlink als Inhalt (design.py)."""
+        link = self.current
+        if not link:
             return
-        import qrcode
+        win = self._design_windows.get(link.code)
+        if win is not None and win.winfo_exists():
+            win.deiconify()
+            win.lift()
+            win.focus_force()
+            return
+        from .design import DesignWindow
 
-        path = filedialog.asksaveasfilename(title="QR-Code speichern", defaultextension=".png",
-                                            initialfile=f"qr-{self.current.code}.png",
-                                            filetypes=[("PNG", "*.png")])
-        if not path:
-            return
-        qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, box_size=24, border=4)
-        qr.add_data(self.current.url)
-        qr.make(fit=True)
-        qr.make_image(fill_color="black", back_color="white").save(path)
-        self.set_status(f"✓ Gespeichert: {path}", OK)
+        self._design_windows[link.code] = DesignWindow(self, link, self.settings)
+
+    def show_about(self) -> None:
+        from completionistqr.ui.about import AboutWindow
+
+        from .design import about_info
+
+        AboutWindow(self, **about_info())
 
     # ================================================================ Statistik
 
@@ -466,6 +481,9 @@ def main() -> None:
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("QROnline.App")
         except Exception:
             pass
-    ctk.set_appearance_mode("system")
+    ctk.set_appearance_mode(settings.load().get("appearance", "system"))
     ctk.set_default_color_theme("blue")
+    from .design import register_fonts
+
+    register_fonts()  # Schriften für die Vorschau im Gestalter
     QROnlineApp().mainloop()

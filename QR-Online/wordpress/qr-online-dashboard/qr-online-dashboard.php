@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       QR-Online Dashboard
  * Description:       Web-Dashboard für QR-Online: Links anlegen und ändern, Scans als Graphen – direkt im WordPress-Admin.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Mike-Dominique Horch (Completionist Library)
@@ -25,7 +25,7 @@
 
 defined('ABSPATH') || exit;
 
-const QR_ONLINE_VERSION = '1.0.0';
+const QR_ONLINE_VERSION = '1.1.0';
 const QR_ONLINE_CAP = 'manage_options';
 const QR_ONLINE_NS = 'qr-online/v1';
 const QR_ONLINE_CODE = '[23456789A-HJ-NP-Za-hj-np-z]{6}'; // Alphabet wie in index.php
@@ -85,10 +85,13 @@ function qr_online_call(string $method, string $path, ?array $body = null, array
     return $data;
 }
 
-/** Ergaenzt einen Link um die Adresse, die im QR-Code steht (wie client.short_url). */
+/** Ergaenzt einen Link um die Adresse, die im QR-Code steht (wie client.py). Hat der Server
+ *  eine eigene kurze Domain (config.php: short_url, z. B. https://c10t.de), liefert er sie mit. */
 function qr_online_with_url(array $row): array
 {
-    $row['url'] = qr_online_server() . '/' . $row['code'];
+    if (empty($row['url'])) {
+        $row['url'] = qr_online_server() . '/' . $row['code'];
+    }
     return $row;
 }
 

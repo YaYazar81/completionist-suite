@@ -27,11 +27,12 @@ Installation im Ordner `Lizenzen` des Programms; der Dialog *Über …* (F1) zei
 | typst (Python) | PDF | Apache 2.0 |
 | markdown-it-py, mdit-py-plugins | PDF | MIT |
 | google-auth, google-auth-oauthlib | MD, QR | Apache 2.0 |
-| requests | MD, QR | Apache 2.0 |
-| Pillow | QR | MIT-CMU (HPND) |
-| qrcode | QR | BSD |
-| customtkinter | QR | MIT |
-| zxing-cpp | QR | Apache 2.0 |
-| uharfbuzz (mit HarfBuzz) | QR | Apache 2.0 (uharfbuzz), MIT (HarfBuzz) |
+| requests | MD, QR, QR-Online | Apache 2.0 |
+| Pillow | QR, QR-Online | MIT-CMU (HPND) |
+| qrcode | QR, QR-Online | BSD |
+| customtkinter | QR, QR-Online | MIT |
+| zxing-cpp | QR, QR-Online | Apache 2.0 |
+| uharfbuzz (mit HarfBuzz) | QR, QR-Online | Apache 2.0 (uharfbuzz), MIT (HarfBuzz) |
+| matplotlib (mit numpy, contourpy, kiwisolver u. a.) | QR-Online | PSF-basiert (matplotlib), BSD (numpy u. a.) |
 | Python | alle | PSF License |
 | PyInstaller (nur zum Bauen; Bootloader in den .exe) | alle | GPL v2 mit Ausnahme für gebaute Programme |

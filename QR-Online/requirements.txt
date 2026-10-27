@@ -3,3 +3,6 @@ customtkinter>=6
 qrcode>=8.2
 Pillow>=10
 matplotlib>=3.9
+# Gestalter aus completionistqr (Scan-Pruefung, Beschriftung im SVG/PDF)
+zxing-cpp>=3.1
+uharfbuzz>=0.50

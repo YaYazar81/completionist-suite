@@ -96,9 +96,16 @@ LOGO_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".avif", ".bmp", ".gif"}
 
 
 class Controls(ctk.CTkTabview):
-    def __init__(self, master, app):
+    """``fixed_payload``: der Inhalt steht fest (QR-Online: der Kurzlink) -- der Reiter
+    Inhalt zeigt ihn nur an, statt Inhaltstyp und Formular; den Stapel-Export gibt es dann
+    nicht. ``app`` ist das Fenster mit ``design``, ``changed()``, ``apply_preset()`` und
+    ``preview`` (siehe designer.py)."""
+
+    def __init__(self, master, app, fixed_payload: str | None = None, fixed_hint: str = ""):
         super().__init__(master, width=480, corner_radius=12)
         self.app = app
+        self.fixed_payload = fixed_payload
+        self.fixed_hint = fixed_hint
         self._refreshers: list = []
         self._values: dict[str, dict[str, ctk.Variable]] = {}
         self.content_type = "url"
@@ -169,17 +176,10 @@ class Controls(ctk.CTkTabview):
     # ================================================================ Inhalt
 
     def _build_content(self, tab) -> None:
-        section(tab, "Was soll der QR-Code enthalten?")
-        self.content_choice = Choice(row(tab, "Inhaltstyp"), CONTENT_LABELS, self.content_type,
-                                     self._content_type_changed, width=220)
-        self.content_choice.grid(row=0, column=1, sticky="ew")
-        self.form = ctk.CTkFrame(tab, fg_color="transparent")
-        self.form.pack(fill="x")
-        # Gehoert nicht ins Formular: das wird beim Wechsel neu gebaut, ein laufender
-        # Upload soll das ueberleben.
-        self.drive_upload = DriveUploadPanel(
-            tab, on_link=lambda link: self._var("file", "link", "entry").set(link))
-        self._build_form()
+        if self.fixed_payload is not None:
+            self._build_fixed_content(tab)
+        else:
+            self._build_content_form(tab)
 
         section(tab, "Fehlerkorrektur")
         ctk.CTkLabel(tab, text="H verträgt die meisten Störungen und ist für Logos nötig.",
@@ -193,6 +193,32 @@ class Controls(ctk.CTkTabview):
         self.payload_error = ctk.CTkLabel(tab, text="", text_color=("#B91C1C", "#F87171"),
                                           anchor="w", wraplength=380)
         self.payload_error.pack(fill="x", padx=4, pady=6)
+
+    def _build_fixed_content(self, tab) -> None:
+        section(tab, "Im QR-Code")
+        self.fixed_var = ctk.StringVar(value=self.fixed_payload)
+        ctk.CTkEntry(tab, textvariable=self.fixed_var, state="readonly").pack(fill="x", padx=4, pady=4)
+        if self.fixed_hint:
+            ctk.CTkLabel(tab, text=self.fixed_hint, text_color=("gray35", "gray65"), anchor="w",
+                         justify="left", wraplength=380).pack(fill="x", padx=4)
+
+    def set_fixed_payload(self, text: str) -> None:
+        self.fixed_payload = text
+        self.fixed_var.set(text)
+        self._update_payload()
+
+    def _build_content_form(self, tab) -> None:
+        section(tab, "Was soll der QR-Code enthalten?")
+        self.content_choice = Choice(row(tab, "Inhaltstyp"), CONTENT_LABELS, self.content_type,
+                                     self._content_type_changed, width=220)
+        self.content_choice.grid(row=0, column=1, sticky="ew")
+        self.form = ctk.CTkFrame(tab, fg_color="transparent")
+        self.form.pack(fill="x")
+        # Gehoert nicht ins Formular: das wird beim Wechsel neu gebaut, ein laufender
+        # Upload soll das ueberleben.
+        self.drive_upload = DriveUploadPanel(
+            tab, on_link=lambda link: self._var("file", "link", "entry").set(link))
+        self._build_form()
 
     def _var(self, ctype: str, key: str, kind: str) -> ctk.Variable:
         store = self._values.setdefault(ctype, {})
@@ -247,6 +273,9 @@ class Controls(ctk.CTkTabview):
         self._update_payload()
 
     def _update_payload(self) -> None:
+        if self.fixed_payload is not None:
+            self._set("payload", self.fixed_payload)
+            return
         t = self.content_type
         v = {k: var.get() for k, var in self._values.get(t, {}).items()}
         g = lambda k: v.get(k, DEFAULTS.get((t, k), ""))  # noqa: E731
@@ -555,6 +584,8 @@ class Controls(ctk.CTkTabview):
                                           justify="left")
         self.export_status.pack(fill="x", padx=4)
 
+        if self.fixed_payload is not None:
+            return  # ein fester Inhalt -- eine Liste vieler Inhalte passt nicht dazu
         section(tab, "Stapel-Export")
         ctk.CTkLabel(tab, text="Viele Codes im aktuellen Design auf einmal: eine CSV-Liste "
                                "(z. B. aus Excel) mit dem Inhalt in der ersten Spalte, optional dem "
@@ -581,7 +612,7 @@ class Controls(ctk.CTkTabview):
         fmt = self.fmt.get()
         ext = export.FORMATS[fmt]
         path = filedialog.asksaveasfilename(title="QR-Code speichern", defaultextension=ext,
-                                            initialfile="qr-code" + ext,
+                                            initialfile=getattr(self.app, "export_name", "qr-code") + ext,
                                             filetypes=[(fmt, "*" + ext)])
         if not path:
             return
@@ -676,10 +707,15 @@ class Controls(ctk.CTkTabview):
 
     def content_state(self) -> dict:
         """Inhaltstyp und Formularwerte (fuer den naechsten Start)."""
+        if self.fixed_payload is not None:
+            return {}
         return {"type": self.content_type,
                 "values": {t: {k: v.get() for k, v in store.items()} for t, store in self._values.items()}}
 
     def restore_content(self, state: dict) -> None:
+        if self.fixed_payload is not None:
+            self._update_payload()
+            return
         ctype = state.get("type")
         for t, values in (state.get("values") or {}).items():
             if t not in FIELDS or not isinstance(values, dict):

@@ -7,9 +7,12 @@ eigentliche Ziel in den Code, sondern eine kurze Adresse auf dem eigenen Webspac
 (z. B. `https://qr.example.de/A7KX9P`). Ein kleines PHP-Skript zählt dort jeden Aufruf und
 leitet sofort zum Ziel weiter. Die App zeigt die Zahlen als Graphen.
 
-Eigenes Projekt neben der Completionist Suite. CompletionistQR bleibt bei statischen Codes
-ohne Server. Für einen gestalteten Code (Logo, Rahmen) den kurzen Link aus QR-Online in
-CompletionistQR als „Website“ einfügen.
+Eigenes Programm neben CompletionistQR, aber mit demselben Gestalter: **„QR-Code gestalten
+und speichern …“** öffnet die Bedienleiste und Vorschau von CompletionistQR (Vorlagen, Formen,
+Farben, Logo, Rahmen, Beschriftung, Scan-Prüfung, Export als PNG, SVG oder PDF) mit dem
+Kurzlink als festem Inhalt. Der Code dafür liegt nur einmal im Paket `completionistqr`
+(`completionistqr/ui/designer.py`); was CompletionistQR neu lernt, kann QR-Online damit
+automatisch auch. Das Design merkt sich QR-Online je Link.
 
 ## Was gezählt wird
 
@@ -29,9 +32,11 @@ nicht zwischenspeichern und auch wiederholte Scans ankommen.
 | **Kennzahlen** | Scans im Zeitraum, heute, insgesamt, letzter Scan |
 | **Graphen** | Scans pro Tag (bei „1 Jahr“ pro Woche), Uhrzeit, Wochentag, Gerät, Betriebssystem, Sprache; Tooltip beim Überfahren |
 | **Zeitraum** | 7 Tage, 30 Tage, 90 Tage, 1 Jahr; gezählt nach lokaler Zeit |
-| **Export** | QR-Code als PNG (schlicht, Fehlerkorrektur M), Link in die Zwischenablage |
+| **Gestalten** | wie in CompletionistQR: Vorlagen, Formen, Farben, Verläufe, Logo, Rahmen, Beschriftung, Scan-Prüfung; je Link gemerkt |
+| **Export** | PNG (512–4096 px, 150–600 dpi), SVG und PDF als Vektorgrafik, Zwischenablage; Link in die Zwischenablage |
+| **Über** | ⓘ bzw. F1: Version, Lizenz, Fremdkomponenten, Impressum (wie in CompletionistQR) |
 
-Hell/Dunkel folgt der Windows-Einstellung.
+Hell/Dunkel folgt der Windows-Einstellung; im Gestalter lässt es sich umschalten.
 
 ## Server einrichten (einmalig)
 
@@ -57,6 +62,30 @@ Die App zeigt aber immer die kurze Form. Gibt es kein mod_rewrite, in der App un
 **Server …** die Adresse `https://qr.example.de/index.php` eintragen. Dann lauten die Links
 `…/index.php/A7KX9P`, und auch das funktioniert.
 
+### Eigene kurze Domain für die Links
+
+Die Adresse im QR-Code muss nicht die des Servers sein. Mit einer eigenen kurzen Domain
+(z. B. `c10t.de`) lauten die Links `https://c10t.de/A7KX9P`, während App und Plugin den
+Server weiter unter seiner Adresse ansprechen (z. B. `https://completionist-library.de/qr`).
+
+1. Die kurze Domain auf denselben Ordner zeigen lassen, in dem `index.php` liegt – in Plesk
+   z. B. als eigene Website, deren Dokumentstamm dieser Ordner ist, oder als Domain-Alias.
+   SSL (Let's Encrypt) für die kurze Domain einschalten.
+2. In der `config.php` des Servers eintragen:
+
+   ```php
+   'short_url' => 'https://c10t.de',
+   ```
+
+Fertig: der Server liefert bei jedem Link die kurze Adresse mit, App und WordPress-Plugin
+zeigen und kodieren sie von selbst – in beiden muss nichts umgestellt werden. Gezählt und
+weitergeleitet wird unter beiden Adressen; schon gedruckte Codes mit der alten Adresse
+funktionieren also weiter.
+
+Alternativ kann der ganze Server auf die kurze Domain umziehen (Inhalt des Ordners samt
+`data/` ins Hauptverzeichnis der Domain, in App und Plugin die Adresse `https://c10t.de`
+eintragen). Dann laufen alte Codes nur weiter, solange der alte Ordner bleibt.
+
 **nginx:** statt `.htaccess`
 
 ```nginx
@@ -71,11 +100,14 @@ Die App spricht den Server über eine kleine JSON-API an. Der Schlüssel steht i
 
 | Aufruf | |
 | :--- | :--- |
-| `GET /api/ping` | Schlüssel prüfen |
+| `GET /api/ping` | Schlüssel prüfen; meldet auch `short_url` |
 | `GET /api/links` | alle Links mit Scan-Zahl und letztem Scan |
 | `POST /api/links` `{"target", "label"}` | neuer Link (Code: 6 Zeichen ohne 0/O/1/I/L) |
 | `GET` / `POST` / `DELETE /api/links/<CODE>` | lesen, Ziel/Name ändern, löschen (samt Scans) |
 | `GET /api/scans/<CODE>?since=YYYY-MM-DD` | einzelne Scans, Zeit in UTC |
+
+Mit `short_url` in der `config.php` tragen alle Links zusätzlich das Feld `url` (die
+Adresse für den QR-Code).
 
 ## Web-Dashboard in WordPress
 
@@ -137,7 +169,8 @@ abrufen, Ziel ändern, löschen. Ohne PHP werden sie übersprungen.
 Aufbau: `server/index.php` (Weiterleitung und API, eine Datei),
 `wordpress/qr-online-dashboard/` (WordPress-Plugin, PHP und JavaScript ohne Build-Schritt), `qronline/client.py`
 (API-Aufrufe), `qronline/stats.py` (Auswertung nach lokaler Zeit), `qronline/charts.py`
-(Diagramme mit matplotlib), `qronline/app.py` (Oberfläche, CustomTkinter),
+(Diagramme mit matplotlib), `qronline/design.py` (Fenster „QR-Code gestalten“ mit dem
+Gestalter aus `completionistqr`), `qronline/app.py` (Oberfläche, CustomTkinter),
 `qronline/settings.py` (Einstellungen unter `%APPDATA%\QR-Online`, der API-Schlüssel per
 Windows-DPAPI verschlüsselt).
 

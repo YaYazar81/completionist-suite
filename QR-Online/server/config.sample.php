@@ -8,4 +8,8 @@ return [
     'db' => __DIR__ . '/data/qronline.sqlite',
     // Wohin die blosse Adresse ohne Code fuehrt ('' = Seite „Nicht gefunden“)
     'home' => '',
+    // Adresse, die in den QR-Codes steht, falls sie nicht die dieses Servers ist -- z. B. eine
+    // eigene kurze Domain (https://c10t.de), deren Dokumentstamm auf diesen Ordner zeigt.
+    // App und WordPress-Plugin uebernehmen sie von hier. '' = die Adresse des Servers.
+    'short_url' => '',
 ];
