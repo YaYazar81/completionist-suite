@@ -44,15 +44,27 @@ Voraussetzung: Webspace mit **PHP 8** und **SQLite** (`pdo_sqlite`, bei fast all
 Hostern dabei) und Apache mit `mod_rewrite`. Am besten eine eigene Subdomain wie
 `qr.example.de`, dann bleiben die Links kurz.
 
-1. Den Inhalt von `server/` auf den Webspace laden (das Setup legt ihn unter
-   *Startmenü → CompletionistQR Online – Server-Dateien* ab). `.htaccess` und `data/.htaccess` gehören
-   dazu. Manche FTP-Programme blenden Dateien mit Punkt aus.
-2. `config.sample.php` als `config.php` kopieren und einen langen Zufallsschlüssel
-   eintragen, z. B. erzeugt mit `php -r "echo bin2hex(random_bytes(24));"`.
-3. Prüfen: `https://qr.example.de/data/` und `https://qr.example.de/config.php` müssen
-   **403** liefern. Die Datenbank darf nicht abrufbar sein.
-4. In CompletionistQR Online unter **Server …** die Adresse (`https://qr.example.de`) und den Schlüssel
-   eintragen und auf **Verbindung testen** klicken.
+Beim ersten Start führt die App durch die Einrichtung (später jederzeit unter **Server …**):
+
+1. **Neuen Server einrichten** wählen und die künftige Server-Adresse eintragen, z. B.
+   `https://qr.example.de`. Die App hat schon einen zufälligen API-Schlüssel erzeugt.
+2. **Server-Dateien speichern …**: die App legt `index.php`, `.htaccess`, `data/.htaccess` und
+   eine fertige `config.php` mit diesem Schlüssel in einen Ordner und öffnet ihn.
+3. Den Inhalt des Ordners **per FTP** in das Verzeichnis laden, auf das die Adresse zeigt
+   (FileZilla oder Dateimanager des Hosters). `.htaccess` und `data/.htaccess` gehören dazu;
+   manche FTP-Programme blenden Dateien mit Punkt aus. SSL für die Adresse einschalten.
+4. **Verbindung testen** und **Speichern**.
+
+Wer schon einen Server hat, wählt **Vorhandenen verbinden** und trägt Adresse und den
+Schlüssel aus dessen `config.php` ein.
+
+Von Hand geht es auch: den Inhalt von `server/` hochladen (das Setup legt ihn unter
+*Startmenü → CompletionistQR Online – Server-Dateien* ab), `config.sample.php` als
+`config.php` kopieren und einen langen Zufallsschlüssel eintragen, z. B. erzeugt mit
+`php -r "echo bin2hex(random_bytes(24));"`.
+
+Danach prüfen: `https://qr.example.de/data/` und `https://qr.example.de/config.php` müssen
+**403** liefern. Die Datenbank darf nicht abrufbar sein.
 
 Die Datenbank `data/qronline.sqlite` legt das Skript beim ersten Aufruf selbst an. Für eine
 Sicherung genügt es, diese Datei zu kopieren.

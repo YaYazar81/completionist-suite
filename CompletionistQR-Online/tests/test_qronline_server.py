@@ -183,3 +183,50 @@ def test_short_domain_from_config(server):
     # Gezählt und weitergeleitet wird unter jeder Adresse, die auf den Ordner zeigt
     r = scan(f"{base}/{link.code}", ANDROID)
     assert r.status_code == 302 and r.headers["Location"] == "https://example.org/kurz"
+
+
+def test_prepared_server_folder_works(tmp_path):
+    """„Server einrichten" in der App: der vorbereitete Ordner (mit erzeugtem Schlüssel)
+    läuft so, wie er ist, auf dem Webspace."""
+    from qronline import server_files
+
+    key = server_files.generate_key()
+    assert len(key) == 48 and key != server_files.generate_key()
+    root = server_files.write_server_files(tmp_path / "upload", key)
+    names = sorted(p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file())
+    assert names == [".htaccess", "config.php", "data/.htaccess", "index.php"]
+    config = (root / "config.php").read_text(encoding="utf-8")
+    assert f"'api_key' => '{key}'" in config and "HIER-" not in config
+    lint = subprocess.run([*php_args(), "-l", str(root / "config.php")], capture_output=True, text=True)
+    assert lint.returncode == 0, lint.stdout + lint.stderr
+
+    port = free_port()
+    proc = subprocess.Popen([*php_args(), "-S", f"127.0.0.1:{port}", "-t", str(root), str(root / "index.php")],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    base = f"http://127.0.0.1:{port}"
+    try:
+        deadline = time.monotonic() + 20
+        while True:
+            try:
+                requests.get(base, timeout=5)
+                break
+            except requests.RequestException:
+                if time.monotonic() > deadline:
+                    pytest.fail("PHP-Server ist nicht angelaufen")
+                time.sleep(0.1)
+        assert server_files.check_connection(base, key) == ""
+        assert "falsch" in server_files.check_connection(base, "y" * 48)
+        link = Client(base, key).create("https://example.org/neu")
+        assert scan(f"{base}/{link.code}", ANDROID).status_code == 302
+    finally:
+        proc.terminate()
+        proc.wait(5)
+
+
+def test_config_rejects_unsafe_keys():
+    from qronline import server_files
+
+    for bad in ("kurz", "mit'anfuehrung'und-mehr-als-16", "x" * 10):
+        with pytest.raises(ValueError):
+            server_files.config_php(bad)
+    assert "'short_url' => 'https://c10t.de'" in server_files.config_php("a" * 32, "c10t.de/")
