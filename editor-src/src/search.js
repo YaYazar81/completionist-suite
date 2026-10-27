@@ -138,9 +138,17 @@ export function clearFind(editor) {
 // Gliederung
 // ------------------------------------------------------------------------
 
+// Je Dokumentstand gemerkt: Scrollen fragt bei jedem Halt nach der aktuellen
+// Ueberschrift, das soll nicht jedes Mal den ganzen Guide durchgehen.
+const outlineCache = new WeakMap();
+
 export function outline(editor) {
-  const items = [];
-  editor.state.doc.descendants((node, pos) => {
+  const doc = editor.state.doc;
+  let items = outlineCache.get(doc);
+  if (items) return items;
+  items = [];
+  outlineCache.set(doc, items);
+  doc.descendants((node, pos) => {
     if (node.type.name === "heading") {
       // Aufgeklappte Syntax ("## " am Cursor) gehoert nicht in den Titel
       const text = node.textContent.replace(/^#{1,6}\s+/, "").trim();
@@ -160,5 +168,12 @@ export function gotoPos(editor, pos) {
   editor.view.focus();
   // Ueberschrift an den oberen Rand statt nur "irgendwie sichtbar"
   const dom = editor.view.nodeDOM(pos);
-  if (dom && dom.scrollIntoView) dom.scrollIntoView({ block: "start", behavior: "smooth" });
+  if (!dom || !dom.scrollIntoView) return;
+  // Weite Spruenge sofort: Bloecke ausserhalb des Sichtfelds haben bis zum
+  // ersten Anzeigen nur eine geschaetzte Hoehe (content-visibility in
+  // editor.css), ein weicher Bildlauf landete daneben. Nach dem ersten Bild
+  // stehen die echten Hoehen fest -- dann noch einmal genau ausrichten.
+  const far = Math.abs(dom.getBoundingClientRect().top) > 2 * window.innerHeight;
+  dom.scrollIntoView({ block: "start", behavior: far ? "instant" : "smooth" });
+  if (far) requestAnimationFrame(() => dom.scrollIntoView({ block: "start", behavior: "instant" }));
 }

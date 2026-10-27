@@ -158,25 +158,49 @@ function hasSource(node, schema) {
   return !!node && node.isText && !!schema.marks.mdSource.isInSet(node.marks);
 }
 
-/** Alle zusammenhaengenden Quelltext-Laeufe im Dokument. */
+/** Alle zusammenhaengenden Quelltext-Laeufe im Dokument.
+ *
+ *  Laeuft bei jeder Transaktion und jedem Neuzeichnen. Das Ergebnis wird je
+ *  Knoten gemerkt (relativ zu dessen Inhalt): ProseMirror-Knoten sind
+ *  unveraenderlich, ein neuer Stand teilt alle unveraenderten mit dem alten --
+ *  so wird nach einem Tastendruck nur der Pfad zum geaenderten Absatz neu
+ *  durchsucht statt eines ganzen 300-Seiten-Guides. */
+const NO_REGIONS = [];
+const regionCache = new WeakMap();
+
 function findRegions(doc, schema) {
-  const regions = [];
-  doc.descendants((node, pos) => {
-    if (!node.isTextblock) return true;
-    let cur = null;
-    node.forEach((child, offset) => {
-      const p = pos + 1 + offset;
-      if (hasSource(child, schema)) {
-        if (cur && cur.to === p) cur.to = p + child.nodeSize;
-        else {
-          cur = { from: p, to: p + child.nodeSize, block: pos };
-          regions.push(cur);
-        }
-      } else cur = null;
-    });
-    return false;
+  return regionsIn(doc, schema);
+}
+
+function regionsIn(parent, schema) {
+  let found = regionCache.get(parent);
+  if (found) return found;
+  found = NO_REGIONS;
+  const add = (r) => {
+    if (found === NO_REGIONS) found = [];
+    found.push(r);
+  };
+  parent.forEach((node, offset) => {
+    if (node.isTextblock) {
+      let cur = null;
+      node.forEach((child, childOffset) => {
+        const p = offset + 1 + childOffset;
+        if (hasSource(child, schema)) {
+          if (cur && cur.to === p) cur.to = p + child.nodeSize;
+          else {
+            cur = { from: p, to: p + child.nodeSize, block: offset };
+            add(cur);
+          }
+        } else cur = null;
+      });
+    } else if (!node.isLeaf) {
+      for (const r of regionsIn(node, schema)) {
+        add({ from: r.from + offset + 1, to: r.to + offset + 1, block: r.block + offset + 1 });
+      }
+    }
   });
-  return regions;
+  regionCache.set(parent, found);
+  return found;
 }
 
 /** Zusammenhaengender Bereich formatierten Texts um pos -- nie mitten in einer Markierung. */

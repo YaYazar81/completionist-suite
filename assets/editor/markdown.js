@@ -214,7 +214,9 @@
       if (RE_RULE.test(line)) { out.push('<hr data-kind="rule">'); i += 1; continue; }
 
       if ((m = RE_FENCE.exec(line))) {
-        var fence = m[1][0] === "`" ? /^ {0,3}```+[ \t]*$/ : /^ {0,3}~~~+[ \t]*$/;
+        // Schliessen nur mit mindestens so vielen Zeichen wie beim Oeffnen: ein
+        // Codeblock, der selbst ``` enthaelt, wird mit ```` umzaeunt.
+        var fence = new RegExp("^ {0,3}" + m[1] + m[1][0] + "*[ \\t]*$");
         var lang = m[2] || "";
         var body = [];
         i += 1;

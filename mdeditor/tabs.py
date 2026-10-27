@@ -1,6 +1,7 @@
 """Die Tabs von CompletionistMD.
 
-* ``MdTab``    -- der WYSIWYG-Editor (eigene ``EditorView`` je Tab). Laden und
+* ``MdTab``    -- der WYSIWYG-Editor (eigene ``EditorView`` je Tab), wahlweise
+  mit Quellcode-Ansicht daneben oder statt seiner (``SourceEdit``). Laden und
   Speichern steuert das Hauptfenster, der Tab haelt nur den Zustand.
 * ``TextTab``  -- schlichter Texteditor fuer ``.txt`` mit Auto-Save. Bewusst
   nicht der Markdown-Editor: der wuerde ``*``, ``#`` oder ``_`` als Markdown
@@ -30,7 +31,7 @@ from PySide6.QtCore import (
     QTimer,
     Signal,
 )
-from PySide6.QtGui import QFontDatabase, QImageReader, QKeySequence, QPixmap, QShortcut
+from PySide6.QtGui import QFontDatabase, QImageReader, QKeySequence, QPixmap, QShortcut, QTextCursor
 from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
@@ -38,6 +39,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QSpinBox,
+    QSplitter,
     QToolBar,
     QToolButton,
     QVBoxLayout,
@@ -55,6 +57,10 @@ TEXT_SUFFIXES = (".txt",)
 PDF_SUFFIXES = (".pdf",)
 IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg")
 AUTOSAVE_MS = 300
+# Quellcode <-> WYSIWYG erst nach einer kurzen Tipp-Pause abgleichen: bei
+# 300-Seiten-Guides soll nicht jeder Buchstabe das ganze Dokument umbauen.
+SYNC_MS = 200
+VIEW_MODES = ("wysiwyg", "source", "split")
 
 
 def kind_of(path: str | Path) -> str | None:
@@ -116,6 +122,159 @@ class BaseTab(QWidget):
 # ---------------------------------------------------------------------- #
 
 
+class SourceEdit(QPlainTextEdit):
+    """Der reine Markdown-Text eines Editor-Tabs.
+
+    Formatbefehle aus der Toolbar (Fett, Ueberschrift, Liste …) setzen hier
+    die Markdown-Zeichen selbst, damit sie auch im Quellcode-Modus wirken."""
+
+    WRAP = {"bold": "**", "italic": "*", "strikeThrough": "~~", "code": "`"}
+    PREFIX = {"ul": "- ", "ol": "1. ", "task": "- [ ] ", "quote": "> "}
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.setObjectName("sourceEdit")
+        self.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
+        font = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
+        font.setPointSizeF(max(font.pointSizeF(), 10.5))
+        self.setFont(font)
+        self.setTabStopDistance(self.fontMetrics().horizontalAdvance(" ") * 4)
+        self.setPlaceholderText("Markdown-Quellcode")
+
+    def replace_text(self, text: str) -> None:
+        """Ersetzt nur den geaenderten Mittelteil -- Cursor und Scrollposition
+        bleiben stehen, und ein grosses Dokument wird nicht ganz neu gesetzt.
+        Der Schritt landet nicht im Undo-Verlauf des Quellcodes (er kommt aus
+        dem WYSIWYG-Editor, der seinen eigenen hat)."""
+        old = self.toPlainText()
+        if old == text:
+            return
+        start = _common_prefix(old, text)
+        end = _common_suffix(old, text, min(len(old), len(text)) - start)
+        doc = self.document()
+        bar = self.verticalScrollBar().value()
+        doc.setUndoRedoEnabled(False)
+        cur = self.textCursor()
+        cur.setPosition(start)
+        cur.setPosition(len(old) - end, cur.MoveMode.KeepAnchor)
+        cur.insertText(text[start:len(text) - end])
+        doc.setUndoRedoEnabled(True)
+        doc.setModified(False)
+        self.verticalScrollBar().setValue(bar)
+
+    def scroll_to_heading(self, index: int, place_cursor: bool = False) -> None:
+        """Die ``index``-te Ueberschrift (Zaehlung wie in der Gliederung) an
+        den oberen Rand holen; Codebloecke zaehlen nicht mit."""
+        block = self.document().firstBlock()
+        fence = ""
+        count = -1
+        while block.isValid():
+            line = block.text()
+            stripped = line.lstrip()
+            if stripped.startswith(("```", "~~~")):
+                mark = stripped[:3]
+                fence = "" if fence == mark else (fence or mark)
+            elif not fence and _is_heading(line):
+                count += 1
+                if count == index:
+                    break
+            block = block.next()
+        if not block.isValid():
+            return
+        if place_cursor:
+            cur = self.textCursor()
+            cur.setPosition(block.position())
+            self.setTextCursor(cur)
+        # Die Scrollleiste von QPlainTextEdit zaehlt (umbrochene) Zeilen, nicht Pixel
+        bar = self.verticalScrollBar()
+        bar.setValue(min(bar.maximum(), block.firstLineNumber()))
+
+    # --- Formatbefehle ---
+
+    def apply(self, cmd: str, arg=None) -> bool:
+        """Toolbar-Befehl auf den Quelltext anwenden; False = hier nicht moeglich."""
+        cur = self.textCursor()
+        if cmd in self.WRAP:
+            mark = self.WRAP[cmd]
+            text = cur.selectedText()
+            cur.insertText(f"{mark}{text}{mark}")
+            if not text:
+                cur.setPosition(cur.position() - len(mark))
+            self.setTextCursor(cur)
+        elif cmd == "p" or (len(cmd) == 2 and cmd[0] == "h" and cmd[1].isdigit()):
+            level = 0 if cmd == "p" else int(cmd[1])
+            self._edit_lines(lambda line: ("#" * level + " " if level else "")
+                             + _strip_heading(line))
+        elif cmd in self.PREFIX:
+            prefix = self.PREFIX[cmd]
+            self._edit_lines(lambda line: line[len(prefix):] if line.startswith(prefix)
+                             else prefix + line)
+        elif cmd in ("rule", "break"):
+            self._insert_block("---" if cmd == "rule" else "***")
+        elif cmd == "codeblock":
+            text = cur.selectedText().replace("\u2029", "\n")
+            self._insert_block(f"```\n{text}\n```")
+        elif cmd == "text" and isinstance(arg, str):
+            cur.insertText(arg)
+        else:
+            return False
+        return True
+
+    def _edit_lines(self, change) -> None:
+        cur = self.textCursor()
+        start, end = sorted((cur.anchor(), cur.position()))
+        doc = self.document()
+        first, last = doc.findBlock(start), doc.findBlock(end)
+        cur.beginEditBlock()
+        block = first
+        while block.isValid():
+            line = QTextCursor(block)
+            line.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
+            line.insertText(change(block.text()))
+            if block == last:
+                break
+            block = block.next()
+        cur.endEditBlock()
+
+    def _insert_block(self, text: str) -> None:
+        cur = self.textCursor()
+        before = "" if cur.atBlockStart() and not cur.hasSelection() else "\n"
+        cur.insertText(f"{before}\n{text}\n\n")
+        self.setTextCursor(cur)
+
+
+def _common_prefix(a: str, b: str, step: int = 4096) -> int:
+    """Laenge des gemeinsamen Anfangs -- erst in Bloecken verglichen (in C),
+    dann zeichenweise: bei einem 300-Seiten-Guide Millisekunden statt Zehntel."""
+    n = min(len(a), len(b))
+    i = 0
+    while i + step <= n and a[i:i + step] == b[i:i + step]:
+        i += step
+    while i < n and a[i] == b[i]:
+        i += 1
+    return i
+
+
+def _common_suffix(a: str, b: str, limit: int, step: int = 4096) -> int:
+    """Laenge des gemeinsamen Endes, hoechstens ``limit``."""
+    la, lb = len(a), len(b)
+    i = 0
+    while i + step <= limit and a[la - i - step:la - i] == b[lb - i - step:lb - i]:
+        i += step
+    while i < limit and a[la - 1 - i] == b[lb - 1 - i]:
+        i += 1
+    return i
+
+
+def _is_heading(line: str) -> bool:
+    hashes = len(line) - len(line.lstrip("#"))
+    return 1 <= hashes <= 6 and (len(line) == hashes or line[hashes] in " \t")
+
+
+def _strip_heading(line: str) -> str:
+    return line.lstrip("#").lstrip(" \t") if _is_heading(line) else line
+
+
 class MdTab(BaseTab):
     """Ein Editor-Tab. Die Logik (Laden/Speichern ueber JavaScript) liegt im
     Hauptfenster; hier steht nur, was je Tab gilt."""
@@ -138,9 +297,139 @@ class MdTab(BaseTab):
         self.autosave.setSingleShot(True)
         self.autosave.setInterval(AUTOSAVE_MS)
         self.watch: FileWatch | None = None  # Aenderungen von aussen (zweites Fenster)
+
+        # Quellcode-Ansicht: neben dem WYSIWYG-Editor oder statt seiner. Der
+        # Editor bleibt die Quelle der Wahrheit -- getippter Quelltext wird
+        # nach SYNC_MS uebernommen (CM.replaceMarkdown), Speichern und Undo
+        # laufen dort wie beim Tippen.
+        self.source = SourceEdit(self)
+        self.mode = "wysiwyg"
+        self.source_first = False    # True: Quellcode links, Editor rechts
+        self.source_focus = False    # zuletzt im Quellcode getippt/geklickt
+        self._source_stale = True    # Quelltext muss beim Einblenden geholt werden
+        self._syncing = False
+        self.to_source = QTimer(self)
+        self.to_source.setSingleShot(True)
+        self.to_source.setInterval(SYNC_MS)
+        self.to_source.timeout.connect(self.pull_source)
+        self.to_editor = QTimer(self)
+        self.to_editor.setSingleShot(True)
+        self.to_editor.setInterval(SYNC_MS)
+        self.to_editor.timeout.connect(self.push_source)
+        self.source.textChanged.connect(self._on_source_edited)
+        self.source.installEventFilter(self)
+
+        self.split = QSplitter(Qt.Orientation.Horizontal, self)
+        self.split.setChildrenCollapsible(False)
+        self.split.addWidget(self.view)
+        self.split.addWidget(self.source)
+        self.source.hide()
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
-        lay.addWidget(self.view)
+        lay.addWidget(self.split)
+
+    # --- Ansicht ---
+
+    def set_view_mode(self, mode: str, source_first: bool | None = None) -> None:
+        """``mode``: "wysiwyg", "source" oder "split" (beide nebeneinander)."""
+        if mode not in VIEW_MODES:
+            mode = "wysiwyg"
+        if source_first is not None and source_first != self.source_first:
+            self.source_first = source_first
+            sizes = self.split.sizes()
+            self.split.insertWidget(0, self.source if source_first else self.view)
+            self.split.setSizes(sizes[::-1])
+        if mode == self.mode:
+            return
+        was_source = self.source_visible()
+        self.push_source_now()
+        self.mode = mode
+        self.view.setVisible(mode != "source")
+        self.source.setVisible(mode != "wysiwyg")
+        if mode == "split":
+            total = max(2, sum(self.split.sizes()) or self.width())
+            self.split.setSizes([total // 2, total - total // 2])
+        if self.source_visible() and (not was_source or self._source_stale):
+            self.pull_source()
+        if mode == "source":
+            self.source_focus = True
+            self.source.setFocus()
+        elif mode == "wysiwyg":
+            self.source_focus = False
+            self.view.setFocus()
+
+    def source_visible(self) -> bool:
+        return self.mode != "wysiwyg"
+
+    def source_active(self) -> bool:
+        """Wirken Befehle (Toolbar, Suche) auf den Quellcode?"""
+        return self.mode == "source" or (self.mode == "split" and self.source_focus)
+
+    # --- Abgleich ---
+
+    def editor_changed(self) -> None:
+        """Der WYSIWYG-Editor hat sich geaendert: Quelltext gedrosselt nachziehen.
+        Nicht, solange im Quelltext getippt wird -- sonst sprange der Cursor."""
+        self._source_stale = True
+        if self.source_visible() and not self.source.hasFocus() and not self.to_editor.isActive():
+            self.to_source.start()
+
+    def reset_source(self) -> None:
+        """Neues Dokument im Editor (Laden, Startseite): Quelltext neu holen,
+        ausstehende Uebernahmen verwerfen, Undo des Quelltexts leeren."""
+        self.to_editor.stop()
+        self.to_source.stop()
+        self._source_stale = True
+        if self.source_visible():
+            self.pull_source(fresh=True)
+
+    def pull_source(self, fresh: bool = False) -> None:
+        self.to_source.stop()
+        if not self.ready:
+            return
+        self.view.run("CM.getMarkdown()", lambda md, f=fresh: self._set_source(md, f))
+
+    def _set_source(self, md, fresh: bool = False) -> None:
+        if not isinstance(md, str) or self.to_editor.isActive():
+            return  # inzwischen im Quelltext getippt -- der gewinnt
+        self._syncing = True
+        try:
+            if fresh:
+                self.source.setPlainText(md)
+            else:
+                self.source.replace_text(md)
+        finally:
+            self._syncing = False
+        self._source_stale = False
+
+    def _on_source_edited(self) -> None:
+        if self._syncing:
+            return
+        self.to_source.stop()
+        self.to_editor.start()
+
+    def push_source(self) -> None:
+        self.to_editor.stop()
+        if self.ready:
+            self.view.call("replaceMarkdown", self.source.toPlainText())
+
+    def push_source_now(self) -> None:
+        """Ausstehenden Quelltext sofort an den Editor geben (vor dem Speichern;
+        Skripte laufen der Reihe nach, das Speichern sieht ihn also schon)."""
+        if self.to_editor.isActive():
+            self.push_source()
+
+    def eventFilter(self, obj, event):  # noqa: N802
+        if obj is self.source:
+            if event.type() == event.Type.FocusIn:
+                self.source_focus = True
+            elif event.type() == event.Type.FocusOut:
+                # Getipptes uebernehmen; danach zeigt der Quelltext, wie der
+                # Editor das Markdown schreibt (z. B. "*" statt "_").
+                self.push_source_now()
+                if self.source_visible():
+                    self.to_source.start()
+        return super().eventFilter(obj, event)
 
     def watch_path(self, path: Path | None) -> None:
         """Beobachtet ``path``; ``disk_changed_signal`` meldet fremde Aenderungen."""

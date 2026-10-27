@@ -14,6 +14,40 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Online
 (Ordner `QR-Online/`) zählt die Version in `QR-Online/qronline/__init__.py`.
 
+## 27.10.2026 – MD 1.6.0, QR 1.4.1 – Quellcode-Ansicht, schnellere große Guides
+
+### CompletionistMD 1.6.0 – Quellcode und Nebeneinander-Ansicht
+* **Quellcode-Ansicht** (Strg + Umschalt + M): der reine Markdown-Text zum Lesen und
+  Bearbeiten. Formatknöpfe, Emojis, Suchen und Ersetzen wirken dort ebenfalls.
+* **Nebeneinander** (Strg + Umschalt + D): links Vault, Bookmarks und Gliederung, in der
+  Mitte der WYSIWYG-Editor, rechts der Quellcode; **⇄** tauscht die beiden Seiten. Beide
+  gleichen sich nach 200 ms Tipp-Pause ab. Aus dem Quellcode werden nur die Absätze um die
+  Änderung neu gelesen, der Schritt ist im Editor rückgängig zu machen. Ein Klick in der
+  Gliederung springt in beiden Seiten, der Quellcode folgt dem Kapitel im Editor. Ansicht
+  und Seite bleiben über einen Neustart erhalten.
+
+### CompletionistMD 1.6.0 – Große Guides
+Gemessen mit einem Guide aus 300 Kapiteln (rund 1 MB Markdown):
+* **Öffnen** rund doppelt so schnell (3,0 s → 1,5 s): das Laden läuft nicht mehr durch alle
+  Editor-Erweiterungen, und Absätze außerhalb des Sichtfelds setzt Chromium erst beim
+  Hinscrollen (`content-visibility`; umflossene Bilder bleiben ausgenommen).
+* **Tippen** spürbar flüssiger: Markdown, Wortzahl, Gliederung und die Syntax-Anzeige
+  werden je Absatz gemerkt statt bei jeder Taste für das ganze Dokument neu berechnet
+  (Markdown nach einem Tastendruck: 340 ms → 6 ms, Tastendruck selbst: 50–70 ms → 20 ms).
+
+### CompletionistQR 1.4.1
+* **SVG: die Schrift des Titels kommt überall an.** Die Beschriftung steht jetzt wie im PDF
+  als Schriftkontur im SVG; die eingebettete Schrift zeigten nur Browser an.
+* **„Über CompletionistQR" zeigt das App-Icon** in der Titelleiste (CustomTkinter setzte
+  dort sein eigenes).
+* **Links im Fenster „Über" sind klickbar**: E-Mail-Adresse, GitHub und alle Webadressen
+  in Lizenz, Fremdkomponenten und Impressum.
+
+### Fehlerkorrekturen
+* **CompletionistMD: Codeblöcke, die selbst ` ``` ` enthalten, überstehen das Neuladen.**
+  Der Editor schreibt sie mit längerem Zaun (` ```` `), las sie aber schon am ersten
+  ` ``` ` als beendet.
+
 ## 25.10.2026 – PDF 1.5.0, MD 1.5.0, QR 1.4.0 – Startbild und Impressum
 
 ### CompletionistPDF 1.5.0, CompletionistMD 1.5.0, CompletionistQR 1.4.0
