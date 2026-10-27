@@ -48,15 +48,28 @@ def primary() -> dict:
 
 
 @lru_cache(maxsize=None)
-def icon(name: str, accent: bool = False, size: int = 18) -> ctk.CTkImage | None:
-    """Lucide-Icon als CTkImage (hell/dunkel); ``None``, falls die Datei fehlt."""
+def _icon_images(name: str, accent: bool) -> tuple[Image.Image, Image.Image] | None:
     prefix = "accent_" if accent else ""
     try:
         light = Image.open(ICON_DIR / f"{name}_{prefix}light.png")
         dark = Image.open(ICON_DIR / f"{name}_{prefix}dark.png")
+        light.load()
+        dark.load()
     except OSError:
         return None
-    return ctk.CTkImage(light_image=light, dark_image=dark, size=(size, size))
+    return light, dark
+
+
+def icon(name: str, accent: bool = False, size: int = 18) -> ctk.CTkImage | None:
+    """Lucide-Icon als CTkImage (hell/dunkel); ``None``, falls die Datei fehlt.
+
+    Gemerkt werden nur die Bilddateien, nicht das CTkImage: dessen Tk-Bilder gehoeren
+    zum Tk, in dem sie zuerst gezeigt wurden -- ein spaeteres Hauptfenster im selben
+    Prozess (Tests, QR-Online nach CompletionistQR) faende sie sonst nicht mehr."""
+    images = _icon_images(name, accent)
+    if images is None:
+        return None
+    return ctk.CTkImage(light_image=images[0], dark_image=images[1], size=(size, size))
 
 
 def apply_theme() -> None:
