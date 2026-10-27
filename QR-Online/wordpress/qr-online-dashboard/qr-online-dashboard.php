@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       QR-Online Dashboard
- * Description:       Web-Dashboard für QR-Online: Links anlegen und ändern, Scans als Graphen – direkt im WordPress-Admin.
+ * Description:       Tracker für QR-Online: die Scans der QR-Links als Kennzahlen und Graphen im WordPress-Admin. Angelegt und gestaltet wird in der App QR-Online.
  * Version:           1.1.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
@@ -13,6 +13,10 @@
  */
 
 /*
+ * Nur der Tracker: das Plugin zeigt Links und Scans an, mehr nicht. Links anlegen, aendern,
+ * loeschen und QR-Codes gestalten geht ausschliesslich in der App QR-Online -- der REST-Proxy
+ * unten reicht deshalb nur lesende Aufrufe (GET) an den Server weiter.
+ *
  * Das Plugin zaehlt nichts selbst. Es spricht die API von QR-Online/server/index.php an
  * (dieselbe wie die Windows-App) und reicht die Antworten an das Dashboard im Browser weiter.
  * Der API-Schluessel bleibt dabei auf dem WordPress-Server; der Browser redet nur mit
@@ -50,7 +54,7 @@ function qr_online_configured(): bool
  * Ein Aufruf der Server-API. Liefert die dekodierte Antwort oder WP_Error mit der Meldung
  * des Servers (die ist schon fuer Menschen geschrieben).
  */
-function qr_online_call(string $method, string $path, ?array $body = null, array $query = [])
+function qr_online_call(string $method, string $path, array $query = [])
 {
     $base = qr_online_server();
     if (!preg_match('#^https?://#i', $base)) {
@@ -66,10 +70,6 @@ function qr_online_call(string $method, string $path, ?array $body = null, array
         'redirection' => 0,
         'headers' => ['X-Api-Key' => qr_online_key(), 'Accept' => 'application/json'],
     ];
-    if ($body !== null) {
-        $args['headers']['Content-Type'] = 'application/json';
-        $args['body'] = wp_json_encode($body);
-    }
     $response = wp_remote_request($url, $args);
     if (is_wp_error($response)) {
         return new WP_Error('qr_online_unreachable', 'Server nicht erreichbar: ' . $response->get_error_message(), ['status' => 502]);
@@ -106,43 +106,23 @@ add_action('rest_api_init', function () {
         'callback' => fn() => qr_online_call('GET', 'ping'),
     ]);
     register_rest_route(QR_ONLINE_NS, '/links', [
-        ['methods' => 'GET', 'permission_callback' => $can, 'callback' => function () {
+        'methods' => 'GET', 'permission_callback' => $can, 'callback' => function () {
             $rows = qr_online_call('GET', 'links');
             return is_wp_error($rows) ? $rows : array_map('qr_online_with_url', $rows);
-        }],
-        ['methods' => 'POST', 'permission_callback' => $can, 'callback' => function (WP_REST_Request $r) {
-            delete_transient('qr_online_widget');
-            $row = qr_online_call('POST', 'links', [
-                'target' => (string)$r->get_param('target'), 'label' => (string)$r->get_param('label')]);
-            return is_wp_error($row) ? $row : new WP_REST_Response(qr_online_with_url($row), 201);
-        }],
+        },
     ]);
     register_rest_route(QR_ONLINE_NS, '/links/' . $code, [
-        ['methods' => 'GET', 'permission_callback' => $can, 'callback' => function (WP_REST_Request $r) {
+        'methods' => 'GET', 'permission_callback' => $can, 'callback' => function (WP_REST_Request $r) {
             $row = qr_online_call('GET', 'links/' . strtoupper($r['code']));
             return is_wp_error($row) ? $row : qr_online_with_url($row);
-        }],
-        ['methods' => 'POST', 'permission_callback' => $can, 'callback' => function (WP_REST_Request $r) {
-            $in = [];
-            foreach (['target', 'label'] as $field) {
-                if ($r->has_param($field)) {
-                    $in[$field] = (string)$r->get_param($field);
-                }
-            }
-            $row = qr_online_call('POST', 'links/' . strtoupper($r['code']), $in);
-            return is_wp_error($row) ? $row : qr_online_with_url($row);
-        }],
-        ['methods' => 'DELETE', 'permission_callback' => $can, 'callback' => function (WP_REST_Request $r) {
-            delete_transient('qr_online_widget');
-            return qr_online_call('DELETE', 'links/' . strtoupper($r['code']));
-        }],
+        },
     ]);
     register_rest_route(QR_ONLINE_NS, '/scans/' . $code, [
         'methods' => 'GET', 'permission_callback' => $can,
         'args' => ['since' => ['type' => 'string', 'pattern' => '^\d{4}-\d{2}-\d{2}$', 'required' => false]],
         'callback' => function (WP_REST_Request $r) {
             $since = (string)$r->get_param('since');
-            return qr_online_call('GET', 'scans/' . strtoupper($r['code']), null, $since !== '' ? ['since' => $since] : []);
+            return qr_online_call('GET', 'scans/' . strtoupper($r['code']), $since !== '' ? ['since' => $since] : []);
         },
     ]);
 });
@@ -164,8 +144,7 @@ add_action('admin_enqueue_scripts', function (string $hook) {
     }
     $base = plugin_dir_url(__FILE__) . 'assets/';
     wp_enqueue_style('qr-online', $base . 'dashboard.css', [], QR_ONLINE_VERSION);
-    wp_enqueue_script('qr-online-qrcode', $base . 'vendor/qrcode.js', [], '1.4.4', true);
-    wp_enqueue_script('qr-online', $base . 'dashboard.js', ['qr-online-qrcode'], QR_ONLINE_VERSION, true);
+    wp_enqueue_script('qr-online', $base . 'dashboard.js', [], QR_ONLINE_VERSION, true);
     wp_add_inline_script('qr-online', 'window.QR_ONLINE = ' . wp_json_encode([
         'api' => esc_url_raw(rest_url(QR_ONLINE_NS . '/')),
         'nonce' => wp_create_nonce('wp_rest'),

@@ -109,13 +109,14 @@ Die App spricht den Server über eine kleine JSON-API an. Der Schlüssel steht i
 Mit `short_url` in der `config.php` tragen alle Links zusätzlich das Feld `url` (die
 Adresse für den QR-Code).
 
-## Web-Dashboard in WordPress
+## Tracker in WordPress
 
-Dieselben Links und Graphen gibt es auch im Browser: das Plugin
-`wordpress/qr-online-dashboard/` zeigt im WordPress-Admin unter **QR-Online** die Liste der
-Links, Kennzahlen, alle Graphen und den QR-Code als PNG, und legt Links an, ändert und löscht
-sie. Es zählt nichts selbst, sondern spricht dieselbe API wie die App. Der Server von oben
-bleibt also nötig, App und Plugin können ihn gleichzeitig benutzen.
+Die Scans gibt es auch im Browser: das Plugin `wordpress/qr-online-dashboard/` zeigt im
+WordPress-Admin unter **QR-Online** die Liste der Links, Kennzahlen und alle Graphen. Es ist
+**nur der Tracker**: Links anlegen, Ziel ändern, löschen und QR-Codes gestalten geht
+ausschließlich in der App. Das Plugin reicht deshalb nur lesende Aufrufe an den Server
+weiter. Es zählt nichts selbst, sondern spricht dieselbe API wie die App; der Server von
+oben bleibt also nötig, App und Plugin können ihn gleichzeitig benutzen.
 
 1. Plugin als Zip packen: `python wordpress/build_zip.py` (legt
    `dist/qr-online-dashboard.zip` an) oder den Ordner `qr-online-dashboard/` selbst zippen.
@@ -167,7 +168,7 @@ ganzen Weg: Link anlegen, scannen mit iPhone-, Android- und Windows-Kennung, Sta
 abrufen, Ziel ändern, löschen. Ohne PHP werden sie übersprungen.
 
 Aufbau: `server/index.php` (Weiterleitung und API, eine Datei),
-`wordpress/qr-online-dashboard/` (WordPress-Plugin, PHP und JavaScript ohne Build-Schritt), `qronline/client.py`
+`wordpress/qr-online-dashboard/` (WordPress-Plugin, nur Anzeige; PHP und JavaScript ohne Build-Schritt), `qronline/client.py`
 (API-Aufrufe), `qronline/stats.py` (Auswertung nach lokaler Zeit), `qronline/charts.py`
 (Diagramme mit matplotlib), `qronline/design.py` (Fenster „QR-Code gestalten“ mit dem
 Gestalter aus `completionistqr`), `qronline/app.py` (Oberfläche, CustomTkinter),

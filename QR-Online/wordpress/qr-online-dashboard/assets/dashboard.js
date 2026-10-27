@@ -1,4 +1,5 @@
-/* QR-Online Dashboard: Links verwalten, Scans als Graphen.
+/* QR-Online Dashboard: der Tracker -- Links mit ihren Scans als Graphen, nur zum Ansehen.
+ * Angelegt, geaendert, gestaltet und geloescht wird ausschliesslich in der App QR-Online.
  *
  * Spricht nur /wp-json/qr-online/v1/ an; das Plugin reicht die Aufrufe mit dem
  * API-Schluessel an den QR-Server weiter. Gezaehlt wird nach lokaler Zeit des Browsers
@@ -98,11 +99,6 @@
 
   function title(link) { return link.label || link.target; }
   function plural(n) { return `${n} ${n === 1 ? "Scan" : "Scans"}`; }
-
-  function normalizeTarget(t) {
-    t = t.trim();
-    return t && !t.includes("://") ? "https://" + t : t;
-  }
 
   // ------------------------------------------------------------ Auswertung
 
@@ -240,37 +236,6 @@
     return el("section", {class: "qro-card " + (extra || "")}, el("h3", {}, heading), body);
   }
 
-  // ------------------------------------------------------------ QR-Code
-
-  /** QR-Code als Canvas: schlicht, Fehlerkorrektur M, 4 Module Rand (wie die App). */
-  function qrCanvas(text, scale) {
-    const qr = window.qrcode(0, "M");
-    qr.addData(text);
-    qr.make();
-    const n = qr.getModuleCount(), border = 4, size = (n + 2 * border) * scale;
-    const canvas = el("canvas", {width: size, height: size, class: "qro-qr"});
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, size, size);
-    ctx.fillStyle = "#000";
-    for (let r = 0; r < n; r++) {
-      for (let c = 0; c < n; c++) {
-        if (qr.isDark(r, c)) ctx.fillRect((c + border) * scale, (r + border) * scale, scale, scale);
-      }
-    }
-    return canvas;
-  }
-
-  function downloadQr(link) {
-    qrCanvas(link.url, 24).toBlob((blob) => {
-      const a = el("a", {href: URL.createObjectURL(blob), download: `qr-${link.code}.png`});
-      document.body.append(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    }, "image/png");
-  }
-
   // ------------------------------------------------------------ Oberflaeche
 
   let statusTimer = null;
@@ -286,8 +251,6 @@
   function layout() {
     root.replaceChildren(
       el("div", {class: "qro-toolbar"},
-        el("button", {class: "button button-primary", type: "button", onclick: () => linkDialog()},
-          "＋ Neuer Link"),
         el("button", {class: "button", type: "button", onclick: refresh}, "Aktualisieren"),
         el("span", {class: "qro-status", role: "status", "aria-live": "polite"}),
         el("a", {class: "qro-settings", href: CFG.settings}, "Einstellungen")),
@@ -306,7 +269,7 @@
     const links = state.links.filter((l) => !q ||
       [l.label, l.target, l.code].some((v) => (v || "").toLowerCase().includes(q)));
     if (!state.links.length) {
-      box.replaceChildren(el("p", {class: "qro-empty"}, "Noch keine Links. „＋ Neuer Link“ legt einen an."));
+      box.replaceChildren(el("p", {class: "qro-empty"}, "Noch keine Links. Angelegt werden sie in der App QR-Online."));
       return;
     }
     box.replaceChildren(...links.map((l) => el("button", {
@@ -323,8 +286,8 @@
     if (!link) {
       box.replaceChildren(el("div", {class: "qro-card qro-empty"},
         state.links.length ? "Links auswählen, um die Scans zu sehen." :
-          "Lege links den ersten QR-Link an. Er bekommt eine kurze Adresse auf deinem Server, " +
-          "die jeden Scan zählt und sofort zum Ziel weiterleitet."));
+          "Noch keine QR-Links. Angelegt und gestaltet werden sie in der App QR-Online; " +
+          "hier erscheinen sie mit ihren Scans."));
       return;
     }
     const target = /^https?:\/\//i.test(link.target)
@@ -338,15 +301,8 @@
             " ", el("button", {type: "button", class: "button button-small", onclick: () => copy(link.url)},
               "Kopieren")),
           el("p", {}, el("span", {class: "qro-muted"}, "Ziel "), target),
-          el("p", {class: "qro-muted qro-hint"}, "Das Ziel lässt sich jederzeit ändern – der gedruckte " +
-            "Code bleibt gültig. Für gestaltete Codes (Logo, Rahmen) den Link in CompletionistQR einfügen."),
-          el("div", {class: "qro-actions"},
-            el("button", {type: "button", class: "button", onclick: () => linkDialog(link)}, "Bearbeiten …"),
-            el("button", {type: "button", class: "button", onclick: () => downloadQr(link)},
-              "QR-Code als PNG"),
-            el("button", {type: "button", class: "button qro-danger", onclick: () => removeLink(link)},
-              "Löschen …"))),
-        qrCanvas(link.url, 4)),
+          el("p", {class: "qro-muted qro-hint"}, "Ziel ändern, QR-Code gestalten und speichern: " +
+            "in der App QR-Online. Der gedruckte Code bleibt dabei gültig."))),
       el("div", {class: "qro-range", role: "group", "aria-label": "Zeitraum"},
         RANGES.map(([label, days]) => el("button", {
           type: "button", class: "button" + (days === state.days ? " is-active" : ""),
@@ -436,61 +392,6 @@
     } catch (e) {
       window.prompt("Link kopieren:", text);
     }
-  }
-
-  async function removeLink(link) {
-    if (!window.confirm(`„${title(link)}“ samt ${plural(link.scans)} löschen?\n\n` +
-        "Gedruckte Codes mit diesem Link funktionieren danach nicht mehr.")) return;
-    status("Lösche …");
-    try {
-      await api("DELETE", "links/" + link.code);
-      state.current = null;
-      store.set("code", "");
-      status("✓ Gelöscht", "ok");
-      refresh();
-    } catch (e) {
-      status(e.message, "error");
-    }
-  }
-
-  /** Dialog zum Anlegen (ohne link) oder Bearbeiten. */
-  function linkDialog(link) {
-    const targetIn = el("input", {type: "text", class: "regular-text", required: true,
-      value: link ? link.target : "https://", id: "qro-target", inputmode: "url"});
-    const labelIn = el("input", {type: "text", class: "regular-text", maxlength: 200,
-      value: link ? link.label : "", id: "qro-label"});
-    const msg = el("p", {class: "qro-dialog-msg", role: "alert"});
-    const dialog = el("dialog", {class: "qro-dialog"},
-      el("form", {method: "dialog", onsubmit: async (e) => {
-        e.preventDefault();
-        const body = {target: normalizeTarget(targetIn.value), label: labelIn.value.trim()};
-        msg.textContent = "Speichere …";
-        try {
-          const row = await api("POST", link ? "links/" + link.code : "links", body);
-          state.current = row;
-          store.set("code", row.code);
-          dialog.close();
-          status(link ? "✓ Gespeichert" : "✓ Angelegt: " + row.url, "ok");
-          refresh();
-        } catch (err) {
-          msg.textContent = err.message;
-        }
-      }},
-      el("h2", {}, link ? "Link bearbeiten" : "Neuer QR-Link"),
-      el("p", {}, el("label", {for: "qro-target"}, "Ziel-Adresse"), targetIn),
-      el("p", {}, el("label", {for: "qro-label"}, "Name (optional)"), labelIn),
-      el("p", {class: "qro-muted"}, link
-        ? "Der gedruckte Code bleibt gültig, er führt danach zum neuen Ziel."
-        : "Der QR-Code enthält eine kurze Adresse auf deinem Server, die jeden Scan zählt " +
-          "und sofort zum Ziel weiterleitet."),
-      msg,
-      el("div", {class: "qro-actions"},
-        el("button", {type: "button", class: "button", onclick: () => dialog.close()}, "Abbrechen"),
-        el("button", {type: "submit", class: "button button-primary"}, link ? "Speichern" : "Anlegen"))));
-    dialog.addEventListener("close", () => dialog.remove());
-    document.body.append(dialog);
-    dialog.showModal();
-    targetIn.focus();
   }
 
   if (!root) return;

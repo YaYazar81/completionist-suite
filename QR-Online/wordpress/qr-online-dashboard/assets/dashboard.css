@@ -46,11 +46,7 @@
 .qro-head h2 { margin: 0 0 8px; font-size: 20px; overflow-wrap: anywhere; }
 .qro-head p { margin: 4px 0; overflow-wrap: anywhere; }
 .qro-hint { font-size: 12px; max-width: 70ch; }
-.qro-qr { width: 132px; height: 132px; image-rendering: pixelated; flex: none; border-radius: 6px; }
-@media (max-width: 600px) { .qro-head { flex-direction: column-reverse; } }
 
-.qro-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.qro .button.qro-danger, .qro-dialog .button.qro-danger { color: var(--qro-error); border-color: var(--qro-error); }
 
 .qro-range { display: flex; flex-wrap: wrap; gap: 0; margin: 14px 0 10px; }
 .qro-range .button { border-radius: 0; margin-left: -1px; }
@@ -87,10 +83,3 @@
 .qro-share-fill { display: block; height: 100%; background: var(--qro-accent); border-radius: 5px; }
 .qro-share-value { text-align: right; font-variant-numeric: tabular-nums; color: var(--qro-muted); }
 
-.qro-dialog { border: none; border-radius: 12px; padding: 20px 24px; width: min(520px, calc(100vw - 32px)); box-shadow: 0 10px 40px rgba(0, 0, 0, .25); }
-.qro-dialog::backdrop { background: rgba(0, 0, 0, .4); }
-.qro-dialog h2 { margin-top: 0; }
-.qro-dialog label { display: block; font-weight: 600; margin-bottom: 4px; }
-.qro-dialog input { width: 100%; }
-.qro-dialog-msg { color: #b91c1c; min-height: 1.4em; }
-.qro-dialog .qro-actions { justify-content: flex-end; }
