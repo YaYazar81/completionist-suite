@@ -14,9 +14,18 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
 
-## 27.10.2026 – CompletionistQR Online 1.2.1 – Speichern und Laden ohne Wartezeit
+## 27.10.2026 – CompletionistQR Online 1.3.0 – Server-Einrichtung, Speichern ohne Wartezeit
 
-### CompletionistQR Online 1.2.1
+### CompletionistQR Online 1.3.0 – Server einrichten beim ersten Start
+* Statt nach Adresse und API-Schlüssel zu fragen, die man da noch gar nicht hat, führt die
+  App beim ersten Start durch die Einrichtung: sie **erzeugt einen zufälligen Schlüssel**,
+  legt mit **„Server-Dateien speichern …"** index.php, .htaccess, data/.htaccess und eine
+  fertige **config.php mit diesem Schlüssel** in einen Ordner, erklärt das **Hochladen per
+  FTP** und **testet die Verbindung**. „Vorhandenen verbinden" für einen schon laufenden
+  Server; derselbe Dialog unter „Server …".
+* Die Server-Dateien stecken dafür auch im Programm selbst (`qronline/server_files.py`).
+
+### CompletionistQR Online 1.3.0 – Speichern und Laden ohne Wartezeit
 * **Eine Verbindung für die ganze Sitzung.** Bisher baute die App für jede Aktion eine neue
   HTTPS-Verbindung zum Server auf -- der TLS-Handshake kostet fast eine Sekunde, und
   Speichern brauchte drei davon nacheinander (speichern, Liste neu laden, Scans neu laden).

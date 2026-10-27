@@ -126,6 +126,14 @@ def main() -> int:
         # Gestalter: Schriften, Vorlagen und Icon von CompletionistQR
         "--add-data", f"{SUITE / 'completionistqr' / 'assets'}{sep}completionistqr/assets",
         "--add-data", f"{SUITE / 'THIRD_PARTY_NOTICES.md'}{sep}.",
+        # Server-Dateien fuer "Server einrichten" (qronline/server_setup.py): die App legt sie
+        # mit einer fertigen config.php in einen Ordner zum Hochladen
+        "--add-data", f"{ROOT / 'server' / 'index.php'}{sep}server",
+        "--add-data", f"{ROOT / 'server' / 'config.sample.php'}{sep}server",
+        "--add-data", f"{ROOT / 'server' / '.htaccess'}{sep}server",
+        "--add-data", f"{ROOT / 'server' / 'data' / '.htaccess'}{sep}server/data",
+        "--hidden-import", "qronline.server_setup",
+        "--hidden-import", "qronline.server_files",
         # CustomTkinter laedt seine Themes als Dateien, zxing-cpp (Scan-Pruefung) ist
         # eine native Erweiterung -- beides findet PyInstaller nicht von allein.
         "--collect-data", "customtkinter",

@@ -180,3 +180,38 @@ def test_app_reuses_connection_and_avoids_reloads(tmp_path, monkeypatch):
         assert win.design.payload == "https://c10t.de/CCCCCC"
     finally:
         app.destroy()
+
+
+def test_server_dialog_prepares_new_server(root, tmp_path, monkeypatch):
+    from qronline import server_setup
+
+    folder = tmp_path / "Hochladen"
+    folder.mkdir()
+    monkeypatch.setattr(server_setup.filedialog, "askdirectory", lambda **_kw: str(folder))
+    opened = []
+    monkeypatch.setattr(server_setup, "open_folder", opened.append)
+
+    dlg = server_setup.ServerDialog(root, first_start=True)
+    pump(dlg)
+    key = dlg.key_var.get()
+    assert len(key) == 48 and dlg.mode.get() == "new" and dlg.steps.winfo_manager() == "grid"
+    dlg.url_var.set("c10t.de/")
+    dlg._save_files()
+    assert opened == [folder]
+    assert f"'api_key' => '{key}'" in (folder / "config.php").read_text(encoding="utf-8")
+    dlg._ok()
+    assert dlg.result == {"base_url": "https://c10t.de", "api_key": key}
+
+
+def test_server_dialog_connects_existing(root):
+    from qronline import server_setup
+
+    dlg = server_setup.ServerDialog(root, "https://c10t.de", "k" * 32)
+    pump(dlg)
+    assert dlg.mode.get() == "existing" and dlg.steps.winfo_manager() == ""
+    assert dlg.key_var.get() == "k" * 32
+    dlg.switch.set("Neuen Server einrichten")
+    dlg._mode_changed("Neuen Server einrichten")
+    pump(dlg)
+    assert dlg.steps.winfo_manager() == "grid"
+    dlg.destroy()

@@ -21,8 +21,6 @@ SELECTED, HOVER = ("#D1FAE5", "#112C27"), ("#E2E8F0", "#222C35")
 
 RANGES = {"7 Tage": 7, "30 Tage": 30, "90 Tage": 90, "1 Jahr": 365}
 OK, MUTED, ERROR = ("#15803D", "#4ADE80"), ("gray35", "gray65"), ("#B91C1C", "#F87171")
-SERVER_HELP = ("Adresse, unter der index.php aus dem Ordner server/ liegt, z. B. "
-               "https://qr.example.de – und der API-Schlüssel aus der config.php dort.")
 
 
 def local_time(ts: str | None, today: date | None = None) -> str:
@@ -139,7 +137,7 @@ class QROnlineApp(ctk.CTk):
         if self.client():
             self.refresh()
         else:
-            self.after(300, self.edit_server)
+            self.after(300, lambda: self.edit_server(first_start=True))
 
     # ================================================================ Server
 
@@ -193,17 +191,13 @@ class QROnlineApp(ctk.CTk):
     def set_status(self, text: str, color=MUTED) -> None:
         self.status.configure(text=text, text_color=color)
 
-    def edit_server(self) -> None:
-        def test(values: dict) -> str:
-            try:
-                Client(values["base_url"], values["api_key"], timeout=8).ping()
-            except ServerError as exc:
-                return str(exc)
-            return ""
-        result = FormDialog(self, "Server", [
-            ("base_url", "Adresse", self.settings.get("base_url", "https://")),
-            ("api_key", "API-Schlüssel", self.settings.get("api_key", ""))],
-            hint=SERVER_HELP, test=test).ask()
+    def edit_server(self, first_start: bool = False) -> None:
+        """Server einrichten oder verbinden (server_setup.py): neuer Schluessel, fertige
+        Server-Dateien zum Hochladen, Verbindungstest."""
+        from .server_setup import ServerDialog
+
+        result = ServerDialog(self, self.settings.get("base_url", ""), self.settings.get("api_key", ""),
+                              first_start=first_start).ask()
         if result:
             self.settings.update(result)
             settings.save(self.settings)
