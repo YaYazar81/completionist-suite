@@ -14,6 +14,21 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
 
+## 27.10.2026 – CompletionistQR Online 1.2.1 – Speichern und Laden ohne Wartezeit
+
+### CompletionistQR Online 1.2.1
+* **Eine Verbindung für die ganze Sitzung.** Bisher baute die App für jede Aktion eine neue
+  HTTPS-Verbindung zum Server auf -- der TLS-Handshake kostet fast eine Sekunde, und
+  Speichern brauchte drei davon nacheinander (speichern, Liste neu laden, Scans neu laden).
+  Jetzt bleibt die Verbindung offen; eine Anfrage dauert dann nur noch rund 150 ms.
+* **Speichern und Anlegen ohne Neuladen:** die Antwort des Servers enthält den gespeicherten
+  Link, die App aktualisiert nur diesen Eintrag. „✓ Gespeichert" bleibt stehen.
+* **Link wechseln ohne Neuaufbau der Liste:** nur die Markierung wechselt, geladen werden
+  allein die Scans des gewählten Links.
+* **„QR-Code gestalten" öffnet beim zweiten Mal sofort:** das Fenster wird einmal aufgebaut
+  und danach für jeden Link wiederverwendet (der Aufbau dauerte knapp eine Sekunde).
+* Beim Speichern wird der Name nicht mehr aus dem Hintergrund-Thread gelesen.
+
 ## 27.10.2026 – PDF 1.6.0, MD 1.7.0, QR 1.5.0, CompletionistQR Online 1.2.0 – Design-System „Completionist Pro"
 
 ### QR-Online heißt jetzt CompletionistQR Online

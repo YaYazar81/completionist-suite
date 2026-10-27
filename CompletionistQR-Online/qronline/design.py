@@ -5,8 +5,8 @@ SVG, PDF, Zwischenablage), Scan-Pruefung und das Fenster "Über" kommen aus dem 
 completionistqr (completionistqr/ui/designer.py). Was CompletionistQR kann, kann CompletionistQR Online
 damit automatisch auch. Fest steht nur der Inhalt: die kurze Adresse des Links.
 
-Das Design merkt sich CompletionistQR Online je Link (settings.json, "designs"); ein neuer Link
-beginnt mit dem zuletzt benutzten Design.
+Das Design merkt sich CompletionistQR Online je Link (settings.json, "designs"); ein neuer
+Link beginnt mit dem zuletzt benutzten Design.
 """
 from __future__ import annotations
 
@@ -45,24 +45,45 @@ def about_info() -> dict:
 
 
 class DesignWindow(DesignerMixin, ctk.CTkToplevel):
+    """Wird einmal aufgebaut und dann wiederverwendet: der Aufbau der Bedienleiste dauert
+    knapp eine Sekunde. Schliessen versteckt das Fenster nur, ``show_link`` zeigt es fuer
+    einen (anderen) Link wieder."""
+
     def __init__(self, master, link, prefs: dict):
         super().__init__(master)
         self.link = link
         self.prefs = prefs  # das Einstellungs-dict des Hauptfensters (wird mitgespeichert)
         self.about_info = about_info()
-        self.export_name = f"qr-{link.code}"
-        self.title(f"QR-Code gestalten – {link.title}")
         self.geometry("1180x820")
         self.minsize(1000, 700)
-        saved = (prefs.get("designs") or {}).get(link.code) or prefs.get("design")
-        self.build_designer(design_from(saved), fixed_payload=link.url, fixed_hint=HINT)
-        self.controls.restore_content({})
-        self.controls.refresh()
-        self.changed()
+        self.build_designer(self._saved_design(link), fixed_payload=link.url, fixed_hint=HINT)
+        self._show(link)
         self.protocol("WM_DELETE_WINDOW", self.close)
         # CTkToplevel setzt unter Windows nach 200 ms sein eigenes Icon
         self.after(250, self._set_icon)
         self.after(100, self.lift)
+
+    def _saved_design(self, link):
+        return design_from((self.prefs.get("designs") or {}).get(link.code) or self.prefs.get("design"))
+
+    def _show(self, link) -> None:
+        self.link = link
+        self.export_name = f"qr-{link.code}"
+        self.title(f"QR-Code gestalten – {link.title}")
+        self.controls.set_fixed_payload(link.url)
+        self.controls.refresh()
+        self.changed()
+
+    def show_link(self, link) -> None:
+        """Fenster (wieder) zeigen -- fuer denselben oder einen anderen Link."""
+        if self.winfo_viewable() and self.link.code != link.code:
+            self.remember()  # Design des bisherigen Links nicht verlieren
+        if self.link.code != link.code or not self.winfo_viewable():
+            self.design = self._saved_design(link)
+        self._show(link)
+        self.deiconify()
+        self.lift()
+        self.focus_force()
 
     def _set_icon(self) -> None:
         try:
@@ -85,4 +106,4 @@ class DesignWindow(DesignerMixin, ctk.CTkToplevel):
 
     def close(self) -> None:
         self.remember()
-        self.destroy()
+        self.withdraw()

@@ -126,7 +126,9 @@ class QROnlineApp(ctk.CTk):
         self.scans: list[stats.Scan] = []
         self._inbox: queue.Queue = queue.Queue()
         self._busy = 0
-        self._design_windows: dict = {}  # Code -> offenes Fenster "QR-Code gestalten"
+        self._design_window = None  # Fenster "QR-Code gestalten" (einmal gebaut, wiederverwendet)
+        self._client: Client | None = None  # bleibt bestehen: Verbindung wird wiederverwendet
+        self._items: dict = {}  # Code -> Listeneintrag (Rahmen, Titel, Info)
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(1, weight=1)
         self._build_toolbar()
@@ -142,8 +144,16 @@ class QROnlineApp(ctk.CTk):
     # ================================================================ Server
 
     def client(self) -> Client | None:
+        """Ein Client fuer die ganze Sitzung: seine Session haelt die HTTPS-Verbindung
+        offen. Ein neuer Verbindungsaufbau (TLS) kostet je nach Server fast eine Sekunde
+        -- bisher bei jeder Aktion, oft mehrmals hintereinander."""
         url, key = self.settings.get("base_url", ""), self.settings.get("api_key", "")
-        return Client(url, key) if url and key else None
+        if not (url and key):
+            return None
+        c = self._client
+        if c is None or c.base_url != url.strip().rstrip("/") or c.api_key != key.strip():
+            self._client = c = Client(url, key)
+        return c
 
     def _run(self, work: Callable, done: Callable, busy: str) -> None:
         """``work`` läuft im Hintergrund; ``done(result)`` danach im GUI-Thread."""
@@ -169,7 +179,8 @@ class QROnlineApp(ctk.CTk):
                     self.set_status(str(error) if isinstance(error, ServerError)
                                     else f"Fehler: {error}", ERROR)
                     continue
-                self.set_status("", MUTED)
+                if self.status.cget("text").endswith("…"):
+                    self.set_status("", MUTED)  # Meldungen wie "✓ Gespeichert" stehen lassen
                 try:
                     done(result)
                 except Exception as exc:  # nicht die ganze Abfrage-Schleife verlieren
@@ -309,50 +320,74 @@ class QROnlineApp(ctk.CTk):
         self.links = links
         for child in self.list_frame.winfo_children():
             child.destroy()
+        self._items = {}
         if not links:
             ctk.CTkLabel(self.list_frame, text="Noch keine Links.\n„＋ Neuer Link …“ legt einen an.",
                          text_color=MUTED).pack(pady=20)
         for link in links:
-            self._list_item(link, self.current is not None and link.code == self.current.code)
-        if self.current:
-            self.select(self.current.code)
-        elif links:
-            self.select(links[0].code)
+            self._list_item(link)
+        code = self.current.code if self.current else (links[0].code if links else None)
+        self.current = None
+        if code:
+            self.select(code)
 
-    def _list_item(self, link: Link, selected: bool) -> None:
+    def _list_item(self, link: Link) -> None:
         """Eintrag in der Liste: Name fett, darunter Code und Scan-Zahl; ganze Fläche klickbar."""
-        base = SELECTED if selected else CARD
-        item = ctk.CTkFrame(self.list_frame, corner_radius=10, fg_color=base, cursor="hand2")
+        item = ctk.CTkFrame(self.list_frame, corner_radius=10, fg_color=CARD, cursor="hand2")
         item.pack(fill="x", pady=3)
-        title = ctk.CTkLabel(item, text=link.title, anchor="w", justify="left", wraplength=250,
+        title = ctk.CTkLabel(item, anchor="w", justify="left", wraplength=250,
                              font=ctk.CTkFont(weight="bold"))
         title.pack(fill="x", padx=12, pady=(8, 0))
-        info = ctk.CTkLabel(item, anchor="w", text_color=MUTED,
-                            text=f"{link.code} · {link.scans} {'Scan' if link.scans == 1 else 'Scans'}")
+        info = ctk.CTkLabel(item, anchor="w", text_color=MUTED)
         info.pack(fill="x", padx=12, pady=(0, 8))
+        code = link.code
         for w in (item, title, info):
-            w.bind("<Button-1>", lambda _e, c=link.code: self.select(c))
-            if not selected:
-                w.bind("<Enter>", lambda _e: item.configure(fg_color=HOVER))
-                w.bind("<Leave>", lambda _e: item.configure(fg_color=base))
+            w.bind("<Button-1>", lambda _e, c=code: self.select(c))
+            w.bind("<Enter>", lambda _e, c=code: self._hover(c, True))
+            w.bind("<Leave>", lambda _e, c=code: self._hover(c, False))
+        self._items[code] = (item, title, info)
+        self._fill_item(link)
 
-    def select(self, code: str) -> None:
-        link = next((l for l in self.links if l.code == code), None)
-        if link is None:
-            self.current = None
-            return
-        changed = self.current is None or self.current.code != code
-        self.current = link
+    def _fill_item(self, link: Link) -> None:
+        widgets = self._items.get(link.code)
+        if widgets:
+            widgets[1].configure(text=link.title)
+            widgets[2].configure(text=f"{link.code} · {link.scans} {'Scan' if link.scans == 1 else 'Scans'}")
+
+    def _hover(self, code: str, inside: bool) -> None:
+        widgets = self._items.get(code)
+        if widgets and not (self.current and self.current.code == code):
+            widgets[0].configure(fg_color=HOVER if inside else CARD)
+
+    def _mark_selected(self) -> None:
+        """Nur die Markierung umsetzen -- die Liste neu aufzubauen dauert bei vielen Links."""
+        for code, (item, _t, _i) in self._items.items():
+            item.configure(fg_color=SELECTED if self.current and code == self.current.code else CARD)
+
+    def _replace_link(self, link: Link) -> None:
+        """Einen Link aus der Server-Antwort uebernehmen, ohne die Liste neu zu laden."""
+        self.links = [link if l.code == link.code else l for l in self.links]
+        self._fill_item(link)
+        if self.current and self.current.code == link.code:
+            self.current = link
+            self._show_details(link)
+
+    def _show_details(self, link: Link) -> None:
         self.heading.configure(text=link.title)
         self.short_var.set(link.url)
         self.target_var.set(link.target)
         self.label_var.set(link.label)
         self.tiles["Insgesamt"].configure(text=str(link.scans))
         self.tiles["Letzter Scan"].configure(text=local_time(link.last_scan))
-        if changed:
-            # Markierung in der Liste nachziehen
-            self._show_links(self.links)
+
+    def select(self, code: str) -> None:
+        link = next((l for l in self.links if l.code == code), None)
+        if link is None:
+            self.current = None
             return
+        self.current = link
+        self._show_details(link)
+        self._mark_selected()
         self.load_scans()
 
     def new_link(self) -> None:
@@ -371,9 +406,11 @@ class QROnlineApp(ctk.CTk):
             target = "https://" + target
 
         def done(link: Link):
+            # Neuer Link oben in die Liste (wie der Server sortiert) -- ohne neue Abfrage
+            self.links.insert(0, link)
             self.current = link
+            self._show_links(self.links)
             self.set_status(f"✓ Angelegt: {link.url}", OK)
-            self.refresh()
         self._run(lambda: client.create(target, result["label"]), done, "Lege Link an …")
 
     def save_link(self) -> None:
@@ -383,12 +420,12 @@ class QROnlineApp(ctk.CTk):
         target = self.target_var.get().strip()
         if target and "://" not in target:
             target = "https://" + target
+        label = self.label_var.get().strip()  # Tk-Variablen nur im GUI-Thread lesen
 
         def done(updated: Link):
-            self.current = updated
-            self.refresh()
-        self._run(lambda: client.update(link.code, target=target, label=self.label_var.get().strip()),
-                  done, "Speichere …")
+            self._replace_link(updated)  # die Antwort enthaelt den gespeicherten Stand
+            self.set_status("✓ Gespeichert", OK)
+        self._run(lambda: client.update(link.code, target=target, label=label), done, "Speichere …")
 
     def delete_link(self) -> None:
         client, link = self.client(), self.current
@@ -401,9 +438,9 @@ class QROnlineApp(ctk.CTk):
             return
 
         def done(_):
-            win = self._design_windows.pop(link.code, None)
-            if win is not None and win.winfo_exists():
-                win.destroy()  # der Code gilt nicht mehr
+            win = self._design_window
+            if win is not None and win.winfo_exists() and win.link.code == link.code:
+                win.withdraw()  # der Code gilt nicht mehr
             self.settings.get("designs", {}).pop(link.code, None)
             settings.save(self.settings)
             self.current = None
@@ -421,15 +458,13 @@ class QROnlineApp(ctk.CTk):
         link = self.current
         if not link:
             return
-        win = self._design_windows.get(link.code)
+        win = self._design_window
         if win is not None and win.winfo_exists():
-            win.deiconify()
-            win.lift()
-            win.focus_force()
+            win.show_link(link)
             return
         from .design import DesignWindow
 
-        self._design_windows[link.code] = DesignWindow(self, link, self.settings)
+        self._design_window = DesignWindow(self, link, self.settings)
 
     def show_about(self) -> None:
         from completionistqr.ui.about import AboutWindow
