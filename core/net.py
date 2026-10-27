@@ -7,7 +7,8 @@ Verbindungsaufbau zehn Sekunden und mehr, bevor es mit IPv4 klappte -- Browser p
 beides parallel und merken davon nichts. Verbunden wird mit der IP-Adresse, Zertifikat und
 Servername (SNI) bleiben die des Hosts.
 
-Der Import genuegt; ``install()`` wirkt nur einmal.
+Schon der Import installiert den Patch; ``install()`` setzt ihn erneut, falls inzwischen
+ein anderer aktiv ist.
 """
 from __future__ import annotations
 
@@ -33,7 +34,7 @@ def _connect_ipv4_first(address, *args, **kwargs):
 
 
 def install() -> None:
-    if _urllib3_connection.create_connection is _create_connection:
+    if _urllib3_connection.create_connection is not _connect_ipv4_first:
         _urllib3_connection.create_connection = _connect_ipv4_first
 
 

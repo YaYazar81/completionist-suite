@@ -6,15 +6,17 @@ import urllib3.util.connection as urllib3_connection
 from core import net
 
 
-def test_installed_once():
-    assert urllib3_connection.create_connection is net._connect_ipv4_first
+def test_install_replaces_other_patch(monkeypatch):
+    monkeypatch.setattr(urllib3_connection, "create_connection", lambda *a, **k: None)
     net.install()
+    assert urllib3_connection.create_connection is net._connect_ipv4_first
     assert net._create_connection is not net._connect_ipv4_first
 
 
-def test_core_drive_uses_it():
+def test_core_drive_installs_it(monkeypatch):
     from core import drive
 
+    monkeypatch.setattr(urllib3_connection, "create_connection", lambda *a, **k: None)
     drive.DriveClient(session=object())  # mit eigener Sitzung: kein Google-Import
     assert urllib3_connection.create_connection is net._connect_ipv4_first
 
