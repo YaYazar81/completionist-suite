@@ -184,6 +184,8 @@ class TokenStore:
         from google.auth.transport.requests import Request
         from google.oauth2.credentials import Credentials
 
+        from . import net  # noqa: F401  IPv4 zuerst, sonst bis zu 20 s Warten bei kaputtem IPv6
+
         creds = Credentials.from_authorized_user_info(info, SCOPES)
         if not creds.valid:
             if not creds.refresh_token:
@@ -203,6 +205,8 @@ class TokenStore:
         if config is None:
             raise SyncError("Es ist noch keine client_secret.json hinterlegt.")
         from google_auth_oauthlib.flow import InstalledAppFlow
+
+        from . import net  # noqa: F401  IPv4 zuerst (siehe core/net.py)
 
         flow = InstalledAppFlow.from_client_config(config, SCOPES)
         try:
@@ -250,6 +254,8 @@ class DriveClient:
         """``session`` statt ``creds``: ein fertiges Objekt mit ``request()`` (Tests)."""
         if session is None:
             from google.auth.transport.requests import AuthorizedSession
+
+            from . import net  # noqa: F401  IPv4 zuerst (siehe core/net.py)
 
             session = AuthorizedSession(creds)
         self.session = session
