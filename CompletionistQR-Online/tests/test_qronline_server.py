@@ -230,3 +230,40 @@ def test_config_rejects_unsafe_keys():
         with pytest.raises(ValueError):
             server_files.config_php(bad)
     assert "'short_url' => 'https://c10t.de'" in server_files.config_php("a" * 32, "c10t.de/")
+
+
+def test_connects_ipv4_first(monkeypatch):
+    """Eine unerreichbare IPv6-Adresse darf den Verbindungsaufbau nicht aufhalten: der
+    Client verbindet zuerst über IPv4, IPv6 nur, wenn es keine IPv4-Adresse gibt."""
+    import socket as socketmod
+
+    from qronline import client as clientmod
+
+    server = socketmod.socket(socketmod.AF_INET, socketmod.SOCK_STREAM)
+    server.bind(("127.0.0.1", 0))
+    server.listen(1)
+    port = server.getsockname()[1]
+    real = socketmod.getaddrinfo
+    seen = []
+
+    def fake_getaddrinfo(host, p, family=0, *args, **kwargs):
+        seen.append((host, family))
+        if host == "qr.example.test":
+            if family == socketmod.AF_INET:
+                return real("127.0.0.1", p, socketmod.AF_INET, *args, **kwargs)
+            raise AssertionError("IPv6 nicht zuerst fragen")
+        return real(host, p, family, *args, **kwargs)
+
+    monkeypatch.setattr(clientmod.socket, "getaddrinfo", fake_getaddrinfo)
+    sock = clientmod._connect_ipv4_first(("qr.example.test", port), 3)
+    assert sock.getpeername() == ("127.0.0.1", port)
+    sock.close()
+    server.close()
+
+    # Ohne IPv4-Adresse: der normale Weg (dort auch IPv6)
+    calls = []
+    monkeypatch.setattr(clientmod, "_create_connection", lambda address, *a, **k: calls.append(address))
+    monkeypatch.setattr(clientmod.socket, "getaddrinfo",
+                        lambda *a, **k: (_ for _ in ()).throw(socketmod.gaierror("keine A-Adresse")))
+    clientmod._connect_ipv4_first(("nur-ipv6.example.test", 443), 3)
+    assert calls == [("nur-ipv6.example.test", 443)]
