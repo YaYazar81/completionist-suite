@@ -14,6 +14,15 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
 
+## 27.10.2026 – CompletionistMD 1.7.1, CompletionistQR 1.5.1 – Google Drive ohne Wartezeit
+
+### CompletionistMD 1.7.1, CompletionistQR 1.5.1
+* **Google-Drive-Sync (MD) und Datei-Upload (QR) beginnen sofort.** Wie zuvor in
+  CompletionistQR Online: Ist IPv6 am eigenen Anschluss gestört, wartete jede neue
+  Verbindung zu Google erst die Zeitüberschreitung ab (bis zu 20 Sekunden) und nahm dann
+  IPv4. Beide Apps verbinden jetzt zuerst über IPv4 und nur ohne IPv4-Adresse über IPv6
+  (`core/net.py`).
+
 ## 27.10.2026 – CompletionistQR Online 1.3.1 – Schneller Start
 
 ### CompletionistQR Online 1.3.1
