@@ -32,7 +32,7 @@ class ColorPicker(ctk.CTkFrame):
         super().__init__(master, fg_color="transparent")
         self._command = command
         self.swatch = ctk.CTkButton(self, text="", width=34, height=26, corner_radius=6,
-                                    border_width=1, border_color=("gray60", "gray40"),
+                                    border_width=1, border_color=("#94A3B8", "#334250"),
                                     command=self._pick)
         self.swatch.pack(side="left")
         self.entry = ctk.CTkEntry(self, width=90)

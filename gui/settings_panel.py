@@ -30,6 +30,7 @@ from core.config import (
     WATERMARK_MODES,
     DocumentConfig,
 )
+from core.design import DARK
 
 from .widgets import (
     Binder,
@@ -120,7 +121,7 @@ class SettingsPanel(QWidget):
 
     def set_emoji_result(self, ok: bool, message: str) -> None:
         self.emoji_status.setText(("✔ " if ok else "✘ ") + message)
-        self.emoji_status.setStyleSheet(f"color: {'#3fb950' if ok else '#e5534b'};")
+        self.emoji_status.setStyleSheet(f"color: {DARK['accent_hi'] if ok else DARK['danger']};")
 
     @property
     def auto_compile(self) -> bool:

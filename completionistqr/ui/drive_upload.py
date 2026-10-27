@@ -17,6 +17,8 @@ import customtkinter as ctk
 
 from core import drive
 
+from . import style
+
 FILE_TYPES = [("PDF, Bilder und Videos",
                "*.pdf *.png *.jpg *.jpeg *.webp *.gif *.mp4 *.mov *.m4v *.webm *.avi *.mkv"),
               ("Alle Dateien", "*.*")]
@@ -27,7 +29,7 @@ CLIENT_HELP = ("Für das Hochladen braucht die App einmalig eine OAuth-Client-Da
                "Ist CompletionistMD schon mit Google Drive verknüpft, ist sie bereits da.\n\n"
                "Jetzt die heruntergeladene Datei wählen?")
 
-OK, MUTED, ERROR = ("#15803D", "#4ADE80"), ("gray35", "gray65"), ("#B91C1C", "#F87171")
+OK, MUTED, ERROR = style.ACCENT, style.MUTED, style.DANGER
 
 
 def size_text(n: float) -> str:
@@ -54,11 +56,10 @@ class DriveUploadPanel(ctk.CTkFrame):
         bar = ctk.CTkFrame(self, fg_color="transparent")
         bar.pack(fill="x", padx=4, pady=(8, 0))
         self.button = ctk.CTkButton(bar, text="Datei in Google Drive hochladen …",
-                                    command=self.pick_and_upload)
+                                    image=style.icon("cloud-upload"), command=self.pick_and_upload)
         self.button.pack(side="left")
-        self.cancel_btn = ctk.CTkButton(bar, text="Abbrechen", width=90, fg_color="transparent",
-                                        border_width=1, text_color=("gray20", "gray85"),
-                                        command=self.cancel.set)
+        self.cancel_btn = ctk.CTkButton(bar, text="Abbrechen", width=90, image=style.icon("x"),
+                                        **style.secondary(), command=self.cancel.set)
         self.progress = ctk.CTkProgressBar(self)
         self.progress.set(0)
         self.status = ctk.CTkLabel(self, text="", anchor="w", justify="left", wraplength=380,

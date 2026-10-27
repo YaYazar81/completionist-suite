@@ -9,6 +9,7 @@ import customtkinter as ctk
 from ..core import export, fonts, payload, presets
 from ..core.config import ECC_LEVELS, QRDesign
 from ..core.render_pil import render
+from . import style
 from .drive_upload import DriveUploadPanel
 from .widgets import Choice, ColorPicker, ValueSlider, row, section
 
@@ -96,13 +97,14 @@ LOGO_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".avif", ".bmp", ".gif"}
 
 
 class Controls(ctk.CTkTabview):
-    """``fixed_payload``: der Inhalt steht fest (QR-Online: der Kurzlink) -- der Reiter
+    """``fixed_payload``: der Inhalt steht fest (CompletionistQR Online: der Kurzlink) -- der Reiter
     Inhalt zeigt ihn nur an, statt Inhaltstyp und Formular; den Stapel-Export gibt es dann
     nicht. ``app`` ist das Fenster mit ``design``, ``changed()``, ``apply_preset()`` und
     ``preview`` (siehe designer.py)."""
 
     def __init__(self, master, app, fixed_payload: str | None = None, fixed_hint: str = ""):
-        super().__init__(master, width=480, corner_radius=12)
+        super().__init__(master, width=480, corner_radius=6, border_width=1,
+                         border_color=style.BORDER)
         self.app = app
         self.fixed_payload = fixed_payload
         self.fixed_hint = fixed_hint
@@ -183,14 +185,14 @@ class Controls(ctk.CTkTabview):
 
         section(tab, "Fehlerkorrektur")
         ctk.CTkLabel(tab, text="H verträgt die meisten Störungen und ist für Logos nötig.",
-                     text_color=("gray35", "gray65"), anchor="w", justify="left",
+                     text_color=style.MUTED, anchor="w", justify="left",
                      wraplength=380).pack(fill="x", padx=4)
         ecc = ctk.CTkSegmentedButton(tab, values=ECC_LEVELS, command=lambda v: self._set("ecc", v))
         ecc.set(self.d.ecc)
         ecc.pack(anchor="w", padx=4, pady=6)
         self._on_refresh(lambda: ecc.set(self.d.ecc))
 
-        self.payload_error = ctk.CTkLabel(tab, text="", text_color=("#B91C1C", "#F87171"),
+        self.payload_error = ctk.CTkLabel(tab, text="", text_color=style.DANGER,
                                           anchor="w", wraplength=380)
         self.payload_error.pack(fill="x", padx=4, pady=6)
 
@@ -260,7 +262,7 @@ class Controls(ctk.CTkTabview):
             elif kind == "switch":
                 ctk.CTkSwitch(r, text="", variable=var).grid(row=0, column=1, sticky="w")
         if t in HINTS:
-            ctk.CTkLabel(self.form, text=HINTS[t], text_color=("gray35", "gray65"), anchor="w",
+            ctk.CTkLabel(self.form, text=HINTS[t], text_color=style.MUTED, anchor="w",
                          justify="left", wraplength=380).pack(fill="x", padx=4, pady=(6, 0))
         if t == "file":
             self.drive_upload.pack(fill="x", after=self.form)
@@ -334,11 +336,10 @@ class Controls(ctk.CTkTabview):
         self._build_gallery()
         bar = ctk.CTkFrame(tab, fg_color="transparent")
         bar.pack(fill="x", padx=4, pady=(6, 0))
-        ctk.CTkButton(bar, text="Aktuelles Design speichern …", command=self._save_preset).pack(
-            side="left")
+        ctk.CTkButton(bar, text="Aktuelles Design speichern …", image=style.icon("save"),
+                      command=self._save_preset).pack(side="left")
         self.delete_btn = ctk.CTkButton(bar, text="Eigene Vorlage löschen …", width=10,
-                                        fg_color="transparent", border_width=1,
-                                        text_color=("gray20", "gray85"),
+                                        image=style.icon("trash-2"), **style.secondary(),
                                         command=self._delete_preset)
         self.delete_btn.pack(side="left", padx=8)
 
@@ -369,9 +370,9 @@ class Controls(ctk.CTkTabview):
         self._thumbs = []
         user = presets.user()
         scale = self._get_widget_scaling()  # scharf auch bei 125/150 % Windows-Skalierung
-        for i, (name, style) in enumerate(presets.all_presets().items()):
-            d = QRDesign(payload="CompletionistQR").apply_style(style)
-            d.caption = style.get("caption", "SCAN ME" if d.frame.startswith("banner") or
+        for i, (name, preset) in enumerate(presets.all_presets().items()):
+            d = QRDesign(payload="CompletionistQR").apply_style(preset)
+            d.caption = preset.get("caption", "SCAN ME" if d.frame.startswith("banner") or
                                   d.frame == "ticket" else "")
             img = render(d, round(76 * scale), supersample=2)
             thumb = ctk.CTkImage(light_image=img, dark_image=img,
@@ -379,10 +380,10 @@ class Controls(ctk.CTkTabview):
             self._thumbs.append(thumb)
             label = name + (" ★" if name in user else "")
             ctk.CTkButton(self.gallery, image=thumb, text=label, compound="top", width=96,
-                          height=110, fg_color=("gray90", "gray20"),
-                          hover_color=("gray80", "gray28"), text_color=("gray10", "gray90"),
+                          height=110, fg_color=style.INPUT, border_color=style.BORDER,
+                          hover_color=style.HOVER, text_color=style.TEXT,
                           font=ctk.CTkFont(size=11),
-                          command=lambda s=style: self.app.apply_preset(s)).grid(
+                          command=lambda s=preset: self.app.apply_preset(s)).grid(
                 row=i // 4, column=i % 4, padx=3, pady=3)
         self.after_idle(lambda: self.delete_btn.configure(
             state="normal" if user else "disabled") if hasattr(self, "delete_btn") else None)
@@ -410,26 +411,27 @@ class Controls(ctk.CTkTabview):
         section(tab, "Logo in der Mitte")
         bar = ctk.CTkFrame(tab, fg_color="transparent")
         bar.pack(fill="x", padx=4, pady=4)
-        ctk.CTkButton(bar, text="Logo wählen …", command=self._pick_logo).pack(side="left")
-        ctk.CTkButton(bar, text="Einfügen", width=90, fg_color="transparent", border_width=1,
-                      text_color=("gray20", "gray85"),
+        ctk.CTkButton(bar, text="Logo wählen …", image=style.icon("image"),
+                      command=self._pick_logo).pack(side="left")
+        ctk.CTkButton(bar, text="Einfügen", width=90, image=style.icon("clipboard-paste"),
+                      **style.secondary(),
                       command=self._paste_logo_clicked).pack(side="left", padx=(8, 0))
-        ctk.CTkButton(bar, text="Entfernen", width=90, fg_color="transparent", border_width=1,
-                      text_color=("gray20", "gray85"),
+        ctk.CTkButton(bar, text="Entfernen", width=90, image=style.icon("trash-2"),
+                      **style.secondary(),
                       command=lambda: self._set_logo("")).pack(side="left", padx=8)
         ctk.CTkLabel(tab, text="Oder ein Bild aus dem Explorer ins Fenster ziehen bzw. mit Strg+V "
                                "aus der Zwischenablage einfügen.",
-                     text_color=("gray35", "gray65"), anchor="w", justify="left",
+                     text_color=style.MUTED, anchor="w", justify="left",
                      wraplength=380).pack(fill="x", padx=4)
         self.logo_name = ctk.CTkLabel(tab, text="Kein Logo gewählt", anchor="w",
-                                      text_color=("gray35", "gray65"))
+                                      text_color=style.MUTED)
         self.logo_name.pack(fill="x", padx=4)
         self._on_refresh(self._refresh_logo_name)
 
         section(tab, "Größe und Unterlage")
         self._slider(tab, "Größe", "logo_size", 10, 30, steps=20, scale=100,
                      fmt=lambda v: f"{v:.0f} %")
-        self.logo_warn = ctk.CTkLabel(tab, text="", text_color=("#B45309", "#FBBF24"),
+        self.logo_warn = ctk.CTkLabel(tab, text="", text_color=style.WARN,
                                       anchor="w", wraplength=380, justify="left")
         self.logo_warn.pack(fill="x", padx=4)
         self._on_refresh(self._refresh_logo_warn)
@@ -442,7 +444,7 @@ class Controls(ctk.CTkTabview):
         ctk.CTkLabel(tab, text="Tipp: PNG mit transparentem Hintergrund sieht am besten aus. "
                                "Unter dem Logo werden die Module ausgespart; die "
                                "Fehlerkorrektur H gleicht das aus.",
-                     text_color=("gray35", "gray65"), anchor="w", justify="left",
+                     text_color=style.MUTED, anchor="w", justify="left",
                      wraplength=380).pack(fill="x", padx=4, pady=(12, 0))
 
     def _pick_logo(self) -> None:
@@ -517,7 +519,7 @@ class Controls(ctk.CTkTabview):
                 box.insert("1.0", self.d.caption)
         self._on_refresh(refresh_box)
         ctk.CTkLabel(tab, text="Zeilenumbruch mit Enter ergibt zwei Zeilen.",
-                     text_color=("gray35", "gray65"), anchor="w").pack(fill="x", padx=4)
+                     text_color=style.MUTED, anchor="w").pack(fill="x", padx=4)
 
         section(tab, "Schrift")
         families = fonts.families()
@@ -561,7 +563,7 @@ class Controls(ctk.CTkTabview):
         ctk.CTkLabel(tab, text="PNG für Web und Office, SVG für Grafikprogramme, PDF für den "
                                "Druck. SVG und PDF sind Vektorgrafiken und in jeder Größe scharf; "
                                "beim PDF legen Breite und dpi nur die Seitengröße fest.",
-                     text_color=("gray35", "gray65"), anchor="w", justify="left",
+                     text_color=style.MUTED, anchor="w", justify="left",
                      wraplength=380).pack(fill="x", padx=4)
 
         section(tab, "Auflösung")
@@ -576,9 +578,10 @@ class Controls(ctk.CTkTabview):
 
         ctk.CTkButton(tab, text="QR-Code speichern …", height=40,
                       font=ctk.CTkFont(size=14, weight="bold"),
+                      image=style.icon("download", accent=True, size=20), **style.primary(),
                       command=self.save).pack(fill="x", padx=4, pady=(24, 6))
-        ctk.CTkButton(tab, text="In die Zwischenablage kopieren (Strg+C)", fg_color="transparent",
-                      border_width=1, text_color=("gray20", "gray85"),
+        ctk.CTkButton(tab, text="In die Zwischenablage kopieren (Strg+C)",
+                      image=style.icon("clipboard-copy"), **style.secondary(),
                       command=self.copy).pack(fill="x", padx=4, pady=(0, 6))
         self.export_status = ctk.CTkLabel(tab, text="", anchor="w", wraplength=380,
                                           justify="left")
@@ -590,12 +593,13 @@ class Controls(ctk.CTkTabview):
         ctk.CTkLabel(tab, text="Viele Codes im aktuellen Design auf einmal: eine CSV-Liste "
                                "(z. B. aus Excel) mit dem Inhalt in der ersten Spalte, optional dem "
                                "Dateinamen in der zweiten. Format, Breite und dpi von oben.",
-                     text_color=("gray35", "gray65"), anchor="w", justify="left",
+                     text_color=style.MUTED, anchor="w", justify="left",
                      wraplength=380).pack(fill="x", padx=4)
         self.batch_check = ctk.BooleanVar(value=True)
         ctk.CTkCheckBox(tab, text="Jeden Code auf Lesbarkeit prüfen",
                         variable=self.batch_check).pack(anchor="w", padx=4, pady=6)
-        self.batch_button = ctk.CTkButton(tab, text="CSV-Liste wählen …", command=self.batch_export)
+        self.batch_button = ctk.CTkButton(tab, text="CSV-Liste wählen …",
+                                          image=style.icon("file-spreadsheet"), command=self.batch_export)
         self.batch_button.pack(fill="x", padx=4)
         self.batch_status = ctk.CTkLabel(tab, text="", anchor="w", wraplength=380, justify="left")
         self.batch_status.pack(fill="x", padx=4, pady=(4, 0))
@@ -618,7 +622,7 @@ class Controls(ctk.CTkTabview):
             return
         width, dpi = self._export_size()
         # Grosse Breiten brauchen ein paar Sekunden -- vorher Bescheid geben
-        self.export_status.configure(text=f"Speichere {width} px …", text_color=("gray35", "gray65"))
+        self.export_status.configure(text=f"Speichere {width} px …", text_color=style.MUTED)
         self.app.configure(cursor="watch")
         self.update_idletasks()
         try:
@@ -630,7 +634,7 @@ class Controls(ctk.CTkTabview):
         finally:
             self.app.configure(cursor="")
         self.export_status.configure(text=f"✓ Gespeichert: {out}",
-                                     text_color=("#15803D", "#4ADE80"))
+                                     text_color=style.ACCENT)
 
     def copy(self) -> None:
         from ..core import clipboard
@@ -647,7 +651,7 @@ class Controls(ctk.CTkTabview):
             return
         self.export_status.configure(text=f"✓ In die Zwischenablage kopiert ({width} px) – "
                                           "z. B. mit Strg+V in Word einfügen",
-                                     text_color=("#15803D", "#4ADE80"))
+                                     text_color=style.ACCENT)
 
     def batch_export(self, csv_path: str | None = None) -> None:
         import threading
@@ -678,7 +682,7 @@ class Controls(ctk.CTkTabview):
 
         def progress(done, total):
             self.after(0, lambda: self.batch_status.configure(
-                text=f"{done} von {total} …", text_color=("gray35", "gray65")))
+                text=f"{done} von {total} …", text_color=style.MUTED))
 
         def work():
             try:
@@ -695,10 +699,10 @@ class Controls(ctk.CTkTabview):
                 messagebox.showerror("Stapel-Export", f"Abgebrochen:\n{error}", parent=self)
                 return
             text = f"✓ {len(files)} Codes gespeichert in {folder}"
-            color = ("#15803D", "#4ADE80")
+            color = style.ACCENT
             if bad:
                 text += f"\n⚠ {len(bad)} nicht lesbar: " + ", ".join(bad[:5]) + (" …" if len(bad) > 5 else "")
-                color = ("#B45309", "#FBBF24")
+                color = style.WARN
             self.batch_status.configure(text=text, text_color=color)
 
         threading.Thread(target=work, daemon=True).start()

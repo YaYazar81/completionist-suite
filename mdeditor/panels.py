@@ -27,6 +27,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core import design
+
 # ---------------------------------------------------------------------- #
 # Gliederung
 # ---------------------------------------------------------------------- #
@@ -145,9 +147,11 @@ class FindBar(QWidget):
         self.case.setToolTip("Groß-/Kleinschreibung beachten")
         self.count = QLabel("", self)
         self.count.setMinimumWidth(70)
-        prev_b = self._button("▲", "Vorheriger Treffer (Umschalt+F3)", lambda: self.nextRequested.emit(-1))
-        next_b = self._button("▼", "Nächster Treffer (F3, Enter)", lambda: self.nextRequested.emit(1))
-        close_b = self._button("✕", "Schließen (Esc)", self.close_bar)
+        prev_b = self._button("▲", "Vorheriger Treffer (Umschalt+F3)", lambda: self.nextRequested.emit(-1),
+                              "chevron-up")
+        next_b = self._button("▼", "Nächster Treffer (F3, Enter)", lambda: self.nextRequested.emit(1),
+                              "chevron-down")
+        close_b = self._button("✕", "Schließen (Esc)", self.close_bar, "x")
 
         self.replace_edit = QLineEdit(self)
         self.replace_edit.setPlaceholderText("Ersetzen durch …")
@@ -188,9 +192,10 @@ class FindBar(QWidget):
             sc.activated.connect(slot)
         self.hide()
 
-    def _button(self, text: str, tip: str, slot) -> QToolButton:
+    def _button(self, text: str, tip: str, slot, icon: str) -> QToolButton:
         b = QToolButton(self)
         b.setText(text)
+        b.setIcon(design.icon(icon))
         b.setToolTip(tip)
         b.setAutoRaise(True)
         b.clicked.connect(slot)

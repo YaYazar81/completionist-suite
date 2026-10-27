@@ -29,10 +29,11 @@ from PySide6.QtCore import (
     QUrl,
     Signal,
 )
-from PySide6.QtGui import QDesktopServices, QIcon, QPixmap
+from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
+    QButtonGroup,
     QFileSystemModel,  # bei PySide6 in QtWidgets (PyQt6: QtGui)
     QDialog,
     QDialogButtonBox,
@@ -53,6 +54,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from core import design
 
 MD_SUFFIXES = (".md", ".markdown")
 IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg")
@@ -214,26 +217,12 @@ class BookmarkDialog(QDialog):
 # Dateityp-Icons
 # ---------------------------------------------------------------------- #
 
-# Suite-Icons (128 px) in assets/filetypes: md blau, pdf rot, img violett, txt grau
 ICON_KINDS = ("md", "pdf", "img", "txt")
-ICON_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent)) / "assets" / "filetypes"
-
-
-def _make_icon(kind: str) -> QIcon:
-    """Icon aus assets/filetypes, fuer die gaengigen Baumgroessen vorab
-    weich herunterskaliert (Qt skaliert sonst grob)."""
-    icon = QIcon()
-    source = QPixmap(str(ICON_DIR / f"{kind}.png"))
-    if source.isNull():
-        return icon
-    for size in (16, 20, 24, 32, 48, 64, 128):
-        icon.addPixmap(source.scaled(size, size, Qt.AspectRatioMode.KeepAspectRatio,
-                                     Qt.TransformationMode.SmoothTransformation))
-    return icon
 
 
 class FileTypeIcons:
-    """Suite-Icon je Dateiendung; Ordner behalten das System-Icon.
+    """Farbiges Lucide-Icon je Dateiendung (md Smaragd, pdf Rot, Bilder
+    Violett, txt Grau); Ordner behalten das System-Icon.
 
     Bewusst kein eigener ``QFileIconProvider``: ``QFileSystemModel`` fragt den
     Provider auch aus seinem Hintergrund-Thread ab, Pixmaps gehoeren aber in den
@@ -241,7 +230,7 @@ class FileTypeIcons:
     """
 
     def __init__(self) -> None:
-        loaded = {kind: _make_icon(kind) for kind in ICON_KINDS}
+        loaded = {kind: design.file_icon(kind) for kind in ICON_KINDS}
         # Fehlt eine Datei, bleibt es beim System-Icon
         self._icons = {k: v for k, v in loaded.items() if not v.isNull()}
 
@@ -311,10 +300,12 @@ class VaultPanel(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setObjectName("vaultPanel")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)  # Panel-Flaeche aus theme.qss
         self.setMinimumWidth(170)
         self._root = ""
         self._vault = ""
         self._bookmarks: list[dict] = []
+        self._active_bookmark = ""
         self._click_path = ""
         self._click_timer = QTimer(self)
         self._click_timer.setSingleShot(True)
@@ -325,11 +316,13 @@ class VaultPanel(QWidget):
         self.title.setObjectName("vaultTitle")
         self.home_button = QToolButton(self)
         self.home_button.setText("⌂")
+        self.home_button.setIcon(design.icon("house"))
         self.home_button.setToolTip("Zurück zum Vault-Hauptverzeichnis")
         self.home_button.setAutoRaise(True)
         self.home_button.clicked.connect(lambda: self.set_root(self._vault, vault=True))
         self.collapse_button = QToolButton(self)
         self.collapse_button.setText("⇱")
+        self.collapse_button.setIcon(design.icon("chevrons-down-up"))
         self.collapse_button.setToolTip("Alle Ordner einklappen")
         self.collapse_button.setAutoRaise(True)
         self.collapse_button.clicked.connect(lambda: self.tree.collapseAll())
@@ -383,6 +376,7 @@ class VaultPanel(QWidget):
         bm_title.setObjectName("vaultTitle")
         add = QToolButton(self)
         add.setText("+")
+        add.setIcon(design.icon("plus"))
         add.setToolTip("Bookmark hinzufügen")
         add.setAutoRaise(True)
         add.clicked.connect(lambda: self.add_bookmark())
@@ -692,13 +686,19 @@ class VaultPanel(QWidget):
             item = self.bm_flow.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
+        # Der zuletzt angeklickte Bookmark bleibt in Smaragd markiert
+        self._bm_group = QButtonGroup(self.bm_box)
+        self._bm_group.setExclusive(True)
         for i, bm in enumerate(self._bookmarks):
             b = QToolButton(self.bm_box)
             b.setObjectName("bookmarkTile")
+            b.setCheckable(True)
+            b.setChecked(bm["path"] == self._active_bookmark)
+            self._bm_group.addButton(b)
             b.setText(bm["name"] or Path(bm["path"]).name)
             b.setToolTip(bm["path"])
             b.setCursor(Qt.CursorShape.PointingHandCursor)
-            b.clicked.connect(lambda _=False, p=bm["path"]: self.navigate_to(p))
+            b.clicked.connect(lambda _=False, p=bm["path"]: self._open_bookmark(p))
             b.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
             b.customContextMenuRequested.connect(lambda pos, k=i, w=b: self._tile_menu(k, w, pos))
             self.bm_flow.addWidget(b)
@@ -708,6 +708,10 @@ class VaultPanel(QWidget):
             hint.setWordWrap(True)
             self.bm_flow.addWidget(hint)
         self.bm_box.updateGeometry()
+
+    def _open_bookmark(self, path: str) -> None:
+        self._active_bookmark = path
+        self.navigate_to(path)
 
     def _tile_menu(self, k: int, widget: QWidget, pos: QPoint) -> None:
         menu = QMenu(self)

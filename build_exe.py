@@ -34,14 +34,15 @@ ICON = ROOT / "assets" / "icon.ico"
 
 # Was je App gebaut wird: Startskript, Name, Datenordner, eigenes Icon
 # Aus assets/ nimmt jede App nur, was sie zur Laufzeit liest: PDF die Schriften,
-# MD das Editor-Bundle, beide ihr eigenes Fenster-Icon und Startbild (Splash).
+# MD das Editor-Bundle, beide das Design-System (assets/theme, assets/icons)
+# und ihr eigenes Fenster-Icon und Startbild (Splash).
 APPS = {
     "pdf": {"script": "main.py", "name": "CompletionistPDF",
-            "data": ["templates", "presets", "assets/fonts", "assets/icon_pdf.ico",
+            "data": ["templates", "presets", "assets/fonts", "assets/theme", "assets/icons", "assets/icon_pdf.ico",
                      "assets/splash_pdf.jpg"],
             "icon": "assets/icon_pdf.ico"},
     "md": {"script": "main_md.py", "name": "CompletionistMD",
-           "data": ["assets/editor", "assets/filetypes", "assets/icon_md.ico",
+           "data": ["assets/editor", "assets/theme", "assets/icons", "assets/icon_md.ico",
                     "assets/splash_md.jpg"],
            "icon": "assets/icon_md.ico"},
     "qr": {"script": "run_completionistqr.py", "name": "CompletionistQR",

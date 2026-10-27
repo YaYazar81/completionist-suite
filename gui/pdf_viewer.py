@@ -18,6 +18,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core import design
+
 try:
     from PySide6.QtPdf import QPdfDocument
     from PySide6.QtPdfWidgets import QPdfView
@@ -44,10 +46,10 @@ class PdfPreview(QWidget):
 
         bar = QHBoxLayout()
         bar.setContentsMargins(6, 4, 6, 4)
-        self._btn_out = _tool("−", "Verkleinern", self.zoom_out)
-        self._btn_in = _tool("+", "Vergrößern", self.zoom_in)
-        self._btn_page = _tool("Ganze Seite", "Ganze Seite anzeigen", self.fit_page)
-        self._btn_fit = _tool("Breite", "An Fensterbreite anpassen", self.fit_width)
+        self._btn_out = _tool("−", "Verkleinern", self.zoom_out, "zoom-out")
+        self._btn_in = _tool("+", "Vergrößern", self.zoom_in, "zoom-in")
+        self._btn_page = _tool("Ganze Seite", "Ganze Seite anzeigen", self.fit_page, "maximize")
+        self._btn_fit = _tool("Breite", "An Fensterbreite anpassen", self.fit_width, "move-horizontal")
         for b in (self._btn_page, self._btn_fit):
             b.setCheckable(True)
         self._btn_page.setChecked(True)
@@ -220,9 +222,12 @@ class PdfPreview(QWidget):
         self._lbl_zoom.setText("" if self._fit else f"{self._current_zoom() * 100:.0f} %")
 
 
-def _tool(text: str, tip: str, slot) -> QToolButton:
+def _tool(text: str, tip: str, slot, icon: str) -> QToolButton:
     btn = QToolButton()
     btn.setText(text)
+    btn.setIcon(design.icon(icon))
+    btn.setIconSize(design.ICON_SIZE)
+    btn.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
     btn.setToolTip(tip)
     btn.setAutoRaise(True)
     btn.clicked.connect(slot)

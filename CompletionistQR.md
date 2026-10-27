@@ -4,7 +4,7 @@ Windows-App für gestaltete QR-Codes: Logo in der Mitte, verschiedene Designs, R
 Beschriftung in wählbarer Schriftart. Mit Live-Vorschau und automatischer Scan-Prüfung.
 
 Eigenständiges Fenster neben CompletionistPDF und CompletionistMD; aus beiden lässt es sich
-über den Knopf **▣ QR** in der Werkzeugleiste starten. Die Oberfläche baut auf CustomTkinter
+über den Knopf **► QR** in der Werkzeugleiste starten. Die Oberfläche baut auf CustomTkinter
 auf, nicht auf Qt wie die beiden anderen Programme.
 
 ## Starten
@@ -117,9 +117,9 @@ nach der Regel nonzero. `tests/test_vector_export.py` rastert jedes Vorlagen-PDF
 prüft es auf Lesbarkeit.
 `completionistqr/ui` enthält die Oberfläche (CustomTkinter), `ui/drive_upload.py` den Knopf
 zum Hochladen. Der Gestalter selbst (Bedienleiste, Vorschau, Kürzel, Fenster „Über") steckt
-in `ui/designer.py` – QR-Online nutzt genau diesen Code für sein Fenster „QR-Code gestalten"
+in `ui/designer.py` – CompletionistQR Online nutzt genau diesen Code für sein Fenster „QR-Code gestalten"
 (mit dem Kurzlink als festem Inhalt). Änderungen hier landen also in beiden Programmen;
-`QR-Online/tests/test_qronline_design.py` prüft das. Anmeldung und Drive-Aufrufe liegen ohne Qt in `core/drive.py` im Hauptordner;
+`CompletionistQR-Online/tests/test_qronline_design.py` prüft das. Anmeldung und Drive-Aufrufe liegen ohne Qt in `core/drive.py` im Hauptordner;
 CompletionistMD nutzt dieselben (`mdeditor/gdrive.py`).
 
 ### Was nicht mitgepackt wird

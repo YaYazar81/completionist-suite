@@ -497,12 +497,12 @@ class SyncStatusButton(QToolButton):
     """Statusleisten-Anzeige; Klick loest einen Abgleich aus."""
 
     COLORS = {
-        "ok": "#2e9d5b",       # gruen: gekoppelt & aktuell
-        "idle": "#2e9d5b",
-        "busy": "#2f7fd8",     # blau: laeuft
-        "offline": "#c99a06",  # gelb
-        "auth": "#d0453a",     # rot
-        "error": "#d0453a",
+        "ok": "#10B981",       # Smaragd: gekoppelt & aktuell
+        "idle": "#10B981",
+        "busy": "#38BDF8",     # blau: laeuft
+        "offline": "#FBBF24",  # gelb
+        "auth": "#F87171",     # rot
+        "error": "#F87171",
     }
     SYMBOLS = {"ok": "☁", "idle": "☁", "offline": "⚠", "auth": "⚠", "error": "⚠"}
     SPINNER = "◐◓◑◒"

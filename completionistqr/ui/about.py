@@ -1,6 +1,6 @@
 """Fenster "Über …": Version, Copyright, Lizenz, Fremdkomponenten, Impressum.
 
-Gemeinsam fuer CompletionistQR und QR-Online (Name, Version, Bild und Icon je App)."""
+Gemeinsam fuer CompletionistQR und CompletionistQR Online (Name, Version, Bild und Icon je App)."""
 from __future__ import annotations
 
 import os

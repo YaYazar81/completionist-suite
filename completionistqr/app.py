@@ -10,6 +10,7 @@ import customtkinter as ctk
 from . import __version__
 from .core import fonts
 from .core.userdir import user_dir
+from .ui import style
 from .ui.designer import DesignerMixin, design_from, register_fonts
 
 
@@ -90,6 +91,7 @@ def main() -> None:
         except Exception:
             pass
     ctk.set_appearance_mode(_load_settings().get("appearance", "system"))
-    ctk.set_default_color_theme("blue")
+    # Completionist Pro (Schiefer & Smaragd) wie CompletionistMD und -PDF
+    style.apply_theme()
     register_fonts()
     CompletionistQRApp(splash=True).mainloop()
