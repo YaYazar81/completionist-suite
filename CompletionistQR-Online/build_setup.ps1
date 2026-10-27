@@ -1,7 +1,7 @@
-# Baut dist\QR-Online-Setup-<Version>.exe
+# Baut dist\CompletionistQR-Online-Setup-<Version>.exe
 #
 #   .\build_setup.ps1             Programmordner (PyInstaller) und Setup
-#   .\build_setup.ps1 -SkipBuild  nur das Setup aus vorhandenem dist\QR-Online
+#   .\build_setup.ps1 -SkipBuild  nur das Setup aus vorhandenem dist\CompletionistQR-Online
 #
 # Erwartet die venv der Suite (..\.venv) mit requirements.txt dieses Ordners
 # und pyinstaller. Braucht Inno Setup 6:  winget install JRSoftware.InnoSetup
@@ -26,7 +26,7 @@ if (-not $iscc) {
 
 $version = & $py -c "import qronline as p; print(p.__version__)"
 if ($LASTEXITCODE -ne 0) { Write-Error "Version konnte nicht gelesen werden." }
-Write-Host "QR-Online $version"
+Write-Host "CompletionistQR Online $version"
 
 if (-not $SkipBuild) {
     $ErrorActionPreference = "Continue"
@@ -35,15 +35,15 @@ if (-not $SkipBuild) {
     $ErrorActionPreference = "Stop"
     if ($LASTEXITCODE -ne 0) { Write-Error "PyInstaller-Build fehlgeschlagen." }
 }
-if (-not (Test-Path "dist\QR-Online\QR-Online.exe")) {
-    Write-Error "dist\QR-Online\ fehlt -- erst ohne -SkipBuild laufen lassen."
+if (-not (Test-Path "dist\CompletionistQR-Online\CompletionistQR-Online.exe")) {
+    Write-Error "dist\CompletionistQR-Online\ fehlt -- erst ohne -SkipBuild laufen lassen."
 }
 
-& $iscc "/DAppVersion=$version" "installer\QR-Online.iss" |
+& $iscc "/DAppVersion=$version" "installer\CompletionistQR-Online.iss" |
     Select-String -Pattern "Error|Warning|Successful|compile" | ForEach-Object { "$_" }
 if ($LASTEXITCODE -ne 0) { Write-Error "Inno Setup fehlgeschlagen." }
 
-$out = "dist\QR-Online-Setup-$version.exe"
+$out = "dist\CompletionistQR-Online-Setup-$version.exe"
 $mb = "{0:N1}" -f ((Get-Item $out).Length / 1MB)
 Write-Host ""
 Write-Host "Fertig: $PSScriptRoot\$out  ($mb MB)"

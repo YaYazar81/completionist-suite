@@ -1,20 +1,21 @@
-; Setup fuer QR-Online (Inno Setup 6).
+; Setup fuer CompletionistQR Online (Inno Setup 6).
 ;
-; Gebaut wird ueber  .\build_setup.ps1  im Ordner QR-Online. Von Hand:
+; Gebaut wird ueber  .\build_setup.ps1  im Ordner CompletionistQR-Online. Von Hand:
 ;
-;   ISCC.exe /DAppVersion=1.0.0 installer\QR-Online.iss
+;   ISCC.exe /DAppVersion=1.0.0 installer\CompletionistQR-Online.iss
 ;
-; Voraussetzung: dist\QR-Online\ existiert (python build_exe.py).
+; Voraussetzung: dist\CompletionistQR-Online\ existiert (python build_exe.py).
 
 #ifndef AppVersion
   #define AppVersion "0.0.0"
 #endif
 
-#define AppName "QR-Online"
+#define AppName "CompletionistQR Online"
 #define AppPublisher "Completionist Library"
 #define AppCopyright "© 2026 Mike-Dominique Horch (Completionist Library)"
-#define AppExe "QR-Online.exe"
-#define SourceDir "..\dist\QR-Online"
+#define AppExe "CompletionistQR-Online.exe"
+#define FileBase "CompletionistQR-Online"  ; Dateinamen ohne Leerzeichen
+#define SourceDir "..\dist\CompletionistQR-Online"
 
 [Setup]
 ; Diese GUID identifiziert das Programm bei Updates und Deinstallation --
@@ -39,7 +40,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 
 OutputDir=..\dist
-OutputBaseFilename={#AppName}-Setup-{#AppVersion}
+OutputBaseFilename={#FileBase}-Setup-{#AppVersion}
 SetupIconFile=..\assets\icon.ico
 WizardStyle=modern
 Compression=lzma2/max
@@ -76,7 +77,17 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopico
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
 
+[InstallDelete]
+; Bis Version 1.1 hiess das Programm "QR-Online" (gleiche AppId, daher Update statt
+; Zweitinstallation) -- dessen .exe und Verknuepfungen wegraeumen.
+Type: files; Name: "{app}\QR-Online.exe"
+Type: files; Name: "{group}\QR-Online.lnk"
+Type: files; Name: "{group}\QR-Online – Server-Dateien.lnk"
+Type: files; Name: "{group}\QR-Online deinstallieren.lnk"
+Type: files; Name: "{group}\Uninstall QR-Online.lnk"
+Type: files; Name: "{autodesktop}\QR-Online.lnk"
+
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\_internal\__pycache__"
 
-; Einstellungen unter %APPDATA%\QR-Online bleiben bei der Deinstallation erhalten.
+; Einstellungen unter %APPDATA%\CompletionistQR Online (bis 1.1: %APPDATA%\CompletionistQR Online) bleiben bei der Deinstallation erhalten.

@@ -10,11 +10,23 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 | CompletionistPDF | `core/__init__.py` |
 | CompletionistMD | `mdeditor/__init__.py` |
 | CompletionistQR | `completionistqr/__init__.py` |
+| CompletionistQR Online (bis 1.1: QR-Online) | `CompletionistQR-Online/qronline/__init__.py` |
 
-CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Online
-(Ordner `QR-Online/`) zählt die Version in `QR-Online/qronline/__init__.py`.
+CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
 
-## 27.10.2026 – PDF 1.6.0, MD 1.7.0, QR 1.5.0, QR-Online 1.2.0 – Design-System „Completionist Pro"
+## 27.10.2026 – PDF 1.6.0, MD 1.7.0, QR 1.5.0, CompletionistQR Online 1.2.0 – Design-System „Completionist Pro"
+
+### QR-Online heißt jetzt CompletionistQR Online
+* Neuer Name in Fenstertitel, „Über", Setup, Startmenü und Dateieigenschaften; Programm
+  `CompletionistQR-Online.exe`, Setup `CompletionistQR-Online-Setup-<Version>.exe`, Ordner im
+  Repository `CompletionistQR-Online/`.
+* Ein installiertes QR-Online wird beim Setup aktualisiert, nicht doppelt installiert
+  (gleiche Setup-Kennung); die alte `.exe` und alte Verknüpfungen räumt das Setup weg.
+  Server, API-Schlüssel und Designs übernimmt das Programm beim ersten Start aus
+  `%APPDATA%\QR-Online` nach `%APPDATA%\CompletionistQR Online`.
+* Das WordPress-Plugin heißt **CompletionistQR Online Tracker**
+  (`wordpress/completionistqr-online-tracker/`) und zeigt sich in Smaragd wie die Apps.
+  Server-Dateien und API bleiben unverändert -- vorhandene Links und Codes gelten weiter.
 
 Das Design-System entstand am 26.10. auf einem eigenen Branch und war bisher nicht in
 `main` -- die Setups bis MD 1.6.0 / QR 1.4.1 / QR-Online 1.1.0 kamen deshalb noch im alten
@@ -45,10 +57,10 @@ haben dabei passende Lucide-Icons bekommen.
 * Viewer-Leiste mit Icons für Zoom, Seiten und Suche; Inhaltsverzeichnis mit
   Smaragd-Auswahl wie die Bäume in MD.
 
-### CompletionistQR 1.5.0, QR-Online 1.2.0
-* QR-Online zeigt den Gestalter in denselben Farben und mit denselben Icons wie
-  CompletionistQR (gemeinsamer Code, siehe QR-Online 1.1.0); auch das Hauptfenster von
-  QR-Online nutzt das Farbschema Completionist Pro.
+### CompletionistQR 1.5.0, CompletionistQR Online 1.2.0
+* CompletionistQR Online zeigt den Gestalter in denselben Farben und mit denselben Icons
+  wie CompletionistQR (gemeinsamer Code, siehe QR-Online 1.1.0); auch sein Hauptfenster
+  und die Graphen nutzen das Farbschema Completionist Pro.
 * Einstellungen und Vorschau als Karten mit feinem Rahmen; Eingabefelder bekommen
   beim Fokus einen Smaragd-Rahmen.
 * Unter der Scan-Prüfung ein Statusbalken: Smaragd = lesbar, Gelb = nicht lesbar.

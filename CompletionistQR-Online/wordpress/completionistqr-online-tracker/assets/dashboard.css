@@ -1,8 +1,8 @@
-/* QR-Online Dashboard – Farben wie die Windows-App (Akzent #3B82F6) */
+/* CompletionistQR Online Tracker */
 .qro {
-  --qro-accent: #3b82f6;
-  --qro-accent-hover: #1d4ed8;
-  --qro-selected: #dbeafe;
+  --qro-accent: #059669;  /* Smaragd wie Completionist Pro */
+  --qro-accent-hover: #047857;
+  --qro-selected: #d1fae5;
   --qro-card: #fff;
   --qro-border: #dcdcde;
   --qro-text: #1f2937;

@@ -1,4 +1,4 @@
-r"""Erzeugt das Programmsymbol von QR-Online im Stil der Suite.
+r"""Erzeugt das Programmsymbol von CompletionistQR Online im Stil der Suite.
 
     python tools\make_icon.py     # assets\icon_source.png (1024 px) und assets\icon.ico
 

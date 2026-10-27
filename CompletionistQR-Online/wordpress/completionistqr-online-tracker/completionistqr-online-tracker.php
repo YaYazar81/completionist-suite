@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name:       QR-Online Dashboard
- * Description:       Tracker für QR-Online: die Scans der QR-Links als Kennzahlen und Graphen im WordPress-Admin. Angelegt und gestaltet wird in der App QR-Online.
+ * Plugin Name:       CompletionistQR Online Tracker
+ * Description:       Tracker für CompletionistQR Online: die Scans der QR-Links als Kennzahlen und Graphen im WordPress-Admin. Angelegt und gestaltet wird in der App CompletionistQR Online.
  * Version:           1.1.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
@@ -14,10 +14,10 @@
 
 /*
  * Nur der Tracker: das Plugin zeigt Links und Scans an, mehr nicht. Links anlegen, aendern,
- * loeschen und QR-Codes gestalten geht ausschliesslich in der App QR-Online -- der REST-Proxy
+ * loeschen und QR-Codes gestalten geht ausschliesslich in der App CompletionistQR Online -- der REST-Proxy
  * unten reicht deshalb nur lesende Aufrufe (GET) an den Server weiter.
  *
- * Das Plugin zaehlt nichts selbst. Es spricht die API von QR-Online/server/index.php an
+ * Das Plugin zaehlt nichts selbst. Es spricht die API von CompletionistQR-Online/server/index.php an
  * (dieselbe wie die Windows-App) und reicht die Antworten an das Dashboard im Browser weiter.
  * Der API-Schluessel bleibt dabei auf dem WordPress-Server; der Browser redet nur mit
  * /wp-json/qr-online/v1/ und braucht dafuer ein angemeldetes Konto mit "manage_options".
@@ -58,7 +58,7 @@ function qr_online_call(string $method, string $path, array $query = [])
 {
     $base = qr_online_server();
     if (!preg_match('#^https?://#i', $base)) {
-        return new WP_Error('qr_online_config', 'Bitte unter „QR-Online → Einstellungen“ die Server-Adresse mit https:// eintragen.', ['status' => 500]);
+        return new WP_Error('qr_online_config', 'Bitte unter „CompletionistQR Online → Einstellungen“ die Server-Adresse mit https:// eintragen.', ['status' => 500]);
     }
     $url = $base . '/api/' . $path;
     if ($query) {
@@ -130,11 +130,11 @@ add_action('rest_api_init', function () {
 // ---------------------------------------------------------------- Admin-Seiten
 
 add_action('admin_menu', function () {
-    add_menu_page('QR-Online', 'QR-Online', QR_ONLINE_CAP, 'qr-online', 'qr_online_dashboard_page',
+    add_menu_page('CompletionistQR Online', 'CompletionistQR Online', QR_ONLINE_CAP, 'qr-online', 'qr_online_dashboard_page',
         'dashicons-chart-bar', 26);
-    add_submenu_page('qr-online', 'QR-Online – Dashboard', 'Dashboard', QR_ONLINE_CAP, 'qr-online',
+    add_submenu_page('qr-online', 'CompletionistQR Online – Dashboard', 'Dashboard', QR_ONLINE_CAP, 'qr-online',
         'qr_online_dashboard_page');
-    add_submenu_page('qr-online', 'QR-Online – Einstellungen', 'Einstellungen', QR_ONLINE_CAP,
+    add_submenu_page('qr-online', 'CompletionistQR Online – Einstellungen', 'Einstellungen', QR_ONLINE_CAP,
         'qr-online-settings', 'qr_online_settings_page');
 });
 
@@ -155,7 +155,7 @@ add_action('admin_enqueue_scripts', function (string $hook) {
 
 function qr_online_dashboard_page(): void
 {
-    echo '<div class="wrap qro"><h1 class="wp-heading-inline">QR-Online</h1>'
+    echo '<div class="wrap qro"><h1 class="wp-heading-inline">CompletionistQR Online</h1>'
         . '<div id="qro-app"><p>Lade …</p></div>'
         . '<noscript><p>Das Dashboard braucht JavaScript.</p></noscript></div>';
 }
@@ -182,7 +182,7 @@ function qr_online_settings_page(): void
     $has_key = qr_online_key() !== '';
     ?>
     <div class="wrap">
-        <h1>QR-Online – Einstellungen</h1>
+        <h1>CompletionistQR Online – Einstellungen</h1>
         <?php
         if (qr_online_configured()) {
             $ping = qr_online_call('GET', 'ping');
@@ -204,7 +204,7 @@ function qr_online_settings_page(): void
                         <input type="url" class="regular-text code" id="qr_online_server" name="qr_online_server"
                                placeholder="https://qr.example.de" value="<?php echo esc_attr(qr_online_server()); ?>"
                             <?php disabled($server_fixed); ?>>
-                        <p class="description">Wo <code>index.php</code> aus <code>QR-Online/server/</code> liegt.
+                        <p class="description">Wo <code>index.php</code> aus <code>CompletionistQR-Online/server/</code> liegt.
                             Genau diese Adresse steht vor dem Code in jedem QR-Code.
                             <?php if ($server_fixed) echo '<br>Festgelegt in der wp-config.php.'; ?></p>
                     </td>
@@ -237,7 +237,7 @@ add_filter('plugin_action_links_' . plugin_basename(__FILE__), function (array $
 
 add_action('wp_dashboard_setup', function () {
     if (current_user_can(QR_ONLINE_CAP) && qr_online_configured()) {
-        wp_add_dashboard_widget('qr_online_widget', 'QR-Online: meistgescannt', 'qr_online_widget');
+        wp_add_dashboard_widget('qr_online_widget', 'CompletionistQR Online: meistgescannt', 'qr_online_widget');
     }
 });
 

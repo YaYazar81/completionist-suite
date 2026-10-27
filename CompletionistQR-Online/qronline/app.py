@@ -1,4 +1,4 @@
-"""Hauptfenster von QR-Online: Links verwalten, Scans als Graphen anzeigen."""
+"""Hauptfenster von CompletionistQR Online: Links verwalten, Scans als Graphen anzeigen."""
 from __future__ import annotations
 
 import ctypes
@@ -110,7 +110,7 @@ class FormDialog(ctk.CTkToplevel):
 class QROnlineApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title(f"QR-Online {__version__}")
+        self.title(f"CompletionistQR Online {__version__}")
         # In der gepackten App liegen die Assets unter sys._MEIPASS
         icon = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1])) / "assets" / "icon.ico"
         if icon.is_file():
@@ -483,7 +483,7 @@ class QROnlineApp(ctk.CTk):
 def main() -> None:
     if sys.platform == "win32":
         try:  # eigenes Taskleistensymbol statt des Python-Symbols
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("QROnline.App")
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("CompletionistQR.Online")
         except Exception:
             pass
     ctk.set_appearance_mode(settings.load().get("appearance", "system"))

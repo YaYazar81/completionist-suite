@@ -2,10 +2,10 @@
 
 Kein eigener Nachbau: Bedienleiste, Vorschau, Vorlagen, Logo, Beschriftung, Export (PNG,
 SVG, PDF, Zwischenablage), Scan-Pruefung und das Fenster "Über" kommen aus dem Paket
-completionistqr (completionistqr/ui/designer.py). Was CompletionistQR kann, kann QR-Online
+completionistqr (completionistqr/ui/designer.py). Was CompletionistQR kann, kann CompletionistQR Online
 damit automatisch auch. Fest steht nur der Inhalt: die kurze Adresse des Links.
 
-Das Design merkt sich QR-Online je Link (settings.json, "designs"); ein neuer Link
+Das Design merkt sich CompletionistQR Online je Link (settings.json, "designs"); ein neuer Link
 beginnt mit dem zuletzt benutzten Design.
 """
 from __future__ import annotations
@@ -19,7 +19,7 @@ from . import __version__, settings
 
 try:
     import completionistqr  # noqa: F401
-except ImportError:  # aus dem Quellcode gestartet: das Paket liegt eine Ebene ueber QR-Online
+except ImportError:  # aus dem Quellcode gestartet: das Paket liegt eine Ebene ueber CompletionistQR-Online
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from completionistqr.ui.designer import DesignerMixin, design_from, register_fonts  # noqa: E402
@@ -28,7 +28,7 @@ from completionistqr.ui.style import apply_theme  # noqa: E402
 
 __all__ = ["DesignWindow", "about_info", "apply_theme", "register_fonts", "style"]
 
-HINT = ("Im Code steht die kurze Adresse deines QR-Online-Servers. Sie zählt jeden Scan und "
+HINT = ("Im Code steht die kurze Adresse deines CompletionistQR-Online-Servers. Sie zählt jeden Scan und "
         "leitet zum Ziel weiter – das Ziel lässt sich jederzeit ändern, der gedruckte Code "
         "bleibt gültig.")
 
@@ -39,7 +39,7 @@ def assets_dir() -> Path:
 
 
 def about_info() -> dict:
-    return {"name": "QR-Online", "version": __version__,
+    return {"name": "CompletionistQR Online", "version": __version__,
             "subtitle": "QR-Codes mit Scan-Statistik",
             "image": assets_dir() / "icon_source.png", "icon": assets_dir() / "icon.ico"}
 

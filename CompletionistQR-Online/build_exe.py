@@ -1,6 +1,6 @@
-r"""Baut den Programmordner dist\QR-Online\ mit PyInstaller.
+r"""Baut den Programmordner dist\CompletionistQR-Online\ mit PyInstaller.
 
-    python build_exe.py            # dist\QR-Online\QR-Online.exe (Programmordner)
+    python build_exe.py            # dist\CompletionistQR-Online\CompletionistQR-Online.exe (Programmordner)
     python build_exe.py --console  # mit Konsolenfenster (zeigt Tracebacks)
 
 Bewusst ein Ordner statt einer einzelnen .exe: die .exe selbst bleibt klein und
@@ -22,7 +22,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 SUITE = ROOT.parent  # completionistqr/ und core/ liegen dort
-NAME = "QR-Online"
+NAME = "CompletionistQR-Online"  # Programmordner und .exe
+DISPLAY = "CompletionistQR Online"  # Anzeigename
 ICON = ROOT / "assets" / "icon.ico"
 # Pakete, deren Lizenztexte in den Ordner Lizenzen kommen
 LICENSED = ["requests", "urllib3", "certifi", "idna", "charset-normalizer", "customtkinter",
@@ -49,11 +50,11 @@ def write_version_file(folder: Path) -> Path:
   kids=[
     StringFileInfo([StringTable('040704B0', [
       StringStruct('CompanyName', 'Completionist Library'),
-      StringStruct('FileDescription', '{NAME} – QR-Codes mit Scan-Statistik'),
+      StringStruct('FileDescription', '{DISPLAY} – QR-Codes mit Scan-Statistik'),
       StringStruct('FileVersion', '{version}'),
       StringStruct('InternalName', '{NAME}'),
       StringStruct('OriginalFilename', '{NAME}.exe'),
-      StringStruct('ProductName', '{NAME}'),
+      StringStruct('ProductName', '{DISPLAY}'),
       StringStruct('ProductVersion', '{version}'),
       StringStruct('LegalCopyright', '© 2026 Mike-Dominique Horch (Completionist Library)'),
       StringStruct('Comments', 'Lizenz: CC BY-NC-ND 4.0; Kontakt: kontakt@completionist-library.de')])]),
@@ -73,7 +74,7 @@ def collect_licenses(target: Path) -> Path:
 
     out = target / "Lizenzen"
     out.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(SUITE / "LICENSE", out / "QR-Online - LICENSE.txt")
+    shutil.copyfile(SUITE / "LICENSE", out / f"{DISPLAY} - LICENSE.txt")
     # Liest das Fenster "Über" (core/legal.py: Lizenzen/THIRD_PARTY_NOTICES.md)
     shutil.copyfile(SUITE / "THIRD_PARTY_NOTICES.md", out / "THIRD_PARTY_NOTICES.md")
     for ofl in (SUITE / "completionistqr" / "assets" / "fonts").glob("*/OFL.txt"):

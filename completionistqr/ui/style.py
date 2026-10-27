@@ -66,7 +66,7 @@ def apply_theme() -> None:
 
 def install_focus_ring(root) -> None:
     """Smaragd-Rahmen um das Eingabefeld mit dem Fokus (Entry, Textbox, ComboBox).
-    Einmal je Anwendung -- auch wenn mehrere Fenster (QR-Online) es anfordern."""
+    Einmal je Anwendung -- auch wenn mehrere Fenster (CompletionistQR Online) es anfordern."""
     top = root._root()
     if getattr(top, "_focus_ring", False):
         return

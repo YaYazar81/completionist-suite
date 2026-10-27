@@ -1,6 +1,6 @@
 """Packt das WordPress-Plugin als Zip zum Hochladen (Plugins → Plugin hochladen).
 
-    python wordpress/build_zip.py   ->  dist/qr-online-dashboard.zip
+    python wordpress/build_zip.py   ->  dist/completionistqr-online-tracker.zip
 """
 from __future__ import annotations
 
@@ -8,10 +8,10 @@ import zipfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-PLUGIN = HERE / "qr-online-dashboard"
+PLUGIN = HERE / "completionistqr-online-tracker"
 
 
-def build(out: Path = HERE.parent / "dist" / "qr-online-dashboard.zip") -> Path:
+def build(out: Path = HERE.parent / "dist" / "completionistqr-online-tracker.zip") -> Path:
     out.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for f in sorted(PLUGIN.rglob("*")):

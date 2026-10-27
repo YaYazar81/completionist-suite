@@ -1,4 +1,4 @@
-# Baut die Windows-Setups aller Programme: CompletionistPDF, -MD, -QR und QR-Online.
+# Baut die Windows-Setups aller Programme: CompletionistPDF, -MD, -QR und CompletionistQR Online.
 #
 # Läuft bei jedem Push und von Hand (Actions -> "Setups bauen" -> Run workflow).
 # Erst die Tests, dann die Setups; die fertigen *-Setup-<Version>.exe liegen danach
@@ -34,7 +34,7 @@ jobs:
           python -m venv .venv
           .venv\Scripts\python.exe -m pip install --upgrade pip
           .venv\Scripts\python.exe -m pip install -r requirements.lock.txt
-          .venv\Scripts\python.exe -m pip install -r QR-Online\requirements.txt
+          .venv\Scripts\python.exe -m pip install -r CompletionistQR-Online\requirements.txt
 
       - name: Inno Setup
         run: |
@@ -45,13 +45,13 @@ jobs:
       - name: Tests
         env:
           QT_QPA_PLATFORM: offscreen
-        run: .venv\Scripts\python.exe -m pytest tests QR-Online\tests -q -p no:cacheprovider
+        run: .venv\Scripts\python.exe -m pytest tests CompletionistQR-Online\tests -q -p no:cacheprovider
 
       - name: Setups CompletionistPDF, -MD, -QR
         run: .\build_setup.ps1 -App all
 
-      - name: Setup QR-Online
-        working-directory: QR-Online
+      - name: Setup CompletionistQR Online
+        working-directory: CompletionistQR-Online
         run: .\build_setup.ps1
 
       - uses: actions/upload-artifact@v7
@@ -59,6 +59,6 @@ jobs:
           name: Setups
           path: |
             dist/*-Setup-*.exe
-            QR-Online/dist/*-Setup-*.exe
+            CompletionistQR-Online/dist/*-Setup-*.exe
           if-no-files-found: error
           retention-days: 30

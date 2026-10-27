@@ -1,4 +1,4 @@
-# QR-Online: alle Adressen an index.php, z. B. /A7KX9P -> index.php
+# CompletionistQR Online: alle Adressen an index.php, z. B. /A7KX9P -> index.php
 Options -Indexes
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f

@@ -1,6 +1,6 @@
 <?php
 /*
- * QR-Online – Weiterleitung mit Scan-Zaehlung.
+ * CompletionistQR Online – Weiterleitung mit Scan-Zaehlung.
  *
  *   GET  /<CODE>                 zaehlt den Scan und leitet zum Ziel weiter (302)
  *   GET  /api/ping               prueft den API-Schluessel (meldet auch short_url)
@@ -176,7 +176,7 @@ function handle_redirect(PDO $pdo, string $code, array $config): void
                 ->execute([$code, now_utc(), $device, $os, language($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')]);
         } catch (Throwable $e) {
             // Lieber einen Scan nicht zaehlen, als den Besucher nicht weiterzuleiten
-            error_log('QR-Online: Scan nicht gespeichert: ' . $e->getMessage());
+            error_log('CompletionistQR Online: Scan nicht gespeichert: ' . $e->getMessage());
         }
     }
     // 302 und no-store: sonst merkt sich der Browser das Ziel und spaetere Scans fehlen
@@ -299,7 +299,7 @@ try {
     header('Content-Type: text/plain; charset=utf-8');
     echo "Nicht gefunden.\n";
 } catch (Throwable $e) {
-    error_log('QR-Online: ' . $e->getMessage());
+    error_log('CompletionistQR Online: ' . $e->getMessage());
     if (($parts[0] ?? '') === 'api') {
         fail(500, 'Serverfehler: ' . $e->getMessage());
     }

@@ -8,9 +8,9 @@ Drei Windows-Programme rund um Spiele-Guides und Dokumente:
 | **CompletionistPDF** | Markdown zu professionellem PDF über Typst, mit Live-Vorschau und PDF-Viewer | [CompletionistPDF.md](CompletionistPDF.md) |
 | **CompletionistQR** | Gestaltete QR-Codes mit Logo, Rahmen und Beschriftung, Scan-Prüfung, Stapel-Export | [CompletionistQR.md](CompletionistQR.md) |
 
-Eigenes Projekt im Ordner `QR-Online/`: **QR-Online** zählt Scans von QR-Codes über einen
+Eigenes Projekt im Ordner `CompletionistQR-Online/`: **CompletionistQR Online** zählt Scans von QR-Codes über einen
 kleinen PHP-Server auf dem eigenen Webspace und zeigt sie als Graphen
-([QR-Online/README.md](QR-Online/README.md)).
+([CompletionistQR-Online/README.md](CompletionistQR-Online/README.md)).
 
 Änderungen und Versionsnummern: [CHANGELOG.md](CHANGELOG.md).
 

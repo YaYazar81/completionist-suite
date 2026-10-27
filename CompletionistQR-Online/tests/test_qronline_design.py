@@ -1,4 +1,4 @@
-"""QR-Online nutzt den Gestalter von CompletionistQR: gleiche Bedienleiste, gleicher Export,
+"""CompletionistQR Online nutzt den Gestalter von CompletionistQR: gleiche Bedienleiste, gleicher Export,
 der Kurzlink als fester Inhalt, das Design je Link gemerkt."""
 from __future__ import annotations
 
@@ -52,7 +52,7 @@ def test_design_window_uses_completionistqr_with_short_link(root, tmp_path):
     out = export.save(win.design, tmp_path / "qr.svg", width_px=512)
     assert "<svg" in out.read_text(encoding="utf-8")
 
-    # Beim Schliessen merkt sich QR-Online das Design fuer diesen Link
+    # Beim Schliessen merkt sich CompletionistQR Online das Design fuer diesen Link
     win.close()
     assert prefs["designs"][LINK.code]["frame"] == win.design.frame
     assert settings.load()["designs"][LINK.code] == prefs["designs"][LINK.code]
@@ -72,7 +72,7 @@ def test_about_window_shows_qr_online(root):
 
     win = AboutWindow(root, **about_info())
     pump(win)
-    assert win.title() == "Über QR-Online"
+    assert win.title() == "Über CompletionistQR Online"
     texts = []
 
     def walk(w):
@@ -83,3 +83,20 @@ def test_about_window_shows_qr_online(root):
     walk(win)
     assert any(f"Version {__version__}" in t for t in texts)
     win.destroy()
+
+
+def test_settings_move_from_old_name(tmp_path, monkeypatch):
+    """Bis 1.1 hiess das Programm QR-Online: dessen Einstellungen werden übernommen."""
+    import json
+
+    monkeypatch.setenv("APPDATA", str(tmp_path))
+    old = tmp_path / "QR-Online"
+    old.mkdir()
+    (old / "settings.json").write_text(json.dumps({"base_url": "https://c10t.de",
+                                                   "designs": {"A7KX9P": {"frame": "card"}}}))
+    data = settings.load()
+    assert data["base_url"] == "https://c10t.de" and data["designs"]["A7KX9P"]["frame"] == "card"
+    assert (tmp_path / "CompletionistQR Online" / "settings.json").is_file()
+    settings.save({**data, "range": "7 Tage"})
+    assert json.loads((old / "settings.json").read_text())["base_url"] == "https://c10t.de"  # alt bleibt
+    assert settings.load()["range"] == "7 Tage"

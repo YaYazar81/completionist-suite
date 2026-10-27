@@ -1,5 +1,5 @@
-/* QR-Online Dashboard: der Tracker -- Links mit ihren Scans als Graphen, nur zum Ansehen.
- * Angelegt, geaendert, gestaltet und geloescht wird ausschliesslich in der App QR-Online.
+/* CompletionistQR Online Tracker -- Links mit ihren Scans als Graphen, nur zum Ansehen.
+ * Angelegt, geaendert, gestaltet und geloescht wird ausschliesslich in der App CompletionistQR Online.
  *
  * Spricht nur /wp-json/qr-online/v1/ an; das Plugin reicht die Aufrufe mit dem
  * API-Schluessel an den QR-Server weiter. Gezaehlt wird nach lokaler Zeit des Browsers
@@ -269,7 +269,7 @@
     const links = state.links.filter((l) => !q ||
       [l.label, l.target, l.code].some((v) => (v || "").toLowerCase().includes(q)));
     if (!state.links.length) {
-      box.replaceChildren(el("p", {class: "qro-empty"}, "Noch keine Links. Angelegt werden sie in der App QR-Online."));
+      box.replaceChildren(el("p", {class: "qro-empty"}, "Noch keine Links. Angelegt werden sie in der App CompletionistQR Online."));
       return;
     }
     box.replaceChildren(...links.map((l) => el("button", {
@@ -286,7 +286,7 @@
     if (!link) {
       box.replaceChildren(el("div", {class: "qro-card qro-empty"},
         state.links.length ? "Links auswählen, um die Scans zu sehen." :
-          "Noch keine QR-Links. Angelegt und gestaltet werden sie in der App QR-Online; " +
+          "Noch keine QR-Links. Angelegt und gestaltet werden sie in der App CompletionistQR Online; " +
           "hier erscheinen sie mit ihren Scans."));
       return;
     }
@@ -302,7 +302,7 @@
               "Kopieren")),
           el("p", {}, el("span", {class: "qro-muted"}, "Ziel "), target),
           el("p", {class: "qro-muted qro-hint"}, "Ziel ändern, QR-Code gestalten und speichern: " +
-            "in der App QR-Online. Der gedruckte Code bleibt dabei gültig."))),
+            "in der App CompletionistQR Online. Der gedruckte Code bleibt dabei gültig."))),
       el("div", {class: "qro-range", role: "group", "aria-label": "Zeitraum"},
         RANGES.map(([label, days]) => el("button", {
           type: "button", class: "button" + (days === state.days ? " is-active" : ""),

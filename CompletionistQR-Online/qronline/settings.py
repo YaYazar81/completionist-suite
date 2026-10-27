@@ -1,4 +1,4 @@
-"""Einstellungen unter %APPDATA%\\QR-Online\\settings.json.
+"""Einstellungen unter %APPDATA%\\CompletionistQR Online\\settings.json (bis 1.1: QR-Online).
 
 Der API-Schlüssel wird unter Windows per DPAPI verschlüsselt abgelegt: nur
 dasselbe Windows-Konto kann ihn wieder lesen.
@@ -8,14 +8,27 @@ from __future__ import annotations
 import base64
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
-_ENTROPY = b"QR-Online/api-key"
+_ENTROPY = b"QR-Online/api-key"  # nicht aendern: damit ist der gespeicherte Schluessel verschluesselt
+
+
+APP_DIR = "CompletionistQR Online"
+OLD_APP_DIR = "QR-Online"  # so hiess das Programm bis Version 1.1
 
 
 def user_dir() -> Path:
-    return Path(os.environ.get("APPDATA", Path.home())) / "QR-Online"
+    base = Path(os.environ.get("APPDATA", Path.home()))
+    new, old = base / APP_DIR, base / OLD_APP_DIR
+    if not new.exists() and old.is_dir():
+        # Erster Start nach der Umbenennung: Server, Schluessel und Designs mitnehmen
+        try:
+            shutil.copytree(old, new)
+        except OSError:
+            return old
+    return new
 
 
 def _dpapi(data: bytes, protect: bool) -> bytes:

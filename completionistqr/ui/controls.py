@@ -97,7 +97,7 @@ LOGO_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".avif", ".bmp", ".gif"}
 
 
 class Controls(ctk.CTkTabview):
-    """``fixed_payload``: der Inhalt steht fest (QR-Online: der Kurzlink) -- der Reiter
+    """``fixed_payload``: der Inhalt steht fest (CompletionistQR Online: der Kurzlink) -- der Reiter
     Inhalt zeigt ihn nur an, statt Inhaltstyp und Formular; den Stapel-Export gibt es dann
     nicht. ``app`` ist das Fenster mit ``design``, ``changed()``, ``apply_preset()`` und
     ``preview`` (siehe designer.py)."""

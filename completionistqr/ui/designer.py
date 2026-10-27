@@ -1,6 +1,6 @@
 """Der Gestalter: links die Bedienleiste, rechts die Vorschau.
 
-Dasselbe Fenster-Innere fuer CompletionistQR (Hauptfenster) und QR-Online (Fenster
+Dasselbe Fenster-Innere fuer CompletionistQR (Hauptfenster) und CompletionistQR Online (Fenster
 "QR-Code gestalten" mit dem Kurzlink als festem Inhalt). Wer ``DesignerMixin`` nutzt, ist
 ein CTk- bzw. CTkToplevel-Fenster und liefert die Einstellungen ueber ``load_setting``
 und ``store_setting``; alles andere -- Vorlagen, Logo, Beschriftung, Export, Scan-Pruefung,
@@ -83,7 +83,7 @@ class DesignerMixin:
 
         self.bind("<Control-s>", lambda _e: self.controls.save())
         # Strg+C / Strg+V nur, wenn kein Textfeld den Fokus hat -- dort kopieren sie Text.
-        # Am Fenster statt bind_all: ein zweites Fenster (QR-Online) behaelt seine Kuerzel.
+        # Am Fenster statt bind_all: ein zweites Fenster (CompletionistQR Online) behaelt seine Kuerzel.
         self.bind("<Control-c>", self._on_copy, add="+")
         self.bind("<Control-v>", self._on_paste, add="+")
         # Bilder (Logo) und CSV-Listen (Stapel-Export) aus dem Explorer ins Fenster ziehen

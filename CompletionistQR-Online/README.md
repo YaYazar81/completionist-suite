@@ -1,8 +1,8 @@
-# QR-Online
+# CompletionistQR Online
 
 QR-Codes, deren Scans gezählt werden, mit Graphen in einer Windows-App.
 
-Ein gedruckter QR-Code meldet von sich aus nichts. QR-Online legt deshalb nicht das
+Ein gedruckter QR-Code meldet von sich aus nichts. CompletionistQR Online legt deshalb nicht das
 eigentliche Ziel in den Code, sondern eine kurze Adresse auf dem eigenen Webspace
 (z. B. `https://qr.example.de/A7KX9P`). Ein kleines PHP-Skript zählt dort jeden Aufruf und
 leitet sofort zum Ziel weiter. Die App zeigt die Zahlen als Graphen.
@@ -11,8 +11,8 @@ Eigenes Programm neben CompletionistQR, aber mit demselben Gestalter: **„QR-Co
 und speichern …“** öffnet die Bedienleiste und Vorschau von CompletionistQR (Vorlagen, Formen,
 Farben, Logo, Rahmen, Beschriftung, Scan-Prüfung, Export als PNG, SVG oder PDF) mit dem
 Kurzlink als festem Inhalt. Der Code dafür liegt nur einmal im Paket `completionistqr`
-(`completionistqr/ui/designer.py`); was CompletionistQR neu lernt, kann QR-Online damit
-automatisch auch. Das Design merkt sich QR-Online je Link.
+(`completionistqr/ui/designer.py`); was CompletionistQR neu lernt, kann CompletionistQR Online damit
+automatisch auch. Das Design merkt sich CompletionistQR Online je Link.
 
 ## Was gezählt wird
 
@@ -45,13 +45,13 @@ Hostern dabei) und Apache mit `mod_rewrite`. Am besten eine eigene Subdomain wie
 `qr.example.de`, dann bleiben die Links kurz.
 
 1. Den Inhalt von `server/` auf den Webspace laden (das Setup legt ihn unter
-   *Startmenü → QR-Online – Server-Dateien* ab). `.htaccess` und `data/.htaccess` gehören
+   *Startmenü → CompletionistQR Online – Server-Dateien* ab). `.htaccess` und `data/.htaccess` gehören
    dazu. Manche FTP-Programme blenden Dateien mit Punkt aus.
 2. `config.sample.php` als `config.php` kopieren und einen langen Zufallsschlüssel
    eintragen, z. B. erzeugt mit `php -r "echo bin2hex(random_bytes(24));"`.
 3. Prüfen: `https://qr.example.de/data/` und `https://qr.example.de/config.php` müssen
    **403** liefern. Die Datenbank darf nicht abrufbar sein.
-4. In QR-Online unter **Server …** die Adresse (`https://qr.example.de`) und den Schlüssel
+4. In CompletionistQR Online unter **Server …** die Adresse (`https://qr.example.de`) und den Schlüssel
    eintragen und auf **Verbindung testen** klicken.
 
 Die Datenbank `data/qronline.sqlite` legt das Skript beim ersten Aufruf selbst an. Für eine
@@ -111,18 +111,18 @@ Adresse für den QR-Code).
 
 ## Tracker in WordPress
 
-Die Scans gibt es auch im Browser: das Plugin `wordpress/qr-online-dashboard/` zeigt im
-WordPress-Admin unter **QR-Online** die Liste der Links, Kennzahlen und alle Graphen. Es ist
+Die Scans gibt es auch im Browser: das Plugin `wordpress/completionistqr-online-tracker/` zeigt im
+WordPress-Admin unter **CompletionistQR Online** die Liste der Links, Kennzahlen und alle Graphen. Es ist
 **nur der Tracker**: Links anlegen, Ziel ändern, löschen und QR-Codes gestalten geht
 ausschließlich in der App. Das Plugin reicht deshalb nur lesende Aufrufe an den Server
 weiter. Es zählt nichts selbst, sondern spricht dieselbe API wie die App; der Server von
 oben bleibt also nötig, App und Plugin können ihn gleichzeitig benutzen.
 
 1. Plugin als Zip packen: `python wordpress/build_zip.py` (legt
-   `dist/qr-online-dashboard.zip` an) oder den Ordner `qr-online-dashboard/` selbst zippen.
+   `dist/completionistqr-online-tracker.zip` an) oder den Ordner `completionistqr-online-tracker/` selbst zippen.
 2. In WordPress **Plugins → Installieren → Plugin hochladen**, die Zip-Datei wählen,
    aktivieren.
-3. **QR-Online → Einstellungen**: Server-Adresse und API-Schlüssel eintragen und speichern.
+3. **CompletionistQR Online → Einstellungen**: Server-Adresse und API-Schlüssel eintragen und speichern.
    Die Seite meldet sofort, ob die Verbindung steht.
 
 Wer die Zugangsdaten nicht in der Datenbank haben will, trägt sie stattdessen in die
@@ -145,7 +145,7 @@ Voraussetzung: WordPress 6.0 und PHP 8.0 oder neuer; die Seite funktioniert mit 
 
 ## Starten
 
-- **Installiert:** `QR-Online-Setup-<Version>.exe`, ohne Adminrechte.
+- **Installiert:** `CompletionistQR-Online-Setup-<Version>.exe`, ohne Adminrechte.
 - **Aus dem Quellcode** (venv der Suite, siehe Haupt-README):
 
 ```powershell
@@ -158,7 +158,7 @@ Voraussetzung: WordPress 6.0 und PHP 8.0 oder neuer; die Seite funktioniert mit 
 ```powershell
 ..\.venv\Scripts\python.exe -m pip install pytest pyinstaller
 ..\.venv\Scripts\python.exe -m pytest tests      # Server-Tests brauchen php im PATH
-..\.venv\Scripts\python.exe build_exe.py         # dist\QR-Online\ (Programmordner)
+..\.venv\Scripts\python.exe build_exe.py         # dist\CompletionistQR-Online\ (Programmordner)
 .\build_setup.ps1                                # Ordner + Setup (Inno Setup 6)
 ..\.venv\Scripts\python.exe tools\make_icon.py   # Programmsymbol neu erzeugen (assets\)
 ```
@@ -168,11 +168,11 @@ ganzen Weg: Link anlegen, scannen mit iPhone-, Android- und Windows-Kennung, Sta
 abrufen, Ziel ändern, löschen. Ohne PHP werden sie übersprungen.
 
 Aufbau: `server/index.php` (Weiterleitung und API, eine Datei),
-`wordpress/qr-online-dashboard/` (WordPress-Plugin, nur Anzeige; PHP und JavaScript ohne Build-Schritt), `qronline/client.py`
+`wordpress/completionistqr-online-tracker/` (WordPress-Plugin, nur Anzeige; PHP und JavaScript ohne Build-Schritt), `qronline/client.py`
 (API-Aufrufe), `qronline/stats.py` (Auswertung nach lokaler Zeit), `qronline/charts.py`
 (Diagramme mit matplotlib), `qronline/design.py` (Fenster „QR-Code gestalten“ mit dem
 Gestalter aus `completionistqr`), `qronline/app.py` (Oberfläche, CustomTkinter),
-`qronline/settings.py` (Einstellungen unter `%APPDATA%\QR-Online`, der API-Schlüssel per
+`qronline/settings.py` (Einstellungen unter `%APPDATA%\CompletionistQR Online`, der API-Schlüssel per
 Windows-DPAPI verschlüsselt).
 
 **Schneller Start:** Verteilt wird ein Programmordner statt einer einzelnen .exe, so wird
