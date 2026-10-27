@@ -14,6 +14,13 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
 
+## 27.10.2026 – CompletionistMD 1.7.2 – Emojis wieder sichtbar
+
+### CompletionistMD 1.7.2
+* **„Emoji einfügen“ zeigt wieder die Emojis statt „…“.** Seit dem Design-System haben alle
+  Listeneinträge einen Innenabstand; im Emoji-Raster blieb dadurch zu wenig Breite, und Qt
+  kürzte jedes Emoji. Das Raster hat jetzt keinen Innenabstand mehr und kürzt nie.
+
 ## 27.10.2026 – CompletionistQR 1.6.0, CompletionistQR Online 1.4.0 – Handschrift mit Pfeil
 
 ### CompletionistQR 1.6.0, CompletionistQR Online 1.4.0
