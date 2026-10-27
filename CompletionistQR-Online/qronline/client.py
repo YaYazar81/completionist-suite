@@ -1,10 +1,42 @@
 """Die paar Aufrufe der Server-API (server/index.php)."""
 from __future__ import annotations
 
+import socket
 from dataclasses import dataclass
 from datetime import date
 
 import requests
+import urllib3.util.connection as _urllib3_connection
+
+# Verbindungsaufbau hoechstens so lange, Antwort hoechstens so lange (Sekunden)
+TIMEOUT = (8, 20)
+
+_create_connection = _urllib3_connection.create_connection
+
+
+def _connect_ipv4_first(address, *args, **kwargs):
+    """IPv4 zuerst, IPv6 nur als Ausweg.
+
+    urllib3 probiert die Adressen eines Servers nacheinander und wartet bei jeder bis zur
+    Zeitueberschreitung. Hat der Server eine IPv6-Adresse, die vom Anschluss aus nicht
+    erreichbar ist (haeufig bei Heim-Routern), hing so jeder Verbindungsaufbau rund zehn
+    Sekunden, bevor es mit IPv4 klappte -- Browser probieren beides parallel und merken
+    davon nichts. Verbunden wird mit der IP-Adresse, Zertifikat und Servername (SNI)
+    bleiben die des Hosts."""
+    host, port = address
+    try:
+        addrs = {info[4][0] for info in socket.getaddrinfo(host, port, socket.AF_INET, socket.SOCK_STREAM)}
+    except (socket.gaierror, UnicodeError):
+        addrs = set()
+    for ip in sorted(addrs):
+        try:
+            return _create_connection((ip, port), *args, **kwargs)
+        except OSError:
+            continue
+    return _create_connection(address, *args, **kwargs)
+
+
+_urllib3_connection.create_connection = _connect_ipv4_first
 
 
 class ServerError(Exception):
@@ -27,7 +59,7 @@ class Link:
 
 
 class Client:
-    def __init__(self, base_url: str, api_key: str, timeout: float = 15,
+    def __init__(self, base_url: str, api_key: str, timeout: float | tuple = TIMEOUT,
                  session: requests.Session | None = None):
         self.base_url = base_url.strip().rstrip("/")
         self.api_key = api_key.strip()

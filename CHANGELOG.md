@@ -14,6 +14,16 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
 
+## 27.10.2026 – CompletionistQR Online 1.3.1 – Schneller Start
+
+### CompletionistQR Online 1.3.1
+* **Links nach dem Start sofort statt nach rund 13 Sekunden.** Hat der Server eine
+  IPv6-Adresse, die vom eigenen Anschluss aus nicht erreichbar ist, wartete die App beim
+  ersten Verbindungsaufbau bis zur Zeitüberschreitung und nahm erst dann IPv4 – Browser
+  probieren beides parallel und merken davon nichts. Die App verbindet jetzt zuerst über
+  IPv4 (Zertifikat und Servername bleiben geprüft) und nur ohne IPv4-Adresse über IPv6.
+* Ein hängender Verbindungsaufbau bricht nach 8 statt 15 Sekunden ab.
+
 ## 27.10.2026 – CompletionistQR Online 1.3.0 – Server-Einrichtung, Speichern ohne Wartezeit
 
 ### CompletionistQR Online 1.3.0 – Server einrichten beim ersten Start
