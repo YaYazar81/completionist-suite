@@ -14,13 +14,14 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
 from matplotlib.ticker import MaxNLocator  # noqa: E402
 
-ACCENT = "#3B82F6"
-ACCENT_HOVER = "#1D4ED8"
-CARD = ("#FFFFFF", "#333333")  # Kartenfarbe hell/dunkel, auch fuer die Kennzahlen
-COLORS = {"Light": {"bg": CARD[0], "text": "#1F2937", "muted": "#6B7280", "grid": "#E5E7EB",
+# Farben von Completionist Pro (completionistqr/ui/style.py, core/design.py)
+ACCENT = "#10B981"
+ACCENT_HOVER = "#059669"
+CARD = ("#FFFFFF", "#1C2329")  # Kartenfarbe hell/dunkel, auch fuer die Kennzahlen
+COLORS = {"Light": {"bg": CARD[0], "text": "#0F172A", "muted": "#475569", "grid": "#E2E8F0",
                     "tip": "#FFFFFF"},
-          "Dark": {"bg": CARD[1], "text": "#E5E7EB", "muted": "#9CA3AF", "grid": "#3F3F46",
-                   "tip": "#1F1F1F"}}
+          "Dark": {"bg": CARD[1], "text": "#E2E8F0", "muted": "#94A3B8", "grid": "#27323D",
+                   "tip": "#161B20"}}
 
 
 def _font() -> list[str]:

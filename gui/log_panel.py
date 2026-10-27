@@ -19,12 +19,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.design import DARK
 from core.typst_engine import Diagnostic
 
 _COLORS = {
-    "error": QColor("#e5534b"),
-    "warning": QColor("#d4a72c"),
-    "info": QColor("#8b949e"),
+    "error": QColor(DARK["danger"]),
+    "warning": QColor(DARK["warn"]),
+    "info": QColor(DARK["muted"]),
 }
 _LABELS = {"error": "Fehler", "warning": "Warnung", "info": "Info"}
 
@@ -84,7 +85,7 @@ class LogPanel(QWidget):
     def _add(self, stamp: str, d: Diagnostic) -> None:
         line = str(d.md_line) if d.md_line else ""
         item = QTreeWidgetItem([stamp, _LABELS.get(d.severity, d.severity), line, d.message])
-        item.setForeground(1, QBrush(_COLORS.get(d.severity, QColor("#8b949e"))))
+        item.setForeground(1, QBrush(_COLORS.get(d.severity, _COLORS["info"])))
         item.setData(0, Qt.ItemDataRole.UserRole, d.md_line)
         item.setToolTip(3, d.message)
         self.tree.addTopLevelItem(item)

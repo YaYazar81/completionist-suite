@@ -14,7 +14,7 @@ import customtkinter as ctk
 
 from ..core import fonts
 from ..core.config import QRDesign
-from . import dropfiles
+from . import dropfiles, style
 from .controls import LOGO_SUFFIXES, Controls
 from .preview import PreviewPanel
 
@@ -74,9 +74,12 @@ class DesignerMixin:
                                                  command=self._appearance_changed)
         self.appearance.set(next((k for k, v in APPEARANCE.items() if v == current), "System"))
         self.appearance.place(relx=1.0, x=-60, y=16, anchor="ne")
-        ctk.CTkButton(self.preview, text="ⓘ", width=34, command=self.show_about).place(
+        info_icon = style.icon("info")
+        ctk.CTkButton(self.preview, text="" if info_icon else "ⓘ", image=info_icon, width=34,
+                      height=34, **style.secondary(), command=self.show_about).place(
             relx=1.0, x=-16, y=16, anchor="ne")
         self.bind("<F1>", lambda _e: self.show_about())
+        style.install_focus_ring(self)
 
         self.bind("<Control-s>", lambda _e: self.controls.save())
         # Strg+C / Strg+V nur, wenn kein Textfeld den Fokus hat -- dort kopieren sie Text.

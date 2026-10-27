@@ -38,7 +38,9 @@ from PySide6.QtWidgets import (
     QWidgetAction,
 )
 
-from . import __version__, images, theme
+from core import design
+
+from . import __version__, images
 from .emoji_dialog import EmojiDialog
 from .gdrive import GDriveSync, SyncStatusButton
 from .history_dialog import HistoryDialog
@@ -469,12 +471,16 @@ class MainWindow(QMainWindow):
     def _build_toolbar(self) -> None:
         bar = QToolBar("Werkzeuge", self)
         bar.setMovable(False)
-        bar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+        # Lucide-Icons ohne Text; Knoepfe ohne Icon (z. B. "Fließtext") zeigen ihren Text
+        bar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+        bar.setIconSize(design.ICON_SIZE)
         self.addToolBar(bar)
         self.toolbar = bar
 
-        def act(text, slot, shortcut=None, tip=None, checkable=False):
+        def act(text, slot, shortcut=None, tip=None, checkable=False, icon=None):
             a = QAction(text, self)
+            if icon:
+                a.setIcon(design.icon(icon))
             a.triggered.connect(slot)
             if shortcut:
                 a.setShortcut(QKeySequence(shortcut))
@@ -487,9 +493,9 @@ class MainWindow(QMainWindow):
 
         # --- Seitenleiste ---
         self.a_vault = act("📁", self.toggle_vault, "Ctrl+Shift+E",
-                           "Vault-Explorer ein-/ausblenden", True)
+                           "Vault-Explorer ein-/ausblenden", True, "folder-tree")
         self.a_outline = act("☰", self.toggle_outline, "Ctrl+Shift+G",
-                             "Gliederung (Überschriften) ein-/ausblenden", True)
+                             "Gliederung (Überschriften) ein-/ausblenden", True, "list-tree")
 
         # --- Ansicht: WYSIWYG, Quellcode oder beide nebeneinander ---
         self.view_button = QToolButton(self)
@@ -499,12 +505,12 @@ class MainWindow(QMainWindow):
         view_group = QActionGroup(self)
         view_group.setExclusive(True)
         self._view_actions: dict[str, QAction] = {}
-        for mode, label, keys in (
-            ("wysiwyg", "✎ WYSIWYG", None),
-            ("source", "⟨/⟩ Quellcode", "Ctrl+Shift+M"),
-            ("split", "◫ Nebeneinander", "Ctrl+Shift+D"),
+        for mode, label, keys, icon in (
+            ("wysiwyg", "WYSIWYG", None, "file-pen-line"),
+            ("source", "Quellcode", "Ctrl+Shift+M", "code"),
+            ("split", "Nebeneinander", "Ctrl+Shift+D", "columns-2"),
         ):
-            a = QAction(label, self)
+            a = QAction(design.icon(icon), label, self)
             a.setCheckable(True)
             if keys:
                 # Kurzbefehl schaltet die Ansicht ein -- und wieder zurueck zu WYSIWYG
@@ -519,9 +525,8 @@ class MainWindow(QMainWindow):
             self.addAction(a)
             self._view_actions[mode] = a
         view_menu.addSeparator()
-        self.a_swap = QAction("⇄ Seiten tauschen", self)
+        self.a_swap = QAction(design.icon("arrow-left-right"), "Seiten tauschen", self)
         self.a_swap.setToolTip("Nebeneinander: Quellcode und WYSIWYG-Editor die Plätze tauschen lassen")
-        self.a_swap.setIconText("⇄")  # in der Toolbar nur das Zeichen, im Menue der ganze Text
         self.a_swap.triggered.connect(self.swap_view_sides)
         view_menu.addAction(self.a_swap)
         self.view_button.setMenu(view_menu)
@@ -530,12 +535,14 @@ class MainWindow(QMainWindow):
         bar.addSeparator()
 
         # --- Datei ---
-        act("Neu", self.new_file, "Ctrl+N")
-        act("Öffnen", self.open_dialog, "Ctrl+O")
+        act("Neu", self.new_file, "Ctrl+N", icon="file-plus")
+        act("Öffnen", self.open_dialog, "Ctrl+O", icon="folder-open")
         act("Speichern", lambda: self._save(reason="manual"), "Ctrl+S",
-            "Sofort speichern (geschieht ohnehin laufend automatisch)")
+            "Sofort speichern (geschieht ohnehin laufend automatisch)", icon="save")
         file_button = QToolButton(self)
         file_button.setText("Datei ▾")
+        file_button.setIcon(design.icon("file"))
+        file_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         file_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         file_menu = QMenu(file_button)
         self.recent_menu = file_menu.addMenu("Zuletzt geöffnet")
@@ -585,22 +592,23 @@ class MainWindow(QMainWindow):
         self.block_button.setMenu(block_menu)
         bar.addWidget(self.block_button)
 
-        self.a_bold = act("B", lambda: self._exec("bold"), "Ctrl+B", "Fett", True)
-        self.a_italic = act("I", lambda: self._exec("italic"), "Ctrl+I", "Kursiv", True)
+        self.a_bold = act("B", lambda: self._exec("bold"), "Ctrl+B", "Fett", True, "bold")
+        self.a_italic = act("I", lambda: self._exec("italic"), "Ctrl+I", "Kursiv", True, "italic")
         self.a_strike = act("S̶", lambda: self._exec("strikeThrough"), "Ctrl+Shift+X",
-                            "Durchgestrichen", True)
-        self.a_code = act("`Code`", lambda: self._exec("code"), "Ctrl+`", "Code", True)
-        self.a_quote = act("❝", lambda: self._exec("quote"), "Ctrl+Shift+Q", "Zitat", True)
+                            "Durchgestrichen", True, "strikethrough")
+        self.a_code = act("`Code`", lambda: self._exec("code"), "Ctrl+`", "Code", True, "code")
+        self.a_quote = act("❝", lambda: self._exec("quote"), "Ctrl+Shift+Q", "Zitat", True, "quote")
         bar.addSeparator()
 
-        act("• Liste", lambda: self._exec("ul"), "Ctrl+Shift+L", "Aufzählung")
-        act("1. Liste", lambda: self._exec("ol"), "Ctrl+Shift+O", "Nummerierung")
-        act("☑ Aufgabe", lambda: self._exec("task"), "Ctrl+Shift+T", "Aufgabenliste")
+        act("• Liste", lambda: self._exec("ul"), "Ctrl+Shift+L", "Aufzählung", icon="list")
+        act("1. Liste", lambda: self._exec("ol"), "Ctrl+Shift+O", "Nummerierung", icon="list-ordered")
+        act("☑ Aufgabe", lambda: self._exec("task"), "Ctrl+Shift+T", "Aufgabenliste", icon="list-checks")
         bar.addSeparator()
 
         # --- Tabelle (Rasterauswahl) ---
         self.table_button = QToolButton(self)
         self.table_button.setText("Tabelle ▾")
+        self.table_button.setIcon(design.icon("table"))
         self.table_button.setToolTip("Tabelle einfügen (Raster wählen)")
         self.table_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.table_menu = QMenu(self.table_button)
@@ -632,6 +640,8 @@ class MainWindow(QMainWindow):
         # --- Bild ---
         self.image_button = QToolButton(self)
         self.image_button.setText("Bild ▾")
+        self.image_button.setIcon(design.icon("image"))
+        self.image_button.setToolTip("Bild einfügen oder ausrichten")
         self.image_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         image_menu = QMenu(self.image_button)
         for label, align in (
@@ -657,6 +667,7 @@ class MainWindow(QMainWindow):
         # --- Emoji ---
         self.emoji_button = QToolButton(self)
         self.emoji_button.setText("😀 ▾")
+        self.emoji_button.setIcon(design.icon("smile"))
         self.emoji_button.setToolTip("Emoji einfügen")
         self.emoji_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         emoji_menu = QMenu(self.emoji_button)
@@ -666,16 +677,21 @@ class MainWindow(QMainWindow):
 
         bar.addSeparator()
         act("─ Linie", lambda: self._exec("rule"), None,
-            "Visuelle Linie (---) -- nur Optik")
+            "Visuelle Linie (---) -- nur Optik", icon="minus")
         act("✂ Trennlinie", lambda: self._exec("break"), None,
-            "Harte Trennlinie (***) -- Seitenumbruch im PDF")
-        act("{ } Code", lambda: self._exec("codeblock"), None, "Codeblock")
+            "Harte Trennlinie (***) -- Seitenumbruch im PDF", icon="scissors")
+        act("{ } Code", lambda: self._exec("codeblock"), None, "Codeblock", icon="square-code")
         bar.addSeparator()
 
-        a_pdf = act("▶ PDF", self.open_in_pdf, "F5",
-                    "Aktuelle Datei an CompletionistPDF übergeben")
-        act("▣ QR", self.open_qr, None,
-            "CompletionistQR starten (eigenes Fenster)")
+        # Uebergabe an die Suite: Icon und Text im einheitlichen Pro-Button
+        a_pdf = act("► PDF", self.open_in_pdf, "F5",
+                    "Aktuelle Datei an CompletionistPDF übergeben", icon="file-text")
+        a_qr = act("► QR", self.open_qr, None,
+                   "CompletionistQR starten (eigenes Fenster)", icon="qr-code")
+        for a in (a_pdf, a_qr):
+            handoff = bar.widgetForAction(a)
+            handoff.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+            handoff.setProperty("handoff", True)
 
         # Alles, was nur im Markdown-Editor Sinn ergibt (siehe _on_tab_changed)
         md_texts = {"• Liste", "1. Liste", "☑ Aufgabe", "─ Linie", "✂ Trennlinie", "{ } Code"}
@@ -706,23 +722,27 @@ class MainWindow(QMainWindow):
 
         # Hell/Dunkel in der Statusleiste: in der Toolbar rutschte der Knopf
         # bei normaler Fensterbreite ins Ueberlaufmenue.
-        self.a_theme = QAction("☾ Dunkel", self)
+        self.a_theme = QAction("Dunkel", self)
         self.a_theme.setToolTip("Hell/Dunkel umschalten")
         self.a_theme.triggered.connect(self.toggle_theme)
         theme_button = QToolButton(self)
         theme_button.setDefaultAction(self.a_theme)
+        theme_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        theme_button.setIconSize(QSize(16, 16))
         theme_button.setAutoRaise(True)
         sb.addPermanentWidget(theme_button)
 
-        a_settings = QAction("⚙ Einstellungen", self)
+        a_settings = QAction(design.icon("settings"), "Einstellungen", self)
         a_settings.setToolTip("Vault-Verzeichnis, Bookmarks und Google-Drive-Sync")
         a_settings.triggered.connect(self.open_settings)
         settings_button = QToolButton(self)
         settings_button.setDefaultAction(a_settings)
+        settings_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        settings_button.setIconSize(QSize(16, 16))
         settings_button.setAutoRaise(True)
         sb.addPermanentWidget(settings_button)
 
-        a_about = QAction("ⓘ", self)
+        a_about = QAction(design.icon("info"), "Info", self)
         a_about.setToolTip("Über CompletionistMD, Lizenz und Fremdkomponenten (F1)")
         a_about.setShortcut(QKeySequence("F1"))
         a_about.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
@@ -730,6 +750,8 @@ class MainWindow(QMainWindow):
         self.addAction(a_about)
         about_button = QToolButton(self)
         about_button.setDefaultAction(a_about)
+        about_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+        about_button.setIconSize(QSize(16, 16))
         about_button.setAutoRaise(True)
         sb.addPermanentWidget(about_button)
 
@@ -1005,7 +1027,10 @@ class MainWindow(QMainWindow):
 
     def _update_view_tools(self) -> None:
         self._view_actions[self.view_mode].setChecked(True)
-        self.view_button.setText(self._view_actions[self.view_mode].text() + " ▾")
+        current = self._view_actions[self.view_mode]
+        self.view_button.setText(current.text() + " ▾")
+        self.view_button.setIcon(current.icon())
+        self.view_button.setToolTip(f"Ansicht: {current.text()} (WYSIWYG, Quellcode oder nebeneinander)")
         self.a_swap.setVisible(self.view_mode == "split")
         # Tabellen und Bilder fuegt nur der WYSIWYG-Editor ein
         is_md = isinstance(self.current_tab(), MdTab)
@@ -1809,10 +1834,10 @@ class MainWindow(QMainWindow):
     def _apply_theme(self) -> None:
         app = QApplication.instance()
         if app is not None:
-            app.setPalette(theme.palette_for(self.theme))
-            app.setStyleSheet(theme.STYLESHEET)
+            design.apply(app, self.theme)
         if hasattr(self, "a_theme"):
-            self.a_theme.setText("☀ Hell" if self.theme == "dark" else "☾ Dunkel")
+            self.a_theme.setText("Hell" if self.theme == "dark" else "Dunkel")
+            self.a_theme.setIcon(design.icon("sun" if self.theme == "dark" else "moon"))
 
     # ------------------------------------------------------------------ #
     # CompletionistPDF

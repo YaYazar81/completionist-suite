@@ -36,7 +36,7 @@ angezeigt und bleibt deshalb unter Windows ungesperrt. Kennwortgeschützte PDFs 
 Kennwort.
 
 Startet die App mit einer .pdf, lädt sie weder Typst noch die Schriftliste noch die letzte
-Sitzung. Erst **◀ Markdown → PDF** oder das Öffnen einer .md baut den Markdown-Modus auf. Ein
+Sitzung. Erst **► Markdown** oder das Öffnen einer .md baut den Markdown-Modus auf. Ein
 reiner Viewer-Start überschreibt die gespeicherte Sitzung nicht. Im Markdown-Modus öffnet
 **PDF ansehen** das exportierte PDF im Viewer.
 
@@ -46,7 +46,7 @@ Windows erlaubt einem Setup nicht, den Standard-Viewer festzulegen. Wer Completi
 Standard will, wählt es einmal unter *Öffnen mit → Andere App auswählen → Immer*. Ein alter
 Benutzer-Schlüssel `Applications\CompletionistPDF.exe` (etwa auf einen früheren Build-Pfad)
 wird dabei gelöscht, sonst hinge „Öffnen mit“ in einer Schleife. **In Editor öffnen** öffnet die `.md` mit dem Standardprogramm;
-**▣ QR** startet CompletionistQR (neben dem Programm oder über dessen Setup gefunden).
+**► QR** startet CompletionistQR (neben dem Programm oder über dessen Setup gefunden).
 
 ### Drucken, zuletzt geöffnet, zusammenführen
 

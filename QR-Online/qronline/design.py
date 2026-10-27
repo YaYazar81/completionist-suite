@@ -23,8 +23,10 @@ except ImportError:  # aus dem Quellcode gestartet: das Paket liegt eine Ebene u
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from completionistqr.ui.designer import DesignerMixin, design_from, register_fonts  # noqa: E402
+from completionistqr.ui import style  # noqa: E402
+from completionistqr.ui.style import apply_theme  # noqa: E402
 
-__all__ = ["DesignWindow", "about_info", "register_fonts"]
+__all__ = ["DesignWindow", "about_info", "apply_theme", "register_fonts", "style"]
 
 HINT = ("Im Code steht die kurze Adresse deines QR-Online-Servers. Sie zählt jeden Scan und "
         "leitet zum Ziel weiter – das Ziel lässt sich jederzeit ändern, der gedruckte Code "

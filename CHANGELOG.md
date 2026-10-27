@@ -14,6 +14,46 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Online
 (Ordner `QR-Online/`) zählt die Version in `QR-Online/qronline/__init__.py`.
 
+## 27.10.2026 – PDF 1.6.0, MD 1.7.0, QR 1.5.0, QR-Online 1.2.0 – Design-System „Completionist Pro"
+
+Das Design-System entstand am 26.10. auf einem eigenen Branch und war bisher nicht in
+`main` -- die Setups bis MD 1.6.0 / QR 1.4.1 / QR-Online 1.1.0 kamen deshalb noch im alten
+Aussehen und PDF blieb bei 1.5.0. Jetzt ist es mit allen Neuerungen von heute zusammengeführt.
+Die Ansichtsknöpfe von CompletionistMD (WYSIWYG, Quellcode, Nebeneinander, Seiten tauschen)
+haben dabei passende Lucide-Icons bekommen.
+
+### Alle Apps
+* **Neues, einheitliches Erscheinungsbild „Completionist Pro"**: dunkler Schiefer
+  (`#121619` Fenster, `#1C2329` Panels, Rahmen `#27323D`) mit Smaragd-Akzent
+  (`#10B981`/`#34D399`, Auswahl `#112C27`) und 6-px-Radien statt Petrol und Grau.
+  Die Farben stehen als Tokens an einer Stelle: `core/design.py` (Qt-Apps, dazu das
+  Stylesheet `assets/theme/theme.qss`) und gleichlautend in
+  `completionistqr/ui/style.py` bzw. `completionistqr/assets/theme/completionist_pro.json`.
+* **Lucide-Icons** (2 px Strich, 20 px) statt Textsymbolen in allen Werkzeugleisten.
+  Ruhezustand gedämpft, Hover hell, aktives Werkzeug in Smaragd; das helle Thema
+  von MD und QR färbt sie passend um.
+* **Übergabe-Knöpfe** (► PDF, ► QR, ► IMG, ► Markdown) überall im gleichen
+  abgesetzten Pro-Button mit Icon.
+
+### CompletionistMD 1.7.0
+* Vault-Explorer als eigenes Panel; Dateitypen mit farbigen Icons (Markdown
+  Smaragd, PDF Rot, Bilder Violett, Text Grau).
+* Bookmarks als entgratete Kacheln; der zuletzt angeklickte bleibt markiert.
+* Editor-Inhalt, Tabs und Statusleiste in den neuen Farben.
+
+### CompletionistPDF 1.6.0
+* Viewer-Leiste mit Icons für Zoom, Seiten und Suche; Inhaltsverzeichnis mit
+  Smaragd-Auswahl wie die Bäume in MD.
+
+### CompletionistQR 1.5.0, QR-Online 1.2.0
+* QR-Online zeigt den Gestalter in denselben Farben und mit denselben Icons wie
+  CompletionistQR (gemeinsamer Code, siehe QR-Online 1.1.0); auch das Hauptfenster von
+  QR-Online nutzt das Farbschema Completionist Pro.
+* Einstellungen und Vorschau als Karten mit feinem Rahmen; Eingabefelder bekommen
+  beim Fokus einen Smaragd-Rahmen.
+* Unter der Scan-Prüfung ein Statusbalken: Smaragd = lesbar, Gelb = nicht lesbar.
+* „QR-Code speichern …" als hervorgehobene Hauptaktion, Knöpfe mit Icons.
+
 ## 27.10.2026 – QR-Online 1.1.0, Tracker-Plugin 1.1.0 – Gestalter von CompletionistQR, kurze Domain
 
 ### QR-Online 1.1.0 – derselbe Gestalter wie CompletionistQR

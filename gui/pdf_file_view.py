@@ -41,7 +41,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core import pdf_select
+from core import design, pdf_select
 from core.watcher import DebouncedWatcher
 
 PDF_SUFFIXES = (".pdf",)
@@ -97,13 +97,16 @@ class PdfFileView(QWidget):
 
         bar = QHBoxLayout()
         bar.setContentsMargins(6, 4, 6, 4)
-        self._btn_toc = self._tool(bar, "☰ Inhalt", "Inhaltsverzeichnis ein-/ausblenden", self.toggle_sidebar, "F4")
+        self._btn_toc = self._tool(bar, "Inhalt", "Inhaltsverzeichnis ein-/ausblenden", self.toggle_sidebar, "F4",
+                                   "list-tree", show_text=True)
         self._btn_toc.setCheckable(True)
         bar.addSpacing(12)
-        self._tool(bar, "−", "Verkleinern", self.zoom_out, "Ctrl+-")
-        self._tool(bar, "+", "Vergrößern", self.zoom_in, "Ctrl++")
-        self._btn_width = self._tool(bar, "Breite", "An Fensterbreite anpassen", self.fit_width, "Ctrl+0")
-        self._btn_page = self._tool(bar, "Ganze Seite", "Ganze Seite anzeigen", self.fit_page, "Ctrl+9")
+        self._tool(bar, "−", "Verkleinern", self.zoom_out, "Ctrl+-", "zoom-out")
+        self._tool(bar, "+", "Vergrößern", self.zoom_in, "Ctrl++", "zoom-in")
+        self._btn_width = self._tool(bar, "Breite", "An Fensterbreite anpassen", self.fit_width, "Ctrl+0",
+                                     "move-horizontal")
+        self._btn_page = self._tool(bar, "Ganze Seite", "Ganze Seite anzeigen", self.fit_page, "Ctrl+9",
+                                    "maximize")
         for b in (self._btn_width, self._btn_page):
             b.setCheckable(True)
         self._btn_page.setChecked(True)
@@ -112,7 +115,7 @@ class PdfFileView(QWidget):
         bar.addWidget(self.zoom_label)
         bar.addSpacing(12)
 
-        self._tool(bar, "◀", "Vorige Seite", self.prev_page, "PgUp")
+        self._tool(bar, "◀", "Vorige Seite", self.prev_page, "PgUp", "chevron-left")
         self.page_spin = QSpinBox()
         self.page_spin.setMinimum(1)
         self.page_spin.setKeyboardTracking(False)
@@ -121,7 +124,7 @@ class PdfFileView(QWidget):
         bar.addWidget(self.page_spin)
         self.page_total = QLabel()
         bar.addWidget(self.page_total)
-        self._tool(bar, "▶", "Nächste Seite", self.next_page, "PgDown")
+        self._tool(bar, "▶", "Nächste Seite", self.next_page, "PgDown", "chevron-right")
         bar.addSpacing(12)
 
         self.find_edit = QLineEdit()
@@ -131,8 +134,8 @@ class PdfFileView(QWidget):
         self.find_edit.returnPressed.connect(self.find_next)
         self.find_edit.textChanged.connect(lambda _t: self._find_timer.start())
         bar.addWidget(self.find_edit)
-        self._tool(bar, "▲", "Vorheriger Treffer", self.find_prev, "Shift+F3")
-        self._tool(bar, "▼", "Nächster Treffer", self.find_next, "F3")
+        self._tool(bar, "▲", "Vorheriger Treffer", self.find_prev, "Shift+F3", "chevron-up")
+        self._tool(bar, "▼", "Nächster Treffer", self.find_next, "F3", "chevron-down")
         self.find_label = QLabel()
         bar.addWidget(self.find_label)
         bar.addStretch(1)
@@ -166,7 +169,12 @@ class PdfFileView(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        layout.addLayout(bar)
+        # Navigationsleiste als eigene Flaeche (Hintergrund und Trennlinie aus theme.qss)
+        bar_widget = QWidget(self)
+        bar_widget.setObjectName("viewerBar")
+        bar_widget.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        bar_widget.setLayout(bar)
+        layout.addWidget(bar_widget)
         layout.addWidget(self.splitter, 1)
 
         # Neu laden, sobald ein anderes Programm (z. B. der Export) die Datei schreibt
@@ -176,9 +184,15 @@ class PdfFileView(QWidget):
         self._update_pages()
         self._update_sidebar()
 
-    def _tool(self, bar: QHBoxLayout, text: str, tip: str, slot, shortcut: str) -> QToolButton:
+    def _tool(self, bar: QHBoxLayout, text: str, tip: str, slot, shortcut: str,
+              icon: str | None = None, show_text: bool = False) -> QToolButton:
         btn = QToolButton()
         btn.setText(text)
+        if icon:
+            btn.setIcon(design.icon(icon))
+            btn.setIconSize(design.ICON_SIZE)
+            btn.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon if show_text
+                                   else Qt.ToolButtonStyle.ToolButtonIconOnly)
         btn.setToolTip(f"{tip}  ({shortcut})")
         btn.setAutoRaise(True)
         btn.clicked.connect(slot)

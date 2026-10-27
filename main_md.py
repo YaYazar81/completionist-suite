@@ -14,7 +14,6 @@ if str(APP_DIR) not in sys.path:
 
 # Vor dem QApplication importieren: QtWebEngine richtet dabei den
 # gemeinsamen OpenGL-Kontext ein, den es spaeter braucht.
-from mdeditor import theme  # noqa: E402
 from mdeditor.window import MainWindow  # noqa: E402
 
 from PySide6.QtWidgets import QApplication  # noqa: E402
@@ -39,9 +38,10 @@ def main() -> int:
 
     qt_translations.install(app, ("qtbase", "qtwebengine"))
     app.setApplicationDisplayName("CompletionistMD")
-    app.setStyle("Fusion")
-    app.setPalette(theme.dark_palette())
-    app.setStyleSheet(theme.STYLESHEET)
+    # Completionist Pro (Schiefer & Smaragd); das helle Thema setzt das Fenster
+    from core import design
+
+    design.apply(app)
 
     icon_path = APP_DIR / "assets" / "icon_md.ico"
     if icon_path.is_file():

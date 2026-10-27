@@ -15,8 +15,9 @@ import customtkinter as ctk
 from . import __version__, settings, stats
 from .client import Client, Link, ServerError
 
-CARD = ("#FFFFFF", "#333333")  # wie charts.CARD; charts wird erst spaeter geladen
-SELECTED, HOVER = ("#DBEAFE", "#1E3A5F"), ("#EEF2F7", "#2F3540")
+# Farben von Completionist Pro wie in CompletionistQR (completionistqr/ui/style.py)
+CARD = ("#FFFFFF", "#1C2329")  # wie charts.CARD; charts wird erst spaeter geladen
+SELECTED, HOVER = ("#D1FAE5", "#112C27"), ("#E2E8F0", "#222C35")
 
 RANGES = {"7 Tage": 7, "30 Tage": 30, "90 Tage": 90, "1 Jahr": 365}
 OK, MUTED, ERROR = ("#15803D", "#4ADE80"), ("gray35", "gray65"), ("#B91C1C", "#F87171")
@@ -208,7 +209,11 @@ class QROnlineApp(ctk.CTk):
                       command=self.refresh).pack(side="left", padx=8)
         ctk.CTkButton(bar, text="Server …", width=90, fg_color="transparent", border_width=1,
                       text_color=("gray20", "gray85"), command=self.edit_server).pack(side="left")
-        ctk.CTkButton(bar, text="ⓘ", width=34, command=self.show_about).pack(side="right")
+        from .design import style  # completionistqr (design.py findet das Paket)
+
+        info_icon = style.icon("info")
+        ctk.CTkButton(bar, text="" if info_icon else "ⓘ", image=info_icon, width=34, height=34,
+                      **style.secondary(), command=self.show_about).pack(side="right")
         self.status = ctk.CTkLabel(bar, text="", anchor="w")
         self.status.pack(side="left", fill="x", expand=True, padx=12)
 
@@ -482,8 +487,8 @@ def main() -> None:
         except Exception:
             pass
     ctk.set_appearance_mode(settings.load().get("appearance", "system"))
-    ctk.set_default_color_theme("blue")
-    from .design import register_fonts
+    from .design import apply_theme, register_fonts
 
+    apply_theme()     # Completionist Pro wie CompletionistQR
     register_fonts()  # Schriften für die Vorschau im Gestalter
     QROnlineApp().mainloop()
