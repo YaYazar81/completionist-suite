@@ -14,6 +14,31 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll. QR-Online
 (Ordner `QR-Online/`) zählt die Version in `QR-Online/qronline/__init__.py`.
 
+## 27.10.2026 – QR-Online 1.1.0, Tracker-Plugin 1.1.0 – Gestalter von CompletionistQR, kurze Domain
+
+### QR-Online 1.1.0 – derselbe Gestalter wie CompletionistQR
+* **„QR-Code gestalten und speichern …"** öffnet den Gestalter von CompletionistQR mit dem
+  Kurzlink als festem Inhalt: Vorlagen, Formen, Farben, Verläufe, Logo, Rahmen,
+  Beschriftung, Scan-Prüfung, Export als PNG, SVG oder PDF und in die Zwischenablage.
+  Bisher gab es nur ein schlichtes PNG.
+* Kein Nachbau: Bedienleiste, Vorschau und Fensterlogik liegen einmal im Paket
+  `completionistqr` (`completionistqr/ui/designer.py`), CompletionistQR und QR-Online nutzen
+  denselben Code. Was CompletionistQR künftig lernt, kann QR-Online damit automatisch auch.
+* Das Design merkt sich QR-Online je Link; ein neuer Link beginnt mit dem zuletzt benutzten.
+* **Fenster „Über QR-Online"** (ⓘ bzw. F1) wie in CompletionistQR: Version, Lizenz,
+  Fremdkomponenten, Impressum, App-Icon, klickbare Links.
+
+### QR-Online-Server und Tracker-Plugin 1.1.0 – eigene kurze Domain, nur noch Anzeige
+* Neu in `config.php`: `'short_url' => 'https://c10t.de'`. Der Server liefert dann bei jedem
+  Link die kurze Adresse für den QR-Code mit; App und WordPress-Plugin übernehmen sie von
+  selbst. Gezählt und weitergeleitet wird unter jeder Adresse, die auf den Server-Ordner
+  zeigt – schon gedruckte Codes bleiben gültig.
+* **Das WordPress-Plugin ist nur noch der Tracker** (bisher nur auf einem Branch, jetzt in
+  `main`): Links, Kennzahlen und Graphen ansehen. Anlegen, Ändern, Löschen und den
+  QR-Code-Export gibt es dort nicht mehr – das geht ausschließlich in der App. Der REST-Proxy
+  des Plugins reicht nur noch lesende Aufrufe an den Server weiter; die mitgelieferte
+  JavaScript-QR-Bibliothek entfällt.
+
 ## 27.10.2026 – MD 1.6.0, QR 1.4.1 – Quellcode-Ansicht, schnellere große Guides
 
 ### CompletionistMD 1.6.0 – Quellcode und Nebeneinander-Ansicht
@@ -47,6 +72,17 @@ Gemessen mit einem Guide aus 300 Kapiteln (rund 1 MB Markdown):
 * **CompletionistMD: Codeblöcke, die selbst ` ``` ` enthalten, überstehen das Neuladen.**
   Der Editor schreibt sie mit längerem Zaun (` ```` `), las sie aber schon am ersten
   ` ``` ` als beendet.
+
+## 26.10.2026 – QR-Online: Web-Dashboard für WordPress
+
+### QR-Online-Dashboard 1.0.0 (WordPress-Plugin)
+* **Neues Plugin** `QR-Online/wordpress/qr-online-dashboard/`: das Dashboard der
+  QR-Online-App im WordPress-Admin – Links anlegen, Ziel und Namen ändern, löschen,
+  Kennzahlen, Graphen (pro Tag/Woche, Uhrzeit, Wochentag, Gerät, Betriebssystem, Sprache),
+  QR-Code als PNG, Link kopieren, Suche in der Liste. Funktioniert auch am Smartphone.
+* Spricht dieselbe API wie die App; der API-Schlüssel bleibt auf dem WordPress-Server
+  (Einstellungsseite oder `wp-config.php`), nur Administratoren sehen das Dashboard.
+* Widget auf der WordPress-Startseite mit den fünf meistgescannten Links.
 
 ## 25.10.2026 – PDF 1.5.0, MD 1.5.0, QR 1.4.0 – Startbild und Impressum
 

@@ -59,7 +59,9 @@ class Client:
     def _link(self, row: dict) -> Link:
         return Link(code=row["code"], target=row["target"], label=row.get("label") or "",
                     created=row["created"], scans=int(row.get("scans") or 0),
-                    last_scan=row.get("last_scan"), url=self.short_url(row["code"]))
+                    last_scan=row.get("last_scan"),
+                    # Mit eigener kurzer Domain (config.php: short_url) liefert der Server die Adresse
+                    url=row.get("url") or self.short_url(row["code"]))
 
     def ping(self) -> None:
         self._call("GET", "ping")

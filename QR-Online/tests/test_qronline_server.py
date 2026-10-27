@@ -164,3 +164,22 @@ def test_redirect_survives_failing_scan_insert(server):
     db.close()
     r = scan(link.url, IPHONE)
     assert r.status_code == 302 and r.headers["Location"] == "https://example.org/immer"
+
+
+def test_short_domain_from_config(server):
+    """Eigene kurze Domain (config.php: short_url): der Server liefert die Adresse für den
+    QR-Code mit, App und WordPress-Plugin übernehmen sie."""
+    base, root = server
+    (root / "config.php").write_text(
+        f"<?php return ['api_key' => '{KEY}', 'db' => __DIR__ . '/data/test.sqlite', "
+        "'home' => '', 'short_url' => 'https://c10t.de/'];", encoding="utf-8")
+    client = Client(base, KEY)
+    link = client.create("https://example.org/kurz")
+    assert link.url == f"https://c10t.de/{link.code}"
+    assert [x.url for x in client.links()] == [link.url]
+    assert client.update(link.code, label="Kurz").url == link.url
+    ping = requests.get(f"{base}/api/ping", headers={"X-Api-Key": KEY}, timeout=5).json()
+    assert ping["short_url"] == "https://c10t.de"
+    # Gezählt und weitergeleitet wird unter jeder Adresse, die auf den Ordner zeigt
+    r = scan(f"{base}/{link.code}", ANDROID)
+    assert r.status_code == 302 and r.headers["Location"] == "https://example.org/kurz"

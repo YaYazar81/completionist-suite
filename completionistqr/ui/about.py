@@ -1,10 +1,13 @@
-"""Fenster "Über CompletionistQR": Version, Copyright, Lizenz, Fremdkomponenten, Impressum."""
+"""Fenster "Über …": Version, Copyright, Lizenz, Fremdkomponenten, Impressum.
+
+Gemeinsam fuer CompletionistQR und QR-Online (Name, Version, Bild und Icon je App)."""
 from __future__ import annotations
 
 import os
 import re
 import tkinter as tk
 import webbrowser
+from pathlib import Path
 
 import customtkinter as ctk
 from PIL import Image
@@ -36,9 +39,12 @@ def _legal():
 
 
 class AboutWindow(ctk.CTkToplevel):
-    def __init__(self, master):
+    def __init__(self, master, name: str = "CompletionistQR", version: str = __version__,
+                 subtitle: str = "Gestaltete QR-Codes", image: Path | None = None,
+                 icon: Path | None = None):
         super().__init__(master)
-        self.title("Über CompletionistQR")
+        self.title(f"Über {name}")
+        self._icon_file = icon or fonts.assets_dir() / "icon.ico"
         self.geometry("940x580")
         self.transient(master)
         legal = _legal()
@@ -54,7 +60,7 @@ class AboutWindow(ctk.CTkToplevel):
         body.pack(fill="both", expand=True)
         # Das App-Bild steht links neben den Reitern und bleibt bei jedem Reiter sichtbar
         try:
-            img = Image.open(fonts.assets_dir() / "splash.jpg")
+            img = Image.open(image or fonts.assets_dir() / "splash.jpg")
             self._art = ctk.CTkImage(light_image=img, dark_image=img, size=(IMAGE_SIZE, IMAGE_SIZE))
             ctk.CTkLabel(body, image=self._art, text="").pack(side="left", anchor="n",
                                                              padx=(14, 4), pady=(16, 4))
@@ -63,9 +69,9 @@ class AboutWindow(ctk.CTkToplevel):
         right = ctk.CTkFrame(body, fg_color="transparent")
         right.pack(side="left", fill="both", expand=True)
 
-        ctk.CTkLabel(right, text="CompletionistQR", font=ctk.CTkFont(size=22, weight="bold"),
+        ctk.CTkLabel(right, text=name, font=ctk.CTkFont(size=22, weight="bold"),
                      anchor="w").pack(fill="x", padx=18, pady=(16, 0))
-        ctk.CTkLabel(right, text=f"Version {__version__}  ·  Gestaltete QR-Codes\n{copyright_}",
+        ctk.CTkLabel(right, text=f"Version {version}  ·  {subtitle}\n{copyright_}",
                      anchor="w", justify="left").pack(fill="x", padx=18, pady=(2, 0))
         line = ctk.CTkFrame(right, fg_color="transparent")
         line.pack(fill="x", padx=18, pady=(0, 8))
@@ -105,7 +111,7 @@ class AboutWindow(ctk.CTkToplevel):
         self.after(250, self._set_icon)
 
     def _set_icon(self) -> None:
-        icon = fonts.assets_dir() / "icon.ico"
+        icon = Path(self._icon_file)
         try:
             self.iconbitmap(str(icon))
             return
@@ -114,7 +120,7 @@ class AboutWindow(ctk.CTkToplevel):
         try:
             from PIL import ImageTk
 
-            self._icon = ImageTk.PhotoImage(Image.open(fonts.assets_dir() / "icon_source.png"))
+            self._icon = ImageTk.PhotoImage(Image.open(icon.with_name("icon_source.png")))
             self.iconphoto(False, self._icon)
         except (OSError, tk.TclError):
             pass

@@ -3,7 +3,7 @@
  * QR-Online – Weiterleitung mit Scan-Zaehlung.
  *
  *   GET  /<CODE>                 zaehlt den Scan und leitet zum Ziel weiter (302)
- *   GET  /api/ping               prueft den API-Schluessel
+ *   GET  /api/ping               prueft den API-Schluessel (meldet auch short_url)
  *   GET  /api/links              alle Links mit Scan-Zahl
  *   POST /api/links              {"target": "...", "label": "..."} -> neuer Link
  *   GET  /api/links/<CODE>       ein Link
@@ -12,6 +12,8 @@
  *   GET  /api/scans/<CODE>?since=YYYY-MM-DD   einzelne Scans (Zeit in UTC)
  *
  * Die API verlangt den Schluessel aus config.php im Kopf "X-Api-Key".
+ * Ist in config.php 'short_url' gesetzt (eigene kurze Domain), tragen alle Links das Feld
+ * "url" mit der Adresse fuer den QR-Code; sonst bilden die Clients sie aus der Server-Adresse.
  * Pro Scan werden nur Zeitpunkt, Geraetetyp, Betriebssystem und Browsersprache
  * gespeichert -- keine IP-Adresse, keine Cookies.
  */
@@ -119,6 +121,22 @@ function new_code(PDO $pdo): string
     return $code;
 }
 
+/** Oeffentliche Adresse fuer QR-Codes ('' = die des Servers, die Clients bilden sie selbst). */
+function short_base(array $config): string
+{
+    $url = rtrim(trim((string)($config['short_url'] ?? '')), '/');
+    return preg_match('#^https?://#i', $url) ? $url : '';
+}
+
+function with_url(array $row, array $config): array
+{
+    $base = short_base($config);
+    if ($base !== '') {
+        $row['url'] = $base . '/' . $row['code'];
+    }
+    return $row;
+}
+
 function link_row(PDO $pdo, string $code): ?array
 {
     $q = $pdo->prepare('SELECT l.code, l.target, l.label, l.created,
@@ -181,7 +199,7 @@ function handle_api(PDO $pdo, array $parts, string $method, array $config): void
     $code = strtoupper($parts[1] ?? '');
 
     if ($what === 'ping') {
-        json_out(200, ['ok' => true, 'time' => now_utc()]);
+        json_out(200, ['ok' => true, 'time' => now_utc(), 'short_url' => short_base($config)]);
     }
     if ($what === 'links' && $code === '') {
         if ($method === 'GET') {
@@ -191,7 +209,9 @@ function handle_api(PDO $pdo, array $parts, string $method, array $config): void
                 GROUP BY l.code ORDER BY l.created DESC')->fetchAll(PDO::FETCH_ASSOC);
             foreach ($rows as &$r) {
                 $r['scans'] = (int)$r['scans'];
+                $r = with_url($r, $config);
             }
+            unset($r);
             json_out(200, $rows);
         }
         if ($method === 'POST') {
@@ -203,7 +223,7 @@ function handle_api(PDO $pdo, array $parts, string $method, array $config): void
             $code = new_code($pdo);
             $pdo->prepare('INSERT INTO links (code, target, label, created) VALUES (?, ?, ?, ?)')
                 ->execute([$code, $target, mb_substr(trim((string)($in['label'] ?? '')), 0, 200), now_utc()]);
-            json_out(201, link_row($pdo, $code));
+            json_out(201, with_url(link_row($pdo, $code), $config));
         }
         fail(405, 'Methode nicht erlaubt.');
     }
@@ -223,7 +243,7 @@ function handle_api(PDO $pdo, array $parts, string $method, array $config): void
             json_out(200, $q->fetchAll(PDO::FETCH_ASSOC));
         }
         if ($what === 'links' && $method === 'GET') {
-            json_out(200, $link);
+            json_out(200, with_url($link, $config));
         }
         if ($what === 'links' && ($method === 'POST' || $method === 'PATCH')) {
             $in = body();
@@ -238,7 +258,7 @@ function handle_api(PDO $pdo, array $parts, string $method, array $config): void
                 $pdo->prepare('UPDATE links SET label = ? WHERE code = ?')
                     ->execute([mb_substr(trim((string)$in['label']), 0, 200), $code]);
             }
-            json_out(200, link_row($pdo, $code));
+            json_out(200, with_url(link_row($pdo, $code), $config));
         }
         if ($what === 'links' && $method === 'DELETE') {
             $pdo->prepare('DELETE FROM links WHERE code = ?')->execute([$code]);
