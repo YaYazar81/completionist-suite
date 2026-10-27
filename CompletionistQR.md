@@ -81,8 +81,10 @@ das Logo in Originalauflösung. Damit ist der Code in jeder Druckgröße randsch
 jedem Programm gleich aus, auch ohne installierte Schrift. Breite und dpi legen beim PDF
 nur die Seitengröße fest (1024 px bei 300 dpi = 86,7 mm). Für den Druck ist PDF die beste Wahl.
 
-Im **SVG** ist die gewählte Schrift eingebettet. Browser und Inkscape zeigen sie korrekt an,
-manche Office-Programme ignorieren eingebettete Schriften jedoch.
+Auch im **SVG** steht die Beschriftung als Schriftkontur. Damit sieht der Titel in Browsern,
+Inkscape, Illustrator, Affinity, Office und der Windows-Vorschau gleich aus – eine eingebettete
+Schrift würden die meisten Grafikprogramme ignorieren. Die Beschriftung bleibt dabei im SVG
+als `aria-label` lesbar.
 
 ## Entwicklung
 

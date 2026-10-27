@@ -114,3 +114,16 @@ def test_pdf_page_size_and_xref(tmp_path):
             break
         offset = int(line[:10])
         assert data[offset:].startswith(f"{i} 0 obj".encode())
+
+
+def test_svg_caption_is_outlined_not_a_font(tmp_path):
+    """Die Beschriftung steht als Kontur im SVG: eine per @font-face eingebettete
+    Schrift zeigen nur Browser, Grafikprogramme fielen auf Ersatzschriften zurück."""
+    style = presets.builtin()["Scan-Me Banner"]
+    d = QRDesign(payload=PAYLOAD).apply_style(style)
+    d.caption = "SCAN ME – Wäh"
+    svg = render_svg.render(d)
+    assert "<text" not in svg and "@font-face" not in svg
+    assert 'aria-label="SCAN ME – Wäh"' in svg
+    caption = svg[svg.index('aria-label="SCAN ME'):]
+    assert ' d="M' in caption[:200] and "C" in caption.split('"')[3]

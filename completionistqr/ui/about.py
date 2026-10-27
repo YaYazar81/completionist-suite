@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import os
+import re
+import tkinter as tk
 import webbrowser
 
 import customtkinter as ctk
@@ -11,6 +13,17 @@ from .. import __version__
 from ..core import fonts
 
 IMAGE_SIZE = 280  # Kantenlaenge des App-Bildes links neben den Reitern
+LINK_COLOR = ("#1f6aa5", "#5aa9e6")  # hell, dunkel
+# Webadressen und E-Mail-Adressen; Satzzeichen am Ende gehoeren nicht dazu
+LINK_RE = re.compile(r"https?://[^\s<>\"'()\[\]]+[^\s<>\"'()\[\].,;:!?]|[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+
+
+def _target(link: str) -> str:
+    return link if link.startswith("http") else "mailto:" + link
+
+
+def _open(link: str) -> None:
+    webbrowser.open(_target(link))
 
 
 def _legal():
@@ -30,7 +43,8 @@ class AboutWindow(ctk.CTkToplevel):
         self.transient(master)
         legal = _legal()
         copyright_ = legal.COPYRIGHT if legal else "© 2026 Mike-Dominique Horch (Completionist Library)"
-        copyright_ += "\nKontakt: " + (legal.CONTACT if legal else "kontakt@completionist-library.de")
+        contact = legal.CONTACT if legal else "kontakt@completionist-library.de"
+        self._set_icon_later()
 
         # Unten zuerst packen, damit die Knoepfe bei kleinem Fenster sichtbar bleiben
         bar = ctk.CTkFrame(self, fg_color="transparent")
@@ -52,7 +66,14 @@ class AboutWindow(ctk.CTkToplevel):
         ctk.CTkLabel(right, text="CompletionistQR", font=ctk.CTkFont(size=22, weight="bold"),
                      anchor="w").pack(fill="x", padx=18, pady=(16, 0))
         ctk.CTkLabel(right, text=f"Version {__version__}  ·  Gestaltete QR-Codes\n{copyright_}",
-                     anchor="w", justify="left").pack(fill="x", padx=18, pady=(2, 8))
+                     anchor="w", justify="left").pack(fill="x", padx=18, pady=(2, 0))
+        line = ctk.CTkFrame(right, fg_color="transparent")
+        line.pack(fill="x", padx=18, pady=(0, 8))
+        ctk.CTkLabel(line, text="Kontakt:").pack(side="left")
+        mail = ctk.CTkLabel(line, text=contact, text_color=LINK_COLOR, cursor="hand2",
+                            font=ctk.CTkFont(underline=True))
+        mail.pack(side="left", padx=(4, 0))
+        mail.bind("<Button-1>", lambda _e: _open(contact))
 
         tabs = ctk.CTkTabview(right)
         tabs.pack(fill="both", expand=True, padx=14, pady=(0, 4))
@@ -65,6 +86,7 @@ class AboutWindow(ctk.CTkToplevel):
             box = ctk.CTkTextbox(tabs.add(name), wrap="word")
             box.pack(fill="both", expand=True)
             box.insert("1.0", text)
+            _link_up(box, text)
             box.configure(state="disabled")
 
         if legal:
@@ -76,3 +98,35 @@ class AboutWindow(ctk.CTkToplevel):
                               command=lambda: os.startfile(str(folder))).pack(side="left", padx=8)
         ctk.CTkButton(bar, text="Schließen", width=110, command=self.destroy).pack(side="right")
         self.after(100, self.lift)
+
+    def _set_icon_later(self) -> None:
+        # CTkToplevel setzt unter Windows nach 200 ms sein eigenes Icon -- danach
+        # unseres, sonst stuende im Fenster "Über" das CustomTkinter-Logo.
+        self.after(250, self._set_icon)
+
+    def _set_icon(self) -> None:
+        icon = fonts.assets_dir() / "icon.ico"
+        try:
+            self.iconbitmap(str(icon))
+            return
+        except tk.TclError:
+            pass  # .ico kennt Tk nur unter Windows
+        try:
+            from PIL import ImageTk
+
+            self._icon = ImageTk.PhotoImage(Image.open(fonts.assets_dir() / "icon_source.png"))
+            self.iconphoto(False, self._icon)
+        except (OSError, tk.TclError):
+            pass
+
+
+def _link_up(box: ctk.CTkTextbox, text: str) -> None:
+    """Webadressen und E-Mail-Adressen in ``box`` klickbar machen."""
+    for i, m in enumerate(LINK_RE.finditer(text)):
+        tag = f"link{i}"
+        box.tag_add(tag, f"1.0+{m.start()}c", f"1.0+{m.end()}c")
+        box.tag_config(tag, foreground=LINK_COLOR[ctk.get_appearance_mode() == "Dark"],
+                       underline=True)
+        box.tag_bind(tag, "<Button-1>", lambda _e, link=m.group(): _open(link))
+        box.tag_bind(tag, "<Enter>", lambda _e: box.configure(cursor="hand2"))
+        box.tag_bind(tag, "<Leave>", lambda _e: box.configure(cursor=""))

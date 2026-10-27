@@ -193,6 +193,35 @@ body {
   padding: 0 0.7em;
 }
 
+/* Lange Guides: Bloecke ausserhalb des Sichtfelds setzt Chromium erst, wenn
+   sie ins Bild kommen. Bei 300 Seiten spart das beim Oeffnen und bei jedem
+   Tastendruck das Layout des ganzen Dokuments. Umflossene Bilder und die
+   Bloecke danach bleiben aussen vor -- die Eindaemmung wuerde den Umfluss
+   abschneiden. */
+.cm-doc > * {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1.6em;
+}
+.cm-doc > img,
+.cm-doc > img.cm-align-left + *,
+.cm-doc > img.cm-align-right + *,
+.cm-doc > img.cm-align-left + * + *,
+.cm-doc > img.cm-align-right + * + *,
+.cm-doc > img.cm-align-left + * + * + *,
+.cm-doc > img.cm-align-right + * + * + *,
+.cm-doc > img.cm-align-left + * + * + * + *,
+.cm-doc > img.cm-align-right + * + * + * + *,
+.cm-doc > img.cm-align-left + * + * + * + * + *,
+.cm-doc > img.cm-align-right + * + * + * + * + *,
+.cm-doc > img.cm-align-left + * + * + * + * + * + *,
+.cm-doc > img.cm-align-right + * + * + * + * + * + *,
+.cm-doc > img.cm-align-left + * + * + * + * + * + * + *,
+.cm-doc > img.cm-align-right + * + * + * + * + * + * + *,
+.cm-doc > img.cm-align-left + * + * + * + * + * + * + * + *,
+.cm-doc > img.cm-align-right + * + * + * + * + * + * + * + * {
+  content-visibility: visible;
+}
+
 /* ---------------------------------------------------------------- */
 /* Bilder und Textumfluss                                           */
 /* ---------------------------------------------------------------- */

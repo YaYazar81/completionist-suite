@@ -109,6 +109,11 @@ class OutlinePanel(QWidget):
         else:
             self.tree.clearSelection()
 
+    def index_of(self, pos: int) -> int:
+        """Nummer der Ueberschrift an ``pos`` in Dokumentreihenfolge (-1: keine)."""
+        positions = [p for _l, _t, p in (self._sig or [])]
+        return positions.index(pos) if pos in positions else -1
+
     def current_text(self) -> str:
         """Titel der hervorgehobenen Ueberschrift (leer, wenn keine)."""
         item = self.tree.currentItem()

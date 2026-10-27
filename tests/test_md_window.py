@@ -3,6 +3,7 @@ Bild, Aenderungen von aussen, aeltere Fassungen."""
 
 from __future__ import annotations
 
+import json
 import os
 import time
 from pathlib import Path
@@ -372,3 +373,170 @@ def test_outline_is_visible_by_default_and_highlights_current_section(qapp, wind
     assert wait_for(qapp, lambda: win.outline_panel.current_text() == "Abschnitt 5")
     win._load_md(tab, doc)
     assert wait_for(qapp, lambda: tab.file is not None and tab.file.path == doc and not tab.loading)
+
+
+def test_source_view_shows_markdown_and_follows_editor(qapp, window):
+    win, tab, doc = window
+    win.set_view_mode("source")
+    try:
+        assert tab.source.isVisible() and not tab.view.isVisible()
+        assert wait_for(qapp, lambda: "## Unterpunkt" in tab.source.toPlainText())
+        win.set_view_mode("split")
+        assert tab.source.isVisible() and tab.view.isVisible()
+        # Getippt im WYSIWYG-Editor: der Quelltext zieht nach der Tipp-Pause nach
+        tab.view.setFocus()
+        js(qapp, tab, "CM.gotoPos(0) || CM.exec('text', 'Neu ')")
+        assert wait_for(qapp, lambda: "Neu Titel" in tab.source.toPlainText())
+    finally:
+        win.set_view_mode("wysiwyg")
+
+
+def test_typing_in_source_reaches_editor_and_file(qapp, window):
+    win, tab, doc = window
+    win.set_view_mode("split")
+    try:
+        assert wait_for(qapp, lambda: "Apfel und Birne." in tab.source.toPlainText())
+        tab.source.setFocus()
+        cur = tab.source.textCursor()
+        text = tab.source.toPlainText()
+        cur.setPosition(text.index("Birne"))
+        cur.insertText("**Kiwi** ")
+        tab.source.setTextCursor(cur)
+        # nicht sofort -- erst nach der Tipp-Pause
+        assert "Kiwi" not in js(qapp, tab, "CM.getMarkdown()")
+        assert wait_for(qapp, lambda: "Apfel und **Kiwi** Birne." in doc.read_text(encoding="utf-8"))
+        assert "**Kiwi**" in js(qapp, tab, "CM.getMarkdown()")
+        # Der Schritt ist im Editor rueckgaengig zu machen
+        js(qapp, tab, "CM.undo()")
+        assert wait_for(qapp, lambda: "Kiwi" not in js(qapp, tab, "CM.getMarkdown()"))
+    finally:
+        win.set_view_mode("wysiwyg")
+
+
+def test_toolbar_commands_and_find_work_in_source(qapp, window):
+    win, tab, doc = window
+    win.set_view_mode("source")
+    try:
+        assert wait_for(qapp, lambda: "Apfel und Birne." in tab.source.toPlainText())
+        cur = tab.source.textCursor()
+        start = tab.source.toPlainText().index("Birne")
+        cur.setPosition(start)
+        cur.setPosition(start + len("Birne"), cur.MoveMode.KeepAnchor)
+        tab.source.setTextCursor(cur)
+        win._exec("bold")
+        assert "Apfel und **Birne**." in tab.source.toPlainText()
+        cur = tab.source.textCursor()
+        cur.setPosition(tab.source.toPlainText().index("Noch ein"))
+        tab.source.setTextCursor(cur)
+        win._exec("h3")
+        assert "### Noch ein Apfel." in tab.source.toPlainText()
+        win._find("apfel", False)
+        assert tab.source.textCursor().selectedText() == "Apfel"
+        win._flush_save(tab)  # wartet nicht auf die Tipp-Pause
+        assert "### Noch ein Apfel." in doc.read_text(encoding="utf-8")
+    finally:
+        win.set_view_mode("wysiwyg")
+
+
+def test_split_sides_can_be_swapped_and_are_remembered(qapp, window):
+    win, tab, doc = window
+    win.set_view_mode("split")
+    try:
+        assert tab.split.widget(1) is tab.source
+        win.swap_view_sides()
+        assert tab.split.widget(0) is tab.source and tab.split.widget(1) is tab.view
+        settings = win._settings
+        assert settings["view_mode"] == "split" and settings["source_first"] is True
+        win.swap_view_sides()
+        assert tab.split.widget(1) is tab.source
+    finally:
+        win.set_view_mode("wysiwyg")
+    assert win._settings["view_mode"] == "wysiwyg"
+
+
+def test_outline_jump_scrolls_source(qapp, window):
+    win, tab, doc = window
+    body = "# Anfang\n\n" + "".join(f"Zeile {i}\n\n" for i in range(200)) + "## Ende\n\nSchluss.\n"
+    doc.write_text(body, encoding="utf-8")
+    win._load_md(tab, doc, flush=False)
+    win.set_view_mode("source")
+    try:
+        assert wait_for(qapp, lambda: "## Ende" in tab.source.toPlainText())
+        assert wait_for(qapp, lambda: win.outline_panel.index_of(-1) == -1 and len(win.outline_panel._sig or []) == 2)
+        pos = win.outline_panel._sig[1][2]
+        win._outline_jump(pos)
+        assert tab.source.textCursor().block().text() == "## Ende"
+        assert tab.source.verticalScrollBar().value() > 0
+    finally:
+        win.set_view_mode("wysiwyg")
+
+
+def test_replace_markdown_matches_fresh_load(qapp, window):
+    """CM.replaceMarkdown ersetzt nur den geaenderten Bereich -- das Ergebnis
+    muss trotzdem genau dem frisch geladenen Dokument entsprechen."""
+    win, tab, doc = window
+    variants = [
+        "# Titel\n\nApfel und Birne.\n\n## Unterpunkt\n\nNoch ein Apfel.\n",
+        "# Titel\n\nApfel und Birne.\n\nApfel und Birne.\n\n## Unterpunkt\n\nNoch ein Apfel.\n",
+        "# Titel\n\nApfel und Birne.\n",
+        "- eins\n- zwei\n\n| a | b |\n| --- | --- |\n| 1 | 2 |\n\n```py\nx = 1\n```\n",
+        "- eins\n- zwei\n- drei\n\n| a | b |\n| --- | --- |\n| 1 | 3 |\n\n```py\nx = 2\n```\n",
+        "",
+        "Nur ein Satz mit **fett** und *kursiv*.\n",
+    ]
+    for md in variants:
+        js(qapp, tab, f"CM.replaceMarkdown({json.dumps(md)})")
+        got = js(qapp, tab, "CM.getMarkdown()")
+        expected = js(qapp, tab, f"(() => {{ const keep = CM.getMarkdown(); "
+                                 f"CM.setMarkdown({json.dumps(md)}, ''); const r = CM.getMarkdown(); "
+                                 f"CM.setMarkdown(keep, ''); return r; }})()")
+        assert got == expected, md
+
+
+def test_code_block_containing_fence_survives_reload(qapp, window):
+    """Ein Codeblock mit ``` darin wird mit ```` umzaeunt -- und muss beim
+    Laden auch erst an ```` enden."""
+    win, tab, doc = window
+    md = "````\n```py\nx = 1\n```\n````\n\nDanach.\n"
+    js(qapp, tab, f"CM.setMarkdown({json.dumps(md)}, '')")
+    assert js(qapp, tab, "CM.getMarkdown()") == md
+
+
+def test_replace_markdown_random_edits_follow_source(qapp, window):
+    """Zufaellige Aenderungen im Quelltext: das nur teilweise neu geparste
+    Dokument muss dem frisch geladenen entsprechen -- oder, wo der frische
+    Parse den Quelltext selbst nicht trifft (exotische Escapes), dem Quelltext."""
+    win, tab, doc = window
+    script = r"""(() => {
+      let seed = 11; const rnd = (n) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
+      const pieces = ["# Titel", "## Abschnitt", "Ein Absatz mit **fett**.", "- eins\n- zwei", "- [ ] auf\n- [x] zu",
+        "1. a\n2. b", "> Zitat\n> weiter", "```js\nx = 1\n\ny = 2\n```", "| a | b |\n| --- | --- |\n| 1 | 2 |",
+        "---", "***", "![Bild](images/a.png)", "<div>html</div>", "Zeile eins\nZeile zwei", "~~~\ncode\n~~~"];
+      const inserts = ["\n\n", "\n", "```", "# ", "- ", "| x |", "\n\n```\n", "a", "**", "> ", "1. ", "~~~"];
+      const bad = [];
+      for (let round = 0; round < 12; round++) {
+        let md = "";
+        for (let i = 0, n = 3 + rnd(10); i < n; i++) md += pieces[rnd(pieces.length)] + "\n\n";
+        CM.setMarkdown(md, "");
+        for (let step = 0; step < 15; step++) {
+          const cur = CM.getMarkdown();
+          const pos = rnd(cur.length + 1);
+          const op = rnd(3);
+          const next = op === 0 ? cur.slice(0, pos) + inserts[rnd(inserts.length)] + cur.slice(pos)
+            : op === 1 ? cur.slice(0, pos) + cur.slice(pos + 1 + rnd(8))
+            : cur.slice(0, pos) + pieces[rnd(pieces.length)] + cur.slice(pos);
+          CM.replaceMarkdown(next);
+          const got = CM.getMarkdown();
+          CM.setMarkdown(next, "");
+          const want = CM.getMarkdown();
+          if (got !== want) {
+            const lines = new Set(next.split("\n"));
+            const wantLines = new Set(want.split("\n"));
+            const extra = got.split("\n").filter((l) => !wantLines.has(l) && !lines.has(l));
+            if (extra.length) bad.push({ next, got, want });
+          }
+        }
+      }
+      return bad.slice(0, 2);
+    })()"""
+    assert js(qapp, tab, script) == []

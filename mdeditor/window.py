@@ -184,6 +184,8 @@ class MainWindow(QMainWindow):
         # Per Einfachklick geoeffnete .txt/.pdf/Bild-Datei: der naechste Einfachklick ersetzt sie
         self._preview: BaseTab | None = None
         self._restoring = False
+        self.view_mode = "wysiwyg"   # wysiwyg / source / split -- fuer alle Editor-Tabs
+        self.source_first = False    # Nebeneinander: Quellcode links statt rechts
 
         self.setWindowTitle(WINDOW_TITLE)
         self.resize(1180, 900)
@@ -215,7 +217,7 @@ class MainWindow(QMainWindow):
 
         # Zweite Seitenleiste: Gliederung des aktiven Dokuments
         self.outline_panel = OutlinePanel(self)
-        self.outline_panel.jump.connect(lambda pos: self.view.call("gotoPos", pos))
+        self.outline_panel.jump.connect(self._outline_jump)
 
         # Rechts: Tabs, darunter die Suchleiste
         self.find_bar = FindBar(self)
@@ -250,6 +252,9 @@ class MainWindow(QMainWindow):
         self._build_statusbar()
         self._new_md_tab()  # Haupt-Tab
         self._load_settings()
+        # Wer im Quellcode bzw. im WYSIWYG-Editor zuletzt den Fokus hatte,
+        # bekommt die Toolbar-Befehle und die Suche
+        QApplication.instance().focusChanged.connect(self._on_focus_changed)
         if not secondary:
             self._restore_tabs()
 
@@ -300,6 +305,7 @@ class MainWindow(QMainWindow):
         tab.view.loadFinished.connect(lambda ok, t=tab: self._on_load_finished(t, ok))
         tab.autosave.timeout.connect(lambda t=tab: self._save(reason="auto", tab=t))
         tab.disk_changed_signal.connect(lambda t=tab: self._on_md_disk_changed(t))
+        tab.set_view_mode(self.view_mode, self.source_first)
         if self._md is None:
             self._md = tab
         self._add_tab(tab, activate)
@@ -326,6 +332,7 @@ class MainWindow(QMainWindow):
         # (Strg+0/1 …) den Tab-eigenen (Zoom) nicht frei.
         for w in self._md_only:
             w.setEnabled(is_md)
+        self._update_view_tools()
         if tab is not None and tab.path is not None:
             self.vault_panel.select_file(str(tab.path))
         self._refresh_outline()
@@ -483,6 +490,43 @@ class MainWindow(QMainWindow):
                            "Vault-Explorer ein-/ausblenden", True)
         self.a_outline = act("☰", self.toggle_outline, "Ctrl+Shift+G",
                              "Gliederung (Überschriften) ein-/ausblenden", True)
+
+        # --- Ansicht: WYSIWYG, Quellcode oder beide nebeneinander ---
+        self.view_button = QToolButton(self)
+        self.view_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.view_button.setToolTip("Ansicht: WYSIWYG-Editor, Markdown-Quellcode oder beide nebeneinander")
+        view_menu = QMenu(self.view_button)
+        view_group = QActionGroup(self)
+        view_group.setExclusive(True)
+        self._view_actions: dict[str, QAction] = {}
+        for mode, label, keys in (
+            ("wysiwyg", "✎ WYSIWYG", None),
+            ("source", "⟨/⟩ Quellcode", "Ctrl+Shift+M"),
+            ("split", "◫ Nebeneinander", "Ctrl+Shift+D"),
+        ):
+            a = QAction(label, self)
+            a.setCheckable(True)
+            if keys:
+                # Kurzbefehl schaltet die Ansicht ein -- und wieder zurueck zu WYSIWYG
+                a.setShortcut(QKeySequence(keys))
+                a.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
+                a.triggered.connect(lambda _=False, m=mode: self.set_view_mode(
+                    "wysiwyg" if self.view_mode == m else m))
+            else:
+                a.triggered.connect(lambda _=False, m=mode: self.set_view_mode(m))
+            view_group.addAction(a)
+            view_menu.addAction(a)
+            self.addAction(a)
+            self._view_actions[mode] = a
+        view_menu.addSeparator()
+        self.a_swap = QAction("⇄ Seiten tauschen", self)
+        self.a_swap.setToolTip("Nebeneinander: Quellcode und WYSIWYG-Editor die Plätze tauschen lassen")
+        self.a_swap.setIconText("⇄")  # in der Toolbar nur das Zeichen, im Menue der ganze Text
+        self.a_swap.triggered.connect(self.swap_view_sides)
+        view_menu.addAction(self.a_swap)
+        self.view_button.setMenu(view_menu)
+        bar.addWidget(self.view_button)
+        bar.addAction(self.a_swap)
         bar.addSeparator()
 
         # --- Datei ---
@@ -730,6 +774,8 @@ class MainWindow(QMainWindow):
         outline = bool(self._settings.get("outline_visible", True))
         self.outline_panel.setVisible(outline)
         self.a_outline.setChecked(outline)
+        self.source_first = bool(self._settings.get("source_first", False))
+        self.set_view_mode(self._settings.get("view_mode", "wysiwyg"), save=False)
         self.gdrive.configure(self._settings.get("gdrive", {}), self.vault_panel.vault, startup=True)
 
     def _save_settings(self) -> None:
@@ -758,6 +804,8 @@ class MainWindow(QMainWindow):
             else self._settings.get("vault_visible", True),
             "outline_visible": self.outline_panel.isVisible() if self.isVisible()
             else self._settings.get("outline_visible", True),
+            "view_mode": self.view_mode,
+            "source_first": self.source_first,
         }
         if not self.secondary:
             update.update({
@@ -833,9 +881,12 @@ class MainWindow(QMainWindow):
             "in einem neuen Tab -- auch Textdateien, PDFs und Bilder\n\n"
             "***\n\n"
             "Sobald eine Datei geöffnet ist, speichert der Editor jede Änderung nach "
-            "etwa 300 ms von selbst -- bloßes Klicken oder Lesen fasst die Datei nicht an.\n",
+            "etwa 300 ms von selbst -- bloßes Klicken oder Lesen fasst die Datei nicht an.\n\n"
+            "- **Strg + Shift + M** zeigt den Markdown-Quellcode, **Strg + Shift + D** "
+            "Editor und Quellcode nebeneinander\n",
             "",
         )
+        tab.reset_source()
         QTimer.singleShot(60, lambda: setattr(tab, "loading", False))
         tab.changed.emit()
 
@@ -893,6 +944,7 @@ class MainWindow(QMainWindow):
         tab.last_saved_text = tab.file.body
         base = QUrl.fromLocalFile(str(path.parent) + os.sep).toString()
         tab.view.call("setMarkdown", tab.file.body, base)
+        tab.reset_source()
         QTimer.singleShot(80, lambda: setattr(tab, "loading", False))
         tab.dirty = False
         tab.error = False
@@ -915,6 +967,60 @@ class MainWindow(QMainWindow):
         AboutDialog(APP_TITLE, __version__, "WYSIWYG-Markdown-Editor der Completionist Suite",
                     self.windowIcon(), self,
                     image=self.app_dir / "assets" / "splash_md.jpg").exec()
+
+    def _outline_jump(self, pos: int) -> None:
+        tab = self._md
+        if tab is None:
+            return
+        if tab.source_visible():
+            index = self.outline_panel.index_of(pos)
+            if index >= 0:
+                tab.source.scroll_to_heading(index, place_cursor=tab.source_active())
+            if tab.source_active():
+                tab.source.setFocus()
+                return
+        tab.view.call("gotoPos", pos)
+
+    # ------------------------------------------------------------------ #
+    # Ansicht: WYSIWYG / Quellcode / nebeneinander
+    # ------------------------------------------------------------------ #
+
+    def set_view_mode(self, mode: str, save: bool = True) -> None:
+        if mode not in self._view_actions:
+            mode = "wysiwyg"
+        self.view_mode = mode
+        for tab in self.all_tabs():
+            if isinstance(tab, MdTab):
+                tab.set_view_mode(mode, self.source_first)
+        self._update_view_tools()
+        if save:
+            self._save_settings()
+
+    def swap_view_sides(self) -> None:
+        self.source_first = not self.source_first
+        for tab in self.all_tabs():
+            if isinstance(tab, MdTab):
+                tab.set_view_mode(self.view_mode, self.source_first)
+        self._save_settings()
+
+    def _update_view_tools(self) -> None:
+        self._view_actions[self.view_mode].setChecked(True)
+        self.view_button.setText(self._view_actions[self.view_mode].text() + " ▾")
+        self.a_swap.setVisible(self.view_mode == "split")
+        # Tabellen und Bilder fuegt nur der WYSIWYG-Editor ein
+        is_md = isinstance(self.current_tab(), MdTab)
+        for w in (self.table_button, self.image_button):
+            w.setEnabled(is_md and self.view_mode != "source")
+
+    def _on_focus_changed(self, _old, new) -> None:
+        if new is None:
+            return
+        for tab in self.all_tabs():
+            if isinstance(tab, MdTab):
+                if new is tab.source:
+                    tab.source_focus = True
+                elif new is tab.view or tab.view.isAncestorOf(new):
+                    tab.source_focus = False
 
     def toggle_outline(self) -> None:
         visible = not self.outline_panel.isVisible()
@@ -944,53 +1050,66 @@ class MainWindow(QMainWindow):
             tab.find_edit.setFocus()  # der PDF-Tab hat seine eigene Suche
             tab.find_edit.selectAll()
             return
-        if isinstance(tab, MdTab):
+        ed = self._plain_editor(tab)
+        if ed is not None:
+            self.find_bar.open(replace, ed.textCursor().selectedText())
+        elif isinstance(tab, MdTab):
             tab.view.call("selectedText", callback=lambda t: self.find_bar.open(
                 replace, t if isinstance(t, str) else ""))
-        elif isinstance(tab, TextTab):
-            self.find_bar.open(replace, tab.editor.textCursor().selectedText())
         else:
             self.find_bar.open(replace)
 
+    def _plain_editor(self, tab: BaseTab | None):
+        """Das Textfeld, in dem gesucht wird: Text-Tab oder aktiver Quellcode."""
+        if isinstance(tab, TextTab):
+            return tab.editor
+        if isinstance(tab, MdTab) and tab.source_active():
+            return tab.source
+        return None
+
     def _find(self, text: str, case: bool) -> None:
         tab = self.current_tab()
-        if isinstance(tab, MdTab):
+        ed = self._plain_editor(tab)
+        if ed is not None:
+            self._text_find(ed, text, case, 0)
+        elif isinstance(tab, MdTab):
             tab.view.call("find", text, case, callback=self._show_find)
-        elif isinstance(tab, TextTab):
-            self._text_find(tab, text, case, 0)
         else:
             self.find_bar.show_result(0, -1)
 
     def _find_next(self, step: int) -> None:
         tab = self.current_tab()
-        if isinstance(tab, MdTab):
+        ed = self._plain_editor(tab)
+        if ed is not None:
+            self._text_find(ed, self.find_bar.find_edit.text(), self.find_bar.case.isChecked(), step)
+        elif isinstance(tab, MdTab):
             tab.view.call("findNext", step, callback=self._show_find)
-        elif isinstance(tab, TextTab):
-            self._text_find(tab, self.find_bar.find_edit.text(), self.find_bar.case.isChecked(), step)
 
     def _replace(self, text: str) -> None:
         tab = self.current_tab()
-        if isinstance(tab, MdTab):
-            tab.view.call("replace", text, callback=self._show_find)
-        elif isinstance(tab, TextTab):
-            cur = tab.editor.textCursor()
+        ed = self._plain_editor(tab)
+        if ed is not None:
+            cur = ed.textCursor()
             if cur.hasSelection():
                 cur.insertText(text)
             self._find_next(1)
+        elif isinstance(tab, MdTab):
+            tab.view.call("replace", text, callback=self._show_find)
 
     def _replace_all(self, text: str) -> None:
         tab = self.current_tab()
-        if isinstance(tab, MdTab):
+        ed = self._plain_editor(tab)
+        if ed is None and isinstance(tab, MdTab):
             tab.view.call("replaceAll", text, callback=lambda r: (
                 self.find_bar.show_result(0, -1),
                 self.statusBar().showMessage(f"{(r or {}).get('replaced', 0)} Stelle(n) ersetzt", 5000)))
-        elif isinstance(tab, TextTab):
+        elif ed is not None:
             needle = self.find_bar.find_edit.text()
             if not needle:
                 return
-            doc = tab.editor.document()
+            doc = ed.document()
             flags = self._text_flags(self.find_bar.case.isChecked())
-            cur = tab.editor.textCursor()
+            cur = ed.textCursor()
             cur.beginEditBlock()
             n = 0
             hit = doc.find(needle, 0, flags)
@@ -1012,9 +1131,10 @@ class MainWindow(QMainWindow):
 
         return QTextDocument.FindFlag.FindCaseSensitively if case else QTextDocument.FindFlag(0)
 
-    def _text_find(self, tab: TextTab, needle: str, case: bool, step: int) -> None:
-        """Suche im Text-Tab: step 0 = ab Auswahlbeginn, +1/-1 = weiter/zurueck."""
-        doc, ed = tab.editor.document(), tab.editor
+    def _text_find(self, ed, needle: str, case: bool, step: int) -> None:
+        """Suche im Textfeld (Text-Tab, Quellcode): step 0 = ab Auswahlbeginn,
+        +1/-1 = weiter/zurueck."""
+        doc = ed.document()
         if not needle:
             self.find_bar.show_result(0, -1)
             return
@@ -1041,8 +1161,12 @@ class MainWindow(QMainWindow):
 
     def _find_closed(self) -> None:
         tab = self.current_tab()
+        ed = self._plain_editor(tab)
         if isinstance(tab, MdTab):
             tab.view.call("clearFind")
+        if ed is not None:
+            ed.setFocus()
+        elif isinstance(tab, MdTab):
             tab.view.setFocus()
         elif tab is not None:
             tab.setFocus()
@@ -1239,6 +1363,7 @@ class MainWindow(QMainWindow):
             return
         if tab.loading:
             return
+        tab.push_source_now()
         tab.view.run("CM.unsavedMarkdown()", lambda body, t=tab: self._write_body(t, body))
 
     def _write_body(self, tab: MdTab, body) -> None:
@@ -1336,6 +1461,7 @@ class MainWindow(QMainWindow):
         if tab is None or tab.file is None or tab.file.path is None or tab.loading or not tab.ready:
             return
         tab.autosave.stop()
+        tab.push_source_now()
         body = self._fetch_body(tab, "CM.unsavedMarkdown()")
         if body is not None:
             self._write_body(tab, body)
@@ -1373,12 +1499,14 @@ class MainWindow(QMainWindow):
         if kind == "ready":
             tab.view.call("setTheme", self.theme)
         elif kind == "dirty":
+            tab.editor_changed()
             if tab.loading or tab.file is None:
                 return
             tab.dirty = True
             tab.changed.emit()
             tab.autosave.start()
         elif kind == "clean":
+            tab.editor_changed()
             # Zurueck zum gespeicherten Stand (z. B. Rueckgaengig) -- nichts zu schreiben.
             if tab.loading or tab.file is None:
                 return
@@ -1398,6 +1526,11 @@ class MainWindow(QMainWindow):
             if tab is self.current_tab():
                 pos = data.get("pos")
                 self.outline_panel.set_current(pos if isinstance(pos, int) else None)
+                # Nebeneinander folgt der Quellcode dem Kapitel, in dem man im Editor ist
+                if isinstance(pos, int) and tab.mode == "split" and not tab.source.hasFocus():
+                    index = self.outline_panel.index_of(pos)
+                    if index >= 0:
+                        tab.source.scroll_to_heading(index)
         elif kind == "pasteImage":
             # Strg+V mit Bild, von Chromium statt von der QAction verarbeitet
             QTimer.singleShot(0, lambda t=tab: self._paste_image(t))
@@ -1432,6 +1565,11 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------ #
 
     def _exec(self, cmd: str, arg=None) -> None:
+        tab = self._md
+        if tab is not None and tab.source_active():
+            tab.source.apply(cmd, arg)
+            tab.source.setFocus()
+            return
         self.view.call("exec", cmd, arg)
         self.view.setFocus()
 
@@ -1469,6 +1607,9 @@ class MainWindow(QMainWindow):
 
     def _insert_emoji(self, char: str) -> None:
         # Der Dialog bleibt offen und behaelt den Fokus fuer weitere Klicks.
+        if self._md is not None and self._md.source_active():
+            self._md.source.apply("text", char)
+            return
         self.view.call("exec", "text", char)
 
     # ------------------------------------------------------------------ #

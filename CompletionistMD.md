@@ -158,6 +158,29 @@ den älteren Fassungen.
   ein: alle Überschriften des aktiven Dokuments, Klick springt hin. Sie folgt dem Tippen.
 - **Datei ▾ → Zuletzt geöffnet** listet die letzten 15 Dateien.
 
+## Quellcode und Nebeneinander-Ansicht
+
+Über **✎ WYSIWYG ▾** in der Werkzeugleiste (neben ☰) wählt man die Ansicht – sie gilt für
+alle Markdown-Tabs und bleibt über einen Neustart erhalten:
+
+- **✎ WYSIWYG** – der gewohnte Editor.
+- **⟨/⟩ Quellcode** (Strg + Umschalt + M) – der reine Markdown-Text zum Lesen und Bearbeiten.
+- **◫ Nebeneinander** (Strg + Umschalt + D) – links Vault, Bookmarks und Gliederung, in der
+  Mitte der WYSIWYG-Editor, rechts der Quellcode. **⇄** tauscht Editor und Quellcode die
+  Plätze. Der Trenner dazwischen lässt sich ziehen.
+
+Beide Seiten gleichen sich gegenseitig ab, jeweils nach einer Tipp-Pause von 200 ms – so
+bleibt das Tippen auch in 300-Seiten-Guides flüssig. Aus dem Quellcode übernimmt der Editor
+nur die Absätze rund um die Änderung (statt das ganze Dokument neu zu lesen); der Schritt
+lässt sich im Editor mit Strg + Z zurücknehmen, gespeichert wird wie beim Tippen. Verlässt
+man den Quellcode, zeigt er das Markdown so, wie der Editor es speichert (z. B. `*` statt `_`).
+
+Im Quellcode wirken auch die Formatknöpfe (Fett, Überschrift, Liste, Linie …) und Emojis –
+sie setzen dort die Markdown-Zeichen; Tabellen und Bilder fügt nur der WYSIWYG-Editor ein.
+Strg + F / Strg + H suchen in der Seite, in der zuletzt getippt wurde. Ein Klick in der
+Gliederung springt in beiden Seiten zur Überschrift, und nebeneinander folgt der Quellcode
+dem Kapitel, in dem man im Editor gerade ist.
+
 ## Dateien zusammenführen
 
 Im Vault-Explorer mehrere `.md` mit Strg- bzw. Umschalt-Klick markieren, Rechtsklick →
@@ -299,6 +322,8 @@ Die Suite unterscheidet zwei Linien, der Editor zeigt sie verschieden an:
 | Strg + Shift + F | im Vault suchen |
 | Strg + Shift + E | Vault-Explorer ein-/ausblenden |
 | Strg + Shift + G | Gliederung ein-/ausblenden |
+| Strg + Shift + M | Quellcode-Ansicht ein/aus |
+| Strg + Shift + D | Editor und Quellcode nebeneinander ein/aus |
 | Strg + V | Text einfügen; Bild aus der Zwischenablage landet in `images/` |
 | F5 | an CompletionistPDF übergeben |
 

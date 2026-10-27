@@ -3,26 +3,74 @@
 // Gegenstueck zu assets/editor/markdown.js: Was der Parser einliest, muss hier
 // wieder als dieselbe Zeile herauskommen (Round-Trip).
 
+//
+// ProseMirror-Knoten sind unveraenderlich, und ein neuer Dokumentstand teilt
+// sich alle unveraenderten Knoten mit dem alten. Das Markdown jedes Blocks
+// wird deshalb je Knoten gemerkt: nach einem Tastendruck wird nur der Absatz
+// neu geschrieben, in dem getippt wurde -- bei einem 300-Seiten-Guide der
+// Unterschied zwischen einigen hundert und wenigen Millisekunden.
+
+const docCache = new WeakMap();
+const blockCache = new WeakMap();
+
 export function serialize(doc) {
-  const md = joinBlocks(doc).replace(/\n{3,}/g, "\n\n").trim();
-  return md ? md + "\n" : "";
+  let md = docCache.get(doc);
+  if (md === undefined) {
+    md = joinBlocks(doc).replace(/\n{3,}/g, "\n\n").trim();
+    md = md ? md + "\n" : "";
+    docCache.set(doc, md);
+  }
+  return md;
 }
 
 // Aufgaben- und Punktlisten sind in Tiptap getrennte Knoten, in Markdown aber
 // eine einzige "-"-Liste. Eine Leerzeile dazwischen machte sie "loose".
 const DASH_LISTS = new Set(["bulletList", "taskList"]);
 
+function cachedBlock(node) {
+  let md = blockCache.get(node);
+  if (md === undefined) {
+    md = block(node);
+    blockCache.set(node, md);
+  }
+  return md;
+}
+
 function joinBlocks(parent) {
+  return layoutBlocks(parent).text;
+}
+
+/** Text der Bloecke plus, je Kindknoten, wo sein Markdown darin steht:
+ *  ``{start, end, blank}`` -- ``blank``: davor steht eine Leerzeile (Bloecke
+ *  ohne Markdown, etwa leere Absaetze, haben start === end). */
+function layoutBlocks(parent) {
   let out = "";
   let prev = null;
+  const spans = [];
   parent.forEach((node) => {
-    const md = block(node);
-    if (!md) return;
-    if (out) out += prev && DASH_LISTS.has(prev) && DASH_LISTS.has(node.type.name) ? "\n" : "\n\n";
+    const md = cachedBlock(node);
+    if (!md) {
+      spans.push({ start: out.length, end: out.length, blank: false });
+      return;
+    }
+    let blank = false;
+    if (out) {
+      blank = !(prev && DASH_LISTS.has(prev) && DASH_LISTS.has(node.type.name));
+      out += blank ? "\n\n" : "\n";
+    }
+    spans.push({ start: out.length, end: out.length + md.length, blank });
     out += md;
     prev = node.type.name;
   });
-  return out;
+  return { text: out, spans };
+}
+
+/** Wo steht das Markdown jedes obersten Blocks in ``serialize(doc)``?
+ *  null, wenn sich das nicht sicher sagen laesst (die Nachbearbeitung in
+ *  serialize hat den Text veraendert). */
+export function blockLayout(doc) {
+  const { text, spans } = layoutBlocks(doc);
+  return serialize(doc) === (text ? text + "\n" : "") ? spans : null;
 }
 
 function blocks(parent) {

@@ -1,4 +1,9 @@
-"""Rendert eine Szene als SVG – dieselben Formen wie render_pil, aber als Vektor."""
+"""Rendert eine Szene als SVG – dieselben Formen wie render_pil, aber als Vektor.
+
+Die Beschriftung steht wie im PDF als Glyphen-Konturen im SVG (render_pdf.text_path):
+eine per @font-face eingebettete Schrift zeigen nur Browser an, Inkscape, Illustrator,
+Affinity oder die Windows-Vorschau fielen auf eine Ersatzschrift zurück.
+"""
 from __future__ import annotations
 
 import base64
@@ -9,6 +14,7 @@ from . import fonts
 from .colors import Gradient
 from .config import QRDesign
 from .geometry import ImageItem, Layer, Scene, TextItem, build_scene, load_logo
+from .render_pdf import text_path
 from .shapes import _f
 
 
@@ -60,6 +66,15 @@ def scene_to_svg(scene: Scene, width_px: int = 1024) -> str:
             body.append(f'<image x="{_f(x)}" y="{_f(y)}" width="{_f(w)}" height="{_f(h)}" '
                         f'preserveAspectRatio="xMidYMid meet" href="data:image/png;base64,{data}"/>')
         elif isinstance(item, TextItem):
+            try:
+                d = text_path(item, svg=True)
+            except (OSError, ImportError):
+                d = ""  # Schrift oder HarfBuzz fehlt: Text mit eingebetteter Schrift
+            if d:
+                label = escape(" ".join(item.lines), {'"': "&quot;"})
+                body.append(f'<path fill="{escape(item.color)}" fill-rule="nonzero" '
+                            f'aria-label="{label}" d="{d}"/>')
+                continue
             defs.append(_font_face(item))
             weight = 700 if item.bold else 400
             for line, base in zip(item.lines, item.baselines):

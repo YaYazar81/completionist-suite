@@ -13,10 +13,11 @@
 // HTML, das die Parse-Regeln in nodes.js lesen. Dokument -> Markdown:
 // serialize.js.
 
-import { Editor } from "@tiptap/core";
+import { Editor, createDocument } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { Table, TableRow } from "@tiptap/extension-table";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
+import { Fragment } from "@tiptap/pm/model";
 import { EditorState, NodeSelection, Selection } from "@tiptap/pm/state";
 import { TableMap } from "@tiptap/pm/tables";
 
@@ -32,7 +33,7 @@ import {
   setBase,
 } from "./nodes.js";
 import { MdSource, RenderInPlace, markIdle } from "./reveal.js";
-import { imageMd, serialize } from "./serialize.js";
+import { blockLayout, imageMd, serialize } from "./serialize.js";
 import { Search, clearFind, find, findNext, gotoPos, outline, replace, replaceAll } from "./search.js";
 
 const MD = window.MD;
@@ -40,6 +41,17 @@ const MD = window.MD;
 let editor = null;
 let loading = false;
 let savedMd = "";     // Markdown, wie es zuletzt geladen bzw. gespeichert wurde
+let savedDoc = null;  // frisch geladen: savedMd erst bei Bedarf aus diesem Stand
+
+/** Gespeicherter Stand. Nach dem Laden wird er erst geschrieben, wenn er
+ *  gebraucht wird -- das Oeffnen eines grossen Guides wartet nicht darauf. */
+function saved() {
+  if (savedDoc) {
+    savedMd = serialize(savedDoc);
+    savedDoc = null;
+  }
+  return savedMd;
+}
 let reported = false; // "dirty" an Python gemeldet
 let imageBar = null;
 let imageSrc = null;
@@ -325,11 +337,26 @@ function onContextMenu(ev) {
 // Zustand fuer die Toolbar
 // ------------------------------------------------------------------------
 
+// Je Block gemerkt (Knoten sind unveraenderlich, siehe serialize.js): sonst
+// zaehlte jede Cursorbewegung den ganzen Guide neu durch.
+const statsCache = new WeakMap();
 function stats() {
   const doc = editor.state.doc;
-  const text = doc.textBetween(0, doc.content.size, " ", " ");
-  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-  return { words, chars: text.replace(/\s/g, "").length };
+  let st = statsCache.get(doc);
+  if (st) return st;
+  st = { words: 0, chars: 0 };
+  doc.forEach((node) => {
+    let n = statsCache.get(node);
+    if (!n) {
+      const text = node.textBetween(0, node.content.size, " ", " ").trim();
+      n = { words: text ? text.split(/\s+/).length : 0, chars: text.replace(/\s/g, "").length };
+      statsCache.set(node, n);
+    }
+    st.words += n.words;
+    st.chars += n.chars;
+  });
+  statsCache.set(doc, st);
+  return st;
 }
 
 function currentState() {
@@ -424,7 +451,7 @@ let dirtyTimer = null;
 function checkDirty() {
   clearTimeout(dirtyTimer);
   dirtyTimer = setTimeout(() => {
-    if (serialize(editor.state.doc) !== savedMd) {
+    if (serialize(editor.state.doc) !== saved()) {
       reported = true;
       send({ type: "dirty" });
     } else if (reported) {
@@ -454,14 +481,17 @@ const api = {};
 api.setMarkdown = (md, baseUrl) => {
   setBase(baseUrl);
   loading = true;
-  editor.commands.setContent(MD.toHtml(md), { emitUpdate: false });
-  // Frischer Zustand = leere Historie: das Laden selbst ist nicht rueckgaengig zu machen.
-  editor.view.updateState(
-    EditorState.create({ doc: editor.state.doc, plugins: editor.state.plugins, schema: editor.schema })
-  );
+  // Direkt einen frischen Zustand bauen statt setContent: dessen Transaktion
+  // liefe durch alle appendTransaction-Plugins (Autolink, reveal.js), die bei
+  // einem 300-Seiten-Guide jeden Absatz einzeln anfassen. Frischer Zustand
+  // heisst auch leere Historie: das Laden ist nicht rueckgaengig zu machen.
+  const doc = createDocument(MD.toHtml(md), editor.schema, {});
+  editor.view.updateState(EditorState.create({ doc, plugins: editor.state.plugins, schema: editor.schema }));
   loading = false;
   clearTimeout(dirtyTimer);
-  savedMd = serialize(editor.state.doc);
+  savedDoc = editor.state.doc;
+  // im Leerlauf vorab schreiben, damit der erste Tastendruck nicht wartet
+  setTimeout(saved, 400);
   reported = false;
   // Cursor in den ersten Text -- "start" waehlte ein Bild am Dokumentanfang aus.
   // Frisch geladen ist alles gerendert, bis der Nutzer klickt oder tippt.
@@ -479,17 +509,167 @@ api.setMarkdown = (md, baseUrl) => {
 
 api.getMarkdown = () => serialize(editor.state.doc);
 
+/** Markdown aus der Quellcode-Ansicht uebernehmen. Anders als setMarkdown
+ *  ein normaler, rueckgaengig zu machender Schritt: ersetzt wird nur der
+ *  Bereich, der sich unterscheidet -- Cursor, Scrollposition und der
+ *  gespeicherte Vergleichsstand bleiben, das Speichern laeuft wie beim Tippen. */
+api.replaceMarkdown = (md) => {
+  // Erst aufgeklappte Syntax am Cursor ("# " einer Ueberschrift) zuklappen:
+  // sonst saehe der Vergleich darin eine Aenderung, und ein Wegfall der
+  // Rauten machte die Ueberschrift zum Absatz.
+  editor.view.dispatch(markIdle(editor.state.tr));
+  const doc = editor.state.doc;
+  const next = reparse(doc, md) || createDocument(MD.toHtml(md), editor.schema, {});
+  const tr = replaceChanged(editor.state.tr, doc, next);
+  if (!tr) return false; // gleicher Inhalt
+  editor.view.dispatch(markIdle(tr));
+  return true;
+};
+
+/** Ersetzt in ``tr`` nur die obersten Bloecke, die sich von ``next``
+ *  unterscheiden -- ganze Bloecke, denn ein Ersetzen quer durch
+ *  verschiedene Knoten (aus einer Tabellenzelle in einen Codeblock) laesst
+ *  ProseMirror den Inhalt passend machen, und dabei landete er woanders.
+ *  Ist es nur der Text eines einzelnen Absatzes bzw. einer Ueberschrift, wird
+ *  nur der geaenderte Text ersetzt: der Cursor darin bleibt stehen. */
+function replaceChanged(tr, doc, next) {
+  const a = doc.content;
+  const b = next.content;
+  let first = 0;
+  while (first < a.childCount && first < b.childCount && a.child(first).eq(b.child(first))) first++;
+  if (first === a.childCount && first === b.childCount) return null;
+  let endA = a.childCount;
+  let endB = b.childCount;
+  while (endA > first && endB > first && a.child(endA - 1).eq(b.child(endB - 1))) {
+    endA--;
+    endB--;
+  }
+  let from = 0;
+  for (let i = 0; i < first; i++) from += a.child(i).nodeSize;
+  let to = from;
+  for (let i = first; i < endA; i++) to += a.child(i).nodeSize;
+
+  if (endA - first === 1 && endB - first === 1) {
+    const oldNode = a.child(first);
+    const newNode = b.child(first);
+    if (oldNode.isTextblock && oldNode.sameMarkup(newNode)) {
+      const start = oldNode.content.findDiffStart(newNode.content);
+      let { a: eA, b: eB } = oldNode.content.findDiffEnd(newNode.content);
+      const overlap = start - Math.min(eA, eB);
+      if (overlap > 0) {
+        eA += overlap;
+        eB += overlap;
+      }
+      return tr.replaceWith(from + 1 + start, from + 1 + eA, newNode.content.cut(start, eB));
+    }
+  }
+  const nodes = [];
+  for (let i = first; i < endB; i++) nodes.push(b.child(i));
+  return tr.replaceWith(from, to, nodes);
+}
+
+const FENCE_OPEN = /^ {0,3}(```+|~~~+)[ \t]*[\w+#-]*[ \t]*$/;
+const FENCE_LINE = /^ {0,3}(?:```|~~~)[^\n]*$/gm;
+
+/** Steht ``md`` an den (aufsteigenden) Stellen ``positions`` in einem
+ *  Codeblock? Gleiche Regeln wie markdown.js. */
+function fenceStates(md, positions) {
+  const states = [];
+  let close = null;
+  let k = 0;
+  FENCE_LINE.lastIndex = 0;
+  for (let m; (m = FENCE_LINE.exec(md)); ) {
+    while (k < positions.length && positions[k] <= m.index) states[k++] = !!close;
+    if (k === positions.length) break;
+    if (close) {
+      if (close.test(m[0])) close = null;
+    } else {
+      const open = FENCE_OPEN.exec(m[0]);
+      if (open) close = new RegExp("^ {0,3}" + open[1] + open[1][0] + "*[ \\t]*$");
+    }
+  }
+  while (k < positions.length) states[k++] = !!close;
+  return states;
+}
+
+/** Neues Dokument, in dem nur die Bloecke um die Aenderung neu geparst sind --
+ *  ein 300-Seiten-Guide wird so nicht bei jeder Tipp-Pause ganz neu gelesen.
+ *
+ *  Geht, weil markdown.js jeden Block an einer Leerzeile enden laesst (ausser
+ *  Codebloecken): Text zwischen zwei Leerzeilen, vor und nach denen alles
+ *  gleich geblieben ist, ergibt fuer sich geparst dieselben Bloecke wie im
+ *  ganzen Dokument. null: lieber alles parsen. */
+function reparse(doc, md) {
+  const spans = blockLayout(doc);
+  if (!spans) return null;
+  const old = serialize(doc);
+  md = String(md).replace(/\r\n?/g, "\n");
+  if (!md.endsWith("\n")) md += "\n"; // wie old: aendert am Parsen nichts
+  const max = Math.min(old.length, md.length);
+  let pre = 0;
+  while (pre < max && old.charCodeAt(pre) === md.charCodeAt(pre)) pre++;
+  let suf = 0;
+  while (suf < max - pre && old.charCodeAt(old.length - 1 - suf) === md.charCodeAt(md.length - 1 - suf)) suf++;
+
+  // Erster neu zu lesender Block: beginnt spaetestens an der Aenderung, mit
+  // Leerzeile davor (dann endet dort auch im neuen Text alles Vorige).
+  let a = -1;
+  for (let i = 0; i < spans.length; i++) {
+    const sp = spans[i];
+    if (sp.start > pre) break;
+    if (sp.end > sp.start && (sp.blank || a < 0)) a = i;
+  }
+  if (a < 0) a = 0;
+  // Letzter: endet fruehestens dort, wo der gleiche Rest beginnt, mit
+  // Leerzeile danach. (Der Zeilenumbruch am Dokumentende gehoert zu keinem Block.)
+  const restStart = Math.min(old.length - suf, old.length - 1);
+  let b = -1;
+  let blankAfter = true; // hinter dem letzten Block: Dokumentende
+  for (let i = spans.length - 1; i >= a; i--) {
+    const sp = spans[i];
+    if (sp.end === sp.start) continue;
+    if (sp.end < restStart) break;
+    if (blankAfter) b = i;
+    blankAfter = sp.blank;
+  }
+  if (b < 0) return null;
+
+  const from = spans[a].start;
+  const oldEnd = spans[b].end;
+  const chunkEnd = md.length - (old.length - oldEnd);
+  if (chunkEnd < from) return null;
+  // Beginnt oder endet der Bereich in einem Codeblock, gilt die Leerzeile dort
+  // nicht als Grenze (ein offener Zaun schluckt den Rest des Dokuments).
+  const fences = fenceStates(md, [from, chunkEnd]);
+  if (fences[0] || fences[1]) return null;
+  const chunk = md.slice(from, chunkEnd);
+
+  let posFrom = 0;
+  for (let i = 0; i < a; i++) posFrom += doc.child(i).nodeSize;
+  let posTo = posFrom;
+  for (let i = a; i <= b; i++) posTo += doc.child(i).nodeSize;
+  const middle = chunk.trim() ? createDocument(MD.toHtml(chunk), editor.schema, {}).content : Fragment.empty;
+  const content = doc.content.cut(0, posFrom).append(middle).append(doc.content.cut(posTo));
+  if (!content.size) return null;
+  try {
+    return doc.type.createChecked(doc.attrs, content);
+  } catch (e) {
+    return null;
+  }
+}
+
 /** Markdown, falls es vom gespeicherten Stand abweicht -- sonst false
  *  (null bekommt Python auch, wenn das Skript scheitert). */
 api.unsavedMarkdown = () => {
   const md = serialize(editor.state.doc);
-  return md !== savedMd ? md : false;
+  return md !== saved() ? md : false;
 };
 
 /** Python hat ``md`` geschrieben: neuer Vergleichsstand. Inzwischen
  *  Getipptes meldet sich danach wieder als "dirty". */
 api.markSaved = (md) => {
   savedMd = md;
+  savedDoc = null;
   reported = false;
   checkDirty();
 };

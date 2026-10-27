@@ -22,7 +22,7 @@ from . import fonts
 from .colors import Gradient, rgb
 from .config import QRDesign
 from .geometry import ImageItem, Layer, Scene, TextItem, build_scene, load_logo
-from .shapes import _p
+from .shapes import _f, _p
 
 PRODUCER = "CompletionistQR"
 
@@ -34,9 +34,11 @@ def _color(color: str) -> str:
 # ---------------------------------------------------------------- Text
 
 class _OutlinePen:
-    """Sammelt Glyphen-Konturen von HarfBuzz als PDF-Pfad (Szene-Einheiten, y nach unten)."""
+    """Sammelt Glyphen-Konturen von HarfBuzz als Pfad (Szene-Einheiten, y nach unten) --
+    als PDF-Operatoren oder, mit ``svg``, als SVG-Pfaddaten."""
 
-    def __init__(self) -> None:
+    def __init__(self, svg: bool = False) -> None:
+        self.svg = svg
         self.ops: list[str] = []
         self.ox = self.oy = self.k = 0.0
         self.cur = (0.0, 0.0)
@@ -47,18 +49,23 @@ class _OutlinePen:
     def _pt(self, p) -> tuple[float, float]:
         return self.ox + p[0] * self.k, self.oy - p[1] * self.k  # Schrift: y nach oben
 
+    def _emit(self, op: str, pts) -> None:
+        fmt = _f if self.svg else _p
+        coords = " ".join(f"{fmt(x)} {fmt(y)}" for x, y in pts)
+        if self.svg:
+            self.ops.append({"m": "M", "l": "L", "c": "C"}[op] + coords)
+        else:
+            self.ops.append(f"{coords} {op}")
+        self.cur = pts[-1]
+
     def moveTo(self, p) -> None:  # noqa: N802 -- Pen-Protokoll von fontTools/HarfBuzz
-        self.cur = self._pt(p)
-        self.ops.append(f"{_p(self.cur[0])} {_p(self.cur[1])} m")
+        self._emit("m", [self._pt(p)])
 
     def lineTo(self, p) -> None:  # noqa: N802
-        self.cur = self._pt(p)
-        self.ops.append(f"{_p(self.cur[0])} {_p(self.cur[1])} l")
+        self._emit("l", [self._pt(p)])
 
     def curveTo(self, *pts) -> None:  # noqa: N802
-        pts = [self._pt(p) for p in pts]
-        self.ops.append(" ".join(f"{_p(x)} {_p(y)}" for x, y in pts) + " c")
-        self.cur = pts[-1]
+        self._emit("c", [self._pt(p) for p in pts])
 
     def qCurveTo(self, *pts) -> None:  # noqa: N802
         # TrueType: zwischen zwei Kontrollpunkten liegt implizit ein Kurvenpunkt
@@ -70,12 +77,10 @@ class _OutlinePen:
             p0 = self.cur
             c1 = (p0[0] + 2 / 3 * (c[0] - p0[0]), p0[1] + 2 / 3 * (c[1] - p0[1]))
             c2 = (nxt[0] + 2 / 3 * (c[0] - nxt[0]), nxt[1] + 2 / 3 * (c[1] - nxt[1]))
-            self.ops.append(f"{_p(c1[0])} {_p(c1[1])} {_p(c2[0])} {_p(c2[1])} "
-                            f"{_p(nxt[0])} {_p(nxt[1])} c")
-            self.cur = nxt
+            self._emit("c", [c1, c2, nxt])
 
     def closePath(self) -> None:  # noqa: N802
-        self.ops.append("h")
+        self.ops.append("Z" if self.svg else "h")
 
     endPath = closePath  # noqa: N815
 
@@ -93,8 +98,9 @@ def _hb_font(path: Path, bold: bool, variable: bool):
     return font
 
 
-def text_path(item: TextItem) -> str:
-    """Alle Zeilen der Beschriftung als ein PDF-Pfad; wie in PIL mittig auf der Grundlinie."""
+def text_path(item: TextItem, svg: bool = False) -> str:
+    """Alle Zeilen der Beschriftung als ein Pfad (PDF-Operatoren oder mit ``svg``
+    SVG-Pfaddaten); wie in PIL mittig auf der Grundlinie."""
     import uharfbuzz as hb
 
     path, variable = fonts.font_file(item.family, item.bold)
@@ -102,7 +108,7 @@ def text_path(item: TextItem) -> str:
         raise FileNotFoundError(f"Schrift „{item.family}“ nicht gefunden")
     font = _hb_font(path, item.bold, variable)
     k = item.size / font.face.upem
-    pen = _OutlinePen()
+    pen = _OutlinePen(svg)
     for line, base in zip(item.lines, item.baselines):
         buf = hb.Buffer()
         buf.add_str(line)
@@ -114,7 +120,7 @@ def text_path(item: TextItem) -> str:
             pen.place(item.cx + (x + pos.x_offset - width / 2) * k, base - pos.y_offset * k, k)
             font.draw_glyph_with_pen(info.codepoint, pen)
             x += pos.x_advance
-    return "\n".join(pen.ops)
+    return ("" if svg else "\n").join(pen.ops)
 
 
 # ---------------------------------------------------------------- PDF-Datei
