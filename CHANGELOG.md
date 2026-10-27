@@ -14,6 +14,22 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
 
+## 27.10.2026 – CompletionistQR 1.6.0, CompletionistQR Online 1.4.0 – Handschrift mit Pfeil
+
+### CompletionistQR 1.6.0, CompletionistQR Online 1.4.0
+* **Neuer Rahmen „Handschrift mit Pfeil“:** Der Code steht auf einer Karte mit feiner Linie,
+  daneben zeigt ein handgezeichneter Pfeil von der Beschriftung auf den Code. Der Pfeil ist
+  zum Pinselende hin schmaler und hat eine schlanke Spitze; er ist in PNG, SVG und PDF
+  identisch (Vektorpfad). **Pfeilfarbe** und Textfarbe sind frei wählbar.
+* **Beschriftung über oder unter dem Code** (Reiter Beschriftung → Position) für die Rahmen
+  Ohne, Feine Linie, Karte und Handschrift mit Pfeil; beim Pfeil dreht sich die Richtung mit.
+* Neue Augenform **„Tropfen“**: alle drei Augen gleich, oben rechts und unten links gerundet.
+* Neue Vorlage **„Handschrift mit Pfeil“** (horizontale Balken, Tropfen-Augen, Schrift Satisfy).
+* **Sechs Handschriften mehr im Setup:** Satisfy (kommt der Schrift des Vorbilds am
+  nächsten), Kaushan Script, Dancing Script, Pacifico, Great Vibes und Permanent Marker.
+  Satisfy und Permanent Marker stehen unter der Apache-Lizenz 2.0; ihre `LICENSE.txt` landet
+  wie die OFL-Texte im Ordner „Lizenzen“.
+
 ## 27.10.2026 – CompletionistMD 1.7.1, CompletionistQR 1.5.1 – Google Drive ohne Wartezeit
 
 ### CompletionistMD 1.7.1, CompletionistQR 1.5.1

@@ -77,8 +77,9 @@ def collect_licenses(target: Path) -> Path:
     shutil.copyfile(SUITE / "LICENSE", out / f"{DISPLAY} - LICENSE.txt")
     # Liest das Fenster "Über" (core/legal.py: Lizenzen/THIRD_PARTY_NOTICES.md)
     shutil.copyfile(SUITE / "THIRD_PARTY_NOTICES.md", out / "THIRD_PARTY_NOTICES.md")
-    for ofl in (SUITE / "completionistqr" / "assets" / "fonts").glob("*/OFL.txt"):
-        shutil.copyfile(ofl, out / f"Schrift {ofl.parent.name} - OFL.txt")
+    fonts = SUITE / "completionistqr" / "assets" / "fonts"
+    for lic in [*fonts.glob("*/OFL.txt"), *fonts.glob("*/LICENSE.txt")]:
+        shutil.copyfile(lic, out / f"Schrift {lic.parent.name} - {lic.name}")
     for pkg in LICENSED:
         try:
             dist = metadata.distribution(pkg)

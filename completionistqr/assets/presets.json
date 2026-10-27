@@ -53,5 +53,12 @@
     "eye_outer_style": "circle", "eye_inner_style": "rounded",
     "eye_custom_color": true, "eye_outer_color": "#9D174D", "eye_inner_color": "#C2410C",
     "frame": "ticket", "frame_color": "#9D174D", "caption_color": "#FFF7ED"
+  },
+  "Handschrift mit Pfeil": {
+    "module_style": "horizontal_bars", "fg_color": "#03485B", "bg_color": "#FFFFFF",
+    "gradient": "none", "eye_outer_style": "drop", "eye_inner_style": "drop",
+    "eye_custom_color": false, "frame": "arrow", "frame_color": "#E5E5E5",
+    "caption_font": "Satisfy", "caption_bold": false, "caption_color": "#03485B",
+    "arrow_color": "#03485B"
   }
 }
