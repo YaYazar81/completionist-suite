@@ -51,8 +51,10 @@ wird dabei gelöscht, sonst hinge „Öffnen mit“ in einer Schleife. **In Edit
 ### Drucken, zuletzt geöffnet, zusammenführen
 
 - **Drucken …** (Strg+P) druckt im Viewer-Modus das PDF, im Markdown-Modus die aktuelle
-  Vorschau. Seitenbereich, Drucker und Kopien kommen aus dem Windows-Druckdialog; jede
-  Seite wird mit höchstens 600 dpi gerastert und seitenfüllend gesetzt.
+  Vorschau. Der Druckdialog zeigt die Seitenansicht neben den Einstellungen (Drucker oder
+  „Als PDF speichern“, Ausrichtung, Papier, Ränder, Kopien, Farbe, beidseitig, Seiten wie
+  `1-3, 5`); **Windows-Druckdialog …** führt zu den Treiber-Einstellungen. Jede Seite wird
+  mit höchstens 600 dpi gerastert und seitenfüllend gesetzt.
 - Der Pfeil am Druckknopf bietet **Seitenansicht …** (Strg+F2: Zoom, Seite/Doppelseite/
   Übersicht, Hoch-/Querformat, Drucken aus der Vorschau) und **Seite einrichten …**
   (Papierformat, Ausrichtung, Ränder; gilt bis zum Programmende). Der Code liegt in

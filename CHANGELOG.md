@@ -14,6 +14,18 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
 
+## 29.10.2026 – CompletionistMD 1.9.0, CompletionistPDF 1.8.0 – Druckdialog mit Seitenansicht
+
+### CompletionistMD 1.9.0, CompletionistPDF 1.8.0
+* **Eigener Druckdialog mit Seitenansicht** (Strg + P): Der Druckdialog von Windows 11 zeigt
+  für diese Programme keine Vorschau („Diese App unterstützt keine Seitenansicht“). Der neue
+  Dialog zeigt sie direkt neben den Einstellungen und folgt jeder Änderung: Drucker oder
+  **Als PDF speichern**, Hoch-/Querformat, Papier, Ränder, Kopien, Farbe oder Graustufen,
+  beidseitig und Seiten wie `1-3, 5`. **Windows-Druckdialog …** bleibt für
+  Treiber-Einstellungen (Papierart, Qualität).
+* Beim Aufbau einer Vorschau zeichnet die Oberfläche nicht mehr zwischendurch neu (konnte
+  die sichtbare Vorschau zum Absturz bringen).
+
 ## 29.10.2026 – CompletionistMD 1.8.0, CompletionistPDF 1.7.0 – Office-Dokumente, Drucken mit Seitenansicht
 
 ### CompletionistMD 1.8.0
