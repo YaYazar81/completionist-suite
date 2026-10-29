@@ -255,7 +255,20 @@ class MainWindow(QMainWindow):
         self.recent_menu.aboutToShow.connect(self._fill_recent_menu)
         recent_button.setMenu(self.recent_menu)
         tb.addWidget(recent_button)
-        act("Drucken …", self.print_pdf, "Ctrl+P", "PDF bzw. Vorschau drucken", "printer")
+        a_print = act("Drucken …", self.print_pdf, "Ctrl+P", "PDF bzw. Vorschau drucken", "printer")
+        # Klick druckt, der Pfeil bietet Seitenansicht und Seite einrichten
+        print_menu = QMenu(self)
+        print_menu.addAction(a_print)
+        a_preview = QAction(design.icon("eye"), "Seitenansicht …", self)
+        a_preview.setShortcut(QKeySequence("Ctrl+F2"))
+        a_preview.triggered.connect(self.preview_pdf)
+        self.addAction(a_preview)
+        print_menu.addAction(a_preview)
+        print_menu.addAction("Seite einrichten …", self.page_setup)
+        a_print.setMenu(print_menu)
+        print_button = tb.widgetForAction(a_print)
+        if isinstance(print_button, QToolButton):
+            print_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
         act("Zusammenführen …", self.merge_files, None,
             "Mehrere Markdown-Dateien zu einer zusammenführen (getrennt durch *** = Seitenumbruch)", "merge")
         # Ein F5 fuer beide Modi: Viewer laedt neu, Markdown-Modus kompiliert
@@ -360,9 +373,8 @@ class MainWindow(QMainWindow):
                     self.windowIcon(), self,
                     image=self.app_dir / "assets" / "splash_pdf.jpg").exec()
 
-    def print_pdf(self) -> None:
-        from .printing import print_document
-
+    def _print_source(self):
+        """(QPdfDocument, Titel) fuer Drucken und Seitenansicht oder None."""
         if self.is_viewer_mode():
             doc = self.viewer.doc
             title = self.viewer.path.name if self.viewer.path else "PDF"
@@ -372,8 +384,27 @@ class MainWindow(QMainWindow):
             title = Path(md).with_suffix(".pdf").name if md else "Vorschau"
             if doc is None or doc.pageCount() == 0:
                 QMessageBox.information(self, "Drucken", "Die Vorschau ist noch leer -- erst kompilieren (F5).")
-                return
-        print_document(self, doc, title)
+                return None
+        return doc, title
+
+    def print_pdf(self) -> None:
+        from .printing import print_document
+
+        source = self._print_source()
+        if source is not None:
+            print_document(self, *source)
+
+    def preview_pdf(self) -> None:
+        from .printing import preview_document
+
+        source = self._print_source()
+        if source is not None:
+            preview_document(self, *source)
+
+    def page_setup(self) -> None:
+        from .printing import page_setup
+
+        page_setup(self)
 
     def merge_files(self) -> None:
         from core.merge_dialog import MergeDialog

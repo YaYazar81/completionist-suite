@@ -439,3 +439,44 @@ body {
 /* Suchen und Ersetzen (search.js) */
 .cm-find { background: rgba(255, 200, 0, 0.35); border-radius: 2px; }
 .cm-find-current { background: rgba(255, 140, 0, 0.75); outline: 1px solid rgba(255, 140, 0, 0.9); }
+
+/* ---------------------------------------------------------------- */
+/* Drucken und Seitenansicht (Datei ▾ → Drucken, mdeditor/printing.py) */
+/* ---------------------------------------------------------------- */
+
+/* Papier ist weiss: immer die hellen Farben, egal welches Thema laeuft.
+   Seitenraender setzt die Seiteneinrichtung, nicht das Blatt hier. */
+@media print {
+  :root, :root[data-theme] {
+    --cm-accent: #059669;
+    --cm-accent-line: rgba(5, 150, 105, 0.4);
+    --cm-bg: #ffffff;
+    --cm-paper: #ffffff;
+    --cm-fg: #000000;
+    --cm-dim: #475569;
+    --cm-line: #cbd5e1;
+    --cm-code-bg: #f8fafc;
+    --cm-quote-bg: #ecfdf5;
+  }
+  html, body { background: #ffffff; }
+  .cm-doc {
+    max-width: none;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+  }
+  /* Chromium setzt beim Drucken alles, die Eindaemmung bringt hier nichts */
+  .cm-doc > * { content-visibility: visible; }
+  .cm-doc h1, .cm-doc h2, .cm-doc h3, .cm-doc h4, .cm-doc h5, .cm-doc h6 { break-after: avoid; }
+  .cm-doc pre, .cm-doc blockquote, .cm-doc tr, .cm-doc img { break-inside: avoid; }
+  /* *** ist die harte Trennlinie: auf Papier wie im PDF ein Seitenumbruch */
+  .cm-doc hr.cm-break { border: none; margin: 0; break-after: page; }
+  .cm-doc hr.cm-break::after { display: none; }
+  /* Aufgeklappte Markdown-Syntax, Suchtreffer und Bildleiste nicht mitdrucken */
+  .cm-doc .cm-syn, .cm-doc .cm-syn-block, .cm-doc .cm-fence { display: none; }
+  .cm-doc pre.cm-reveal-code[data-lang]::before { display: block; }
+  .cm-doc li.cm-reveal-li { list-style: inherit; }
+  .cm-find, .cm-find-current { background: none; outline: none; }
+  .cm-imagebar { display: none !important; }
+  ::selection { background: none; }
+}

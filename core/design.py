@@ -67,7 +67,10 @@ LIGHT = {
 }
 
 # Farben der Dateityp-Icons im Vault (unabhaengig vom Thema gut lesbar)
-FILE_COLORS = {"md": "#34D399", "pdf": "#F87171", "img": "#A78BFA", "txt": "#94A3B8"}
+FILE_COLORS = {"md": "#34D399", "pdf": "#F87171", "img": "#A78BFA", "txt": "#94A3B8",
+               # Office: Farben wie die Programme (Word, Excel, PowerPoint, Google)
+               "word": "#60A5FA", "excel": "#4ADE80", "powerpoint": "#FB923C", "google": "#FBBF24",
+               "other": "#38BDF8"}
 
 _theme = "dark"
 
@@ -250,7 +253,9 @@ def icon(name: str, color: str | None = None) -> QIcon:
 
 
 def file_icon(kind: str) -> QIcon:
-    """Farbiges Dateityp-Icon fuer Baeume (md, pdf, img, txt)."""
-    name = {"img": "file-image", "txt": "file"}.get(kind, "file-text")
+    """Farbiges Dateityp-Icon fuer Baeume (md, pdf, img, txt; Office: word, excel,
+    powerpoint, google, other)."""
+    name = {"img": "file-image", "txt": "file", "excel": "file-spreadsheet",
+            "powerpoint": "file", "google": "file", "other": "file"}.get(kind, "file-text")
     return icon(name, FILE_COLORS.get(kind))
 

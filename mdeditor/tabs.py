@@ -9,6 +9,11 @@
 * ``PdfTab``   -- schreibgeschuetzte Vorschau (QtPdf) mit Zoom, Seiten, Suche.
 * ``ImageTab`` -- schreibgeschuetzte Bildansicht mit Zoom und Uebergabe an
   CompletionistIMG; laedt neu, sobald die Datei gespeichert wird.
+* ``OfficeTab`` -- schreibgeschuetzte Ansicht von Word-, Excel-, PowerPoint-,
+  OpenDocument- und weiteren Office-Dateien (PDF ueber LibreOffice bzw.
+  Microsoft Office, sonst Text und Tabellen); Google-Verknuepfungen als Link.
+
+Jeder Tab liefert mit ``print_job`` seinen Druckauftrag (``core/printing.py``).
 
 PDF- und Bild-Tabs beobachten ihre Datei (``FileWatch``), damit Aenderungen aus
 CompletionistIMG bzw. CompletionistPDF sofort sichtbar werden.
@@ -46,7 +51,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core import design
+from core import design, office
 
 from .markdown_io import MarkdownFile, snapshot, write_safely
 
@@ -58,6 +63,7 @@ MD_SUFFIXES = (".md", ".markdown")
 TEXT_SUFFIXES = (".txt",)
 PDF_SUFFIXES = (".pdf",)
 IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg")
+OFFICE_SUFFIXES = office.OFFICE_SUFFIXES
 AUTOSAVE_MS = 300
 # Quellcode <-> WYSIWYG erst nach einer kurzen Tipp-Pause abgleichen: bei
 # 300-Seiten-Guides soll nicht jeder Buchstabe das ganze Dokument umbauen.
@@ -66,10 +72,11 @@ VIEW_MODES = ("wysiwyg", "source", "split")
 
 
 def kind_of(path: str | Path) -> str | None:
-    """"md", "txt", "pdf", "img" oder None (nicht im Editor darstellbar)."""
+    """"md", "txt", "pdf", "img", "office" oder None (nicht im Editor darstellbar)."""
     p = str(path).lower()
     for kind, suffixes in (("md", MD_SUFFIXES), ("txt", TEXT_SUFFIXES),
-                           ("pdf", PDF_SUFFIXES), ("img", IMAGE_SUFFIXES)):
+                           ("pdf", PDF_SUFFIXES), ("img", IMAGE_SUFFIXES),
+                           ("office", OFFICE_SUFFIXES)):
         if p.endswith(suffixes):
             return kind
     return None
@@ -112,6 +119,11 @@ class BaseTab(QWidget):
 
     def flush(self) -> None:
         """Ausstehende Aenderungen sofort schreiben (Tab schliessen, Ende)."""
+
+    def print_job(self):
+        """``core.printing.PrintJob`` fuer Drucken und Seitenansicht, None = nichts zu drucken.
+        Darf blockieren (der Markdown-Tab laesst Chromium erst ein PDF setzen)."""
+        return None
 
     def set_path(self, path: Path) -> None:
         """Datei wurde umbenannt/verschoben."""
@@ -467,6 +479,11 @@ class MdTab(BaseTab):
             return "error", "Fehler beim Speichern"
         return ("dirty", "ungespeichert …") if self.dirty else ("saved", "gespeichert")
 
+    def print_job(self):
+        from .printing import WebPdfJob
+
+        return WebPdfJob(self.view.page(), self.title())
+
     def stats(self) -> str:
         return self.words
 
@@ -604,6 +621,11 @@ class TextTab(BaseTab):
             return "error", "Fehler beim Speichern"
         return ("dirty", "ungespeichert …") if self.is_dirty() else ("saved", "gespeichert")
 
+    def print_job(self):
+        from core.printing import TextDocumentJob
+
+        return TextDocumentJob(self.editor.document(), self.path.name)
+
     def stats(self) -> str:
         return self._words
 
@@ -700,12 +722,15 @@ class PdfTab(BaseTab):
     ZOOM_STEP = 1.25
     SEARCH_PATIENCE_MS = 1500  # so lange heisst es "sucht …" statt "keine Treffer"
 
-    def __init__(self, path: Path, parent=None) -> None:
+    def __init__(self, path: Path, parent=None, loader=None) -> None:
+        """``loader``: liefert die PDF-Bytes statt ``path`` zu lesen (Office-Ansicht);
+        die Datei wird dann nicht beobachtet."""
         super().__init__(parent)
         from PySide6.QtPdf import QPdfDocument, QPdfSearchModel
         from PySide6.QtPdfWidgets import QPdfView
 
         self.path = Path(path)
+        self.loader = loader
         self._buffer: QBuffer | None = None
         self.doc = QPdfDocument(self)
         self.view = QPdfView(self)
@@ -776,8 +801,9 @@ class PdfTab(BaseTab):
         lay.addWidget(bar)
         lay.addWidget(self.view, 1)
 
-        self.watch = FileWatch(self.path, self)
-        self.watch.changed.connect(self.reload)
+        self.watch = FileWatch(self.path, self) if loader is None else None
+        if self.watch is not None:
+            self.watch.changed.connect(self.reload)
         self.load()
 
     # --- Laden ---
@@ -785,7 +811,7 @@ class PdfTab(BaseTab):
     def load(self) -> None:
         # Aus dem Speicher laden: eine geoeffnete Datei waere unter Windows
         # gesperrt, und CompletionistPDF koennte sie nicht neu schreiben.
-        data = QByteArray(self.path.read_bytes())
+        data = QByteArray(self.loader() if self.loader is not None else self.path.read_bytes())
         buf = QBuffer(self)
         buf.setData(data)
         buf.open(QIODevice.OpenModeFlag.ReadOnly)
@@ -814,7 +840,13 @@ class PdfTab(BaseTab):
 
     def set_path(self, path: Path) -> None:
         super().set_path(path)
-        self.watch.set_path(self.path)
+        if self.watch is not None:
+            self.watch.set_path(self.path)
+
+    def print_job(self):
+        from core.printing import PdfJob
+
+        return PdfJob(self.doc, self.path.name) if self.doc.pageCount() else None
 
     # --- Seiten ---
 
@@ -1094,7 +1126,283 @@ class ImageTab(BaseTab):
             return True
         return super().eventFilter(obj, event)
 
+    def print_job(self):
+        from core.printing import ImageJob
+
+        return ImageJob(self._source.toImage(), self.path.name) if self._source is not None else None
+
     def stats(self) -> str:
         if self.image_size.isEmpty():
             return ""
         return f"{self.image_size.width()} × {self.image_size.height()} px"
+
+
+# ---------------------------------------------------------------------- #
+# Office (schreibgeschuetzt)
+# ---------------------------------------------------------------------- #
+
+
+class OfficeConverter(QObject):
+    """Wandelt Office-Dokumente nacheinander nach PDF (``core.office.converters``).
+
+    Eine Umwandlung nach der anderen: LibreOffice teilt sich sein Profil
+    (``lo-profile`` im Cache, nur beim ersten Mal langsam) und vertraegt keine
+    zwei Laeufe darauf gleichzeitig. Ergebnis: ``callback(name, pdf_bytes)``,
+    bei Misserfolg ``(None, b"")``.
+    """
+
+    TIMEOUT_MS = 120_000
+    _instance: "OfficeConverter | None" = None
+
+    @classmethod
+    def instance(cls) -> "OfficeConverter":
+        if cls._instance is None:
+            from PySide6.QtWidgets import QApplication
+
+            cls._instance = cls(QApplication.instance())
+        return cls._instance
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        from PySide6.QtCore import QStandardPaths
+
+        cache = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation)
+        self.base = Path(cache or Path.home() / ".cache") / "completionistmd-office"
+        self.queue: list = []   # (Quelldatei, callback, Aufrufer)
+        self.current = None
+        self.process = None
+        self._attempts: list = []
+        self._started = 0.0
+        self._target: tuple = ("", Path())
+        self._poll = QTimer(self)  # fertig? alle 200 ms nachsehen
+        self._poll.setInterval(200)
+        self._poll.timeout.connect(self._check)
+
+    def submit(self, source: Path, callback, owner: QObject) -> None:
+        """``callback`` wird nur gerufen, solange ``owner`` (der Tab) noch lebt."""
+        # Ein neuer Auftrag desselben Tabs ersetzt seinen wartenden
+        self.queue = [job for job in self.queue if job[2] is not owner]
+        self.queue.append((Path(source), callback, owner))
+        if self.current is None:
+            self._next_job()
+
+    @staticmethod
+    def _deliver(job, name, data: bytes) -> None:
+        import shiboken6
+
+        if shiboken6.isValid(job[2]):  # Tab inzwischen geschlossen: niemand mehr da
+            job[1](name, data)
+
+    def _next_job(self) -> None:
+        import shutil
+
+        import shiboken6
+
+        self.current = None
+        while self.queue:
+            job = self.queue.pop(0)
+            source, _callback, owner = job
+            if not shiboken6.isValid(owner):
+                continue
+            work = self.base / "job"
+            shutil.rmtree(work, ignore_errors=True)
+            try:
+                work.mkdir(parents=True, exist_ok=True)
+                # Mit einer Kopie arbeiten: kurze ASCII-Namen, und das Original
+                # bleibt frei, auch wenn es gerade in Word offen ist.
+                copy = work / ("dokument" + source.suffix.lower())
+                shutil.copyfile(source, copy)
+            except OSError:
+                self._deliver(job, None, b"")
+                continue
+            self.current = job
+            self._attempts = office.converters(copy, work, self.base / "lo-profile")
+            self._try_next()
+            return
+
+    def _try_next(self) -> None:
+        import subprocess
+        import sys
+
+        if not self._attempts:
+            self._finish(None, b"")
+            return
+        name, cmd, target = self._attempts.pop(0)
+        self._target = (name, target)
+        # subprocess statt QProcess: nur so startet PowerShell (Weg ueber
+        # Microsoft Office) unter Windows ohne aufblitzendes Konsolenfenster.
+        flags = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+        try:
+            self.process = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                            stderr=subprocess.DEVNULL, creationflags=flags, close_fds=True)
+        except OSError:
+            self._try_next()
+            return
+        self._started = time.monotonic()
+        self._poll.start()
+
+    def _check(self) -> None:
+        proc = self.process
+        if proc is None:
+            self._poll.stop()
+            return
+        if proc.poll() is None:
+            if time.monotonic() - self._started > self.TIMEOUT_MS / 1000:
+                proc.kill()  # haengt: beim naechsten Blick ist er beendet
+            return
+        self._poll.stop()
+        self.process = None
+        name, target = self._target
+        try:
+            data = target.read_bytes()
+        except OSError:
+            data = b""
+        if data.startswith(b"%PDF"):
+            self._finish(name, data)
+        else:
+            self._try_next()
+
+    def _finish(self, name, data: bytes) -> None:
+        current = self.current
+        self.current = None
+        if current is not None:
+            self._deliver(current, name, data)
+        self._next_job()
+
+
+class OfficeTab(BaseTab):
+    """Office-Dokument zum Lesen: als PDF ueber LibreOffice bzw. Microsoft Office,
+    sonst Text und Tabellen aus der eingebauten Ansicht (``core.office``)."""
+
+    kind = "office"
+
+    def __init__(self, path: Path, parent=None) -> None:
+        super().__init__(parent)
+        from PySide6.QtWidgets import QStackedWidget, QTextBrowser
+
+        self.path = Path(path)
+        self.pdf: PdfTab | None = None
+        self._pdf_data = b""
+        self.mode = ""          # "pdf", "html", "google", "error", "" = wird umgewandelt
+
+        bar = QToolBar(self)
+        bar.setObjectName("tabBar")
+        self.toolbar = bar
+        self.info = QLabel(bar)
+        bar.addWidget(self.info)
+        _spacer(bar)
+        self.open_button = _tool(bar, "Im Standardprogramm öffnen",
+                                 "Mit dem Programm öffnen, das Windows dafür eingetragen hat (zum Bearbeiten)",
+                                 self.open_external, icon="folder-open", show_text=True)
+
+        self.message = QLabel(self)
+        self.message.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.message.setWordWrap(True)
+        self.message.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        self.message.setOpenExternalLinks(True)
+        self.browser = QTextBrowser(self)
+        self.browser.setOpenExternalLinks(True)
+        self.browser.setObjectName("officeView")
+        self.stack = QStackedWidget(self)
+        self.stack.addWidget(self.message)
+        self.stack.addWidget(self.browser)
+
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(0)
+        lay.addWidget(bar)
+        lay.addWidget(self.stack, 1)
+
+        self.watch = FileWatch(self.path, self)
+        self.watch.changed.connect(self.load)
+        self.load()
+
+    # --- Laden ---
+
+    def load(self) -> None:
+        if office.is_google(self.path):
+            self._show_google()
+            return
+        if not office.can_convert(self.path):
+            self._show_html()
+            return
+        if self.mode != "pdf":
+            self.mode = ""
+            self.info.setText("  Wird für die Ansicht umgewandelt …")
+            self.message.setText("Das Dokument wird für die Ansicht umgewandelt …")
+            self.stack.setCurrentWidget(self.message)
+        OfficeConverter.instance().submit(self.path, self._on_converted, self)
+        self.changed.emit()
+
+    def _on_converted(self, name, data: bytes) -> None:
+        if not data:
+            self._show_html(note="Die Umwandlung ist fehlgeschlagen – ")
+            return
+        self._pdf_data = data
+        if self.pdf is None:
+            self.pdf = PdfTab(self.path, self.stack, loader=lambda: self._pdf_data)
+            self.pdf.changed.connect(self.changed)
+            self.stack.addWidget(self.pdf)
+        else:
+            self.pdf.reload()
+        self.mode = "pdf"
+        self.info.setText(f"  Schreibgeschützte Ansicht · umgewandelt mit {name}")
+        self.stack.setCurrentWidget(self.pdf)
+        self.changed.emit()
+
+    def _show_html(self, note: str = "") -> None:
+        try:
+            html = office.to_html(self.path)
+        except (office.Unsupported, OSError) as exc:
+            self.mode = "error"
+            self.info.setText("  Keine Ansicht möglich")
+            self.message.setText(
+                f"<p>{exc}</p><p>Für eine originalgetreue Ansicht aller Office-Formate "
+                "<a href='https://de.libreoffice.org/download/download/'>LibreOffice</a> "
+                "installieren (kostenlos) – oder die Datei im Standardprogramm öffnen.</p>")
+            self.stack.setCurrentWidget(self.message)
+        else:
+            self.mode = "html"
+            self.info.setText(f"  {note}Textansicht ohne Layout · für die Originalansicht "
+                              "LibreOffice oder Microsoft Office installieren")
+            self.browser.setHtml(html)
+            self.stack.setCurrentWidget(self.browser)
+        self.changed.emit()
+
+    def _show_google(self) -> None:
+        url = office.google_url(self.path)
+        self.mode = "google"
+        self.info.setText("  Google-Dokument (Verknüpfung)")
+        if url:
+            self.message.setText(f"<p>Dieses Dokument liegt in Google Drive.</p>"
+                                 f"<p><a href='{url}'>Im Browser öffnen</a></p>")
+        else:
+            self.message.setText("Die Verknüpfung enthält keine Adresse.")
+        self.stack.setCurrentWidget(self.message)
+        self.changed.emit()
+
+    def open_external(self) -> None:
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.path)))
+
+    def set_path(self, path: Path) -> None:
+        super().set_path(path)
+        self.watch.set_path(self.path)
+        if self.pdf is not None:
+            self.pdf.path = self.path
+
+    # --- Drucken, Suche ---
+
+    def print_job(self):
+        if self.mode == "pdf" and self.pdf is not None:
+            return self.pdf.print_job()
+        if self.mode == "html":
+            from core.printing import TextDocumentJob
+
+            return TextDocumentJob(self.browser.document(), self.path.name)
+        return None
+
+    def stats(self) -> str:
+        return self.pdf.stats() if self.mode == "pdf" and self.pdf is not None else ""

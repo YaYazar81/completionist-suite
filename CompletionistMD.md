@@ -16,7 +16,10 @@ Optional mit Datei: `python main_md.py "Kapitel 1.md"` (taugt auch für
 | :--- | :--- |
 | `main_md.py` | Startpunkt, Palette, Fensteraufbau |
 | `mdeditor/window.py` | Hauptfenster, Toolbar, Kontextmenü, Auto-Save, Suchen, PDF-Übergabe |
-| `mdeditor/tabs.py` | Tabs: Markdown, Text, PDF, Bild; Beobachten der Dateien |
+| `mdeditor/tabs.py` | Tabs: Markdown, Text, PDF, Bild, Office (nur lesen); Beobachten der Dateien |
+| `mdeditor/printing.py` | Markdown drucken (Chromium setzt das PDF) |
+| `core/printing.py` | Drucken, Seitenansicht, Seite einrichten (auch in CompletionistPDF) |
+| `core/office.py` | Office-Formate: Endungen, Umwandlung nach PDF, eingebaute Textansicht |
 | `mdeditor/vault.py` | Vault-Explorer links: Verzeichnisbaum, Dateiaktionen, Bookmarks, Mehrfachauswahl |
 | `mdeditor/panels.py` | Gliederung, Suchleiste, Volltextsuche im Vault |
 | `mdeditor/history_dialog.py` | Ältere Fassungen ansehen und wiederherstellen |
@@ -135,6 +138,60 @@ unverändert durchgereicht.
   wieder her (der jetzige Stand wird dabei ebenfalls gesichert). Ordner mit Punkt zeigt
   der Vault-Explorer nicht, und der Drive-Sync lässt sie aus.
 - **Gilt auch für `.txt`-Tabs.**
+
+## Office-Dokumente (nur lesen)
+
+Word, Excel, PowerPoint, OpenDocument (LibreOffice/OpenOffice), Apple iWork, WPS, RTF und
+CSV stehen im Vault-Explorer (farbige Icons je Programmfamilie) und öffnen sich wie PDFs in
+einem schreibgeschützten Tab. **Im Standardprogramm öffnen** in der Tab-Leiste startet das
+eingetragene Office-Programm zum Bearbeiten; der Tab lädt nach dem Speichern dort selbst neu.
+
+Wie der Tab das Dokument zeigt, hängt davon ab, was installiert ist (`core/office.py`):
+
+| Installiert | Ansicht |
+| :--- | :--- |
+| LibreOffice | originalgetreu als PDF – alle Formate, auch `.doc`, `.xls`, `.ppt`, `.pages` … |
+| Microsoft Office | originalgetreu als PDF über Word, Excel bzw. PowerPoint (unsichtbar, schreibgeschützt, ohne Makros) |
+| keins von beiden | Text und Tabellen ohne Layout für `.docx`, `.xlsx`, `.pptx`, `.odt`, `.ods`, `.odp`, `.fod*`, `.csv`; die alten Binärformate brauchen einen der Konverter |
+
+Umgewandelt wird eine Kopie der Datei, das Original bleibt frei, auch wenn es gerade in Word
+offen ist. LibreOffice läuft dabei mit eigenem Profil im Cache und stört ein offenes
+LibreOffice nicht. Als PDF gezeigt, gelten Zoom, Seiten und Suche (Strg + F) wie im PDF-Tab.
+
+Google Docs, Tabellen und Präsentationen liegen lokal nur als Verknüpfung (`.gdoc`,
+`.gsheet`, `.gslides` von Google Drive für Desktop); der Tab bietet den Link zum Dokument im
+Browser. Als `.docx`/`.xlsx`/`.pptx` heruntergeladene Google-Dateien sind normale
+Office-Dateien.
+
+## Drucken
+
+**Datei ▾ → Drucken …** (Strg + P), **Seitenansicht …** (Strg + F2) und **Seite
+einrichten …** gelten für jeden Tab: Markdown, Text, PDF, Bild und Office-Dokument.
+
+- **Seitenansicht** zeigt die Seiten so, wie sie aufs Papier kommen: Zoom, an Breite oder
+  Seite anpassen, eine Seite / Doppelseiten / alle Seiten, Hoch- und Querformat, Seite
+  einrichten und Drucken direkt aus der Vorschau.
+- **Seite einrichten** (Papierformat, Ausrichtung, Ränder) gilt bis zum Programmende für
+  alle weiteren Ausdrucke.
+- **Markdown** setzt Chromium im eingestellten Papierformat; auf Papier immer schwarz auf
+  weiß, auch im dunklen Thema. `***` wird wie im PDF zum Seitenumbruch, aufgeklappte
+  Markdown-Syntax, Suchtreffer und die Bildleiste werden nicht mitgedruckt (`@media print`
+  in `editor.css`). Ändert man in der Seitenansicht Format oder Ausrichtung, wird neu gesetzt.
+- **PDF und Office (als PDF)** werden seitenweise mit höchstens 600 dpi gerastert; die
+  Seitenansicht rendert gröber (höchstens 150 dpi, bei langen Dokumenten weniger), damit
+  auch 300 Seiten in den Speicher passen.
+
+## Google-Drive-Sync
+
+Hochgeladen werden Notizen und Texte (`.md`, `.txt`), PDFs, Bilder (`.png`, `.jpg`, `.gif`)
+und Office-Dateien aller gängigen Programme: Word (`.doc`, `.docx`, `.docm`, `.dot*`,
+`.rtf`), Excel (`.xls`, `.xlsx`, `.xlsm`, `.xlsb`, `.xlt*`, `.csv`), PowerPoint (`.ppt`,
+`.pptx`, `.pps*`, `.pot*`), Office-2003-XML (`.xml`), OpenDocument von LibreOffice und
+OpenOffice (`.odt`, `.ods`, `.odp`, `.odg`, Vorlagen und Flat-XML), Apple iWork (`.pages`,
+`.numbers`, `.key`) und WPS Office. Die Dateien landen unverändert in Drive (keine
+Umwandlung in Google-Formate). Nicht hochgeladen werden die Sperrdateien offener Dokumente
+(`~$Bericht.docx`, `.~lock.…#`) und Google-Verknüpfungen (`.gdoc` …) – deren Dokumente
+liegen ohnehin in Drive.
 
 ## Mehrere Fenster
 
@@ -326,6 +383,7 @@ Die Suite unterscheidet zwei Linien, der Editor zeigt sie verschieden an:
 | Strg + Shift + D | Editor und Quellcode nebeneinander ein/aus |
 | Strg + V | Text einfügen; Bild aus der Zwischenablage landet in `images/` |
 | F5 | an CompletionistPDF übergeben |
+| Strg + P / Strg + F2 | drucken / Seitenansicht |
 
 ## CompletionistPDF starten
 
