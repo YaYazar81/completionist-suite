@@ -201,6 +201,12 @@ Umwandlung in Google-Formate). Nicht hochgeladen werden die Sperrdateien offener
 (`~$Bericht.docx`, `.~lock.…#`) und Google-Verknüpfungen (`.gdoc` …) – deren Dokumente
 liegen ohnehin in Drive.
 
+Abgeglichen wird beim Start, wenige Sekunden nach dem Speichern bzw. nach dem Anlegen oder
+Umbenennen im Vault-Explorer, im eingestellten Takt (Standard 15 Minuten) und per Klick auf
+die Anzeige in der Statusleiste. Es gleicht immer nur ein Fenster zur Zeit ab
+(`gdrive.lock` neben den Zugangsdaten); die anderen versuchen es 30 Sekunden später.
+Gibt es einen Ordner in Drive doppelt, geht Neues immer in den ältesten.
+
 ## Mehrere Fenster
 
 CompletionistMD darf mehrfach laufen (z. B. um mit Alt+Tab zwischen Dateien zu kopieren).

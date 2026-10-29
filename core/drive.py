@@ -338,7 +338,7 @@ class DriveClient:
                 "q": "trashed = false",
                 "spaces": "drive",
                 "pageSize": 1000,
-                "fields": "nextPageToken, files(id, name, mimeType, parents, md5Checksum, modifiedTime)",
+                "fields": "nextPageToken, files(id, name, mimeType, parents, md5Checksum, modifiedTime, createdTime)",
             }
             if token:
                 params["pageToken"] = token

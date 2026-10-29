@@ -24,6 +24,7 @@ import json
 import os
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -53,6 +54,7 @@ DEFAULTS = {
 SAVE_DEBOUNCE_MS = 5000
 STARTUP_DELAY_MS = 4000
 RETRY_MINUTES = (1, 2, 5, 10, 15)  # neuer Lauf nach Abbruch (offline/Fehler)
+BUSY_RETRY_MS = 30_000  # anderes Fenster gleicht ab: danach noch einmal
 
 
 def settings_with_defaults(raw) -> dict:
@@ -129,7 +131,16 @@ class RemoteTree:
 
 
 def remote_tree(client, folder_name: str) -> RemoteTree:
-    items = client.list_all()
+    """Der Zielordner in Drive samt Unterordnern und Dateien.
+
+    Gleichnamige Ordner an derselben Stelle (vor MD 1.9.1 von zwei Fenstern zur
+    selben Zeit angelegt) zaehlen zusammen: Neues landet immer im
+    aeltesten, Dateien in den anderen werden erkannt und nicht noch einmal
+    hochgeladen. Ohne feste Wahl hing das Ziel davon ab, in welcher Reihenfolge
+    Google die Liste lieferte -- neue Dateien landeten dann im "anderen" Ordner.
+    """
+    # Aelteste zuerst (stabil sortiert: ohne createdTime bleibt die Reihenfolge)
+    items = sorted(client.list_all(), key=lambda i: i.get("createdTime") or "")
     # Kein files/root: mit drive.file darf die App den Root-Ordner nicht lesen
     # (404 "File not found: 0A…PVA"). Zielordner ist deshalb der gleichnamige
     # Ordner, der nicht selbst in einem Ordner der App liegt.
@@ -139,24 +150,27 @@ def remote_tree(client, folder_name: str) -> RemoteTree:
         and not own.intersection(i.get("parents") or [])
     ]
     # Die Liste kann kurz nach dem Loeschen noch verwaiste IDs enthalten:
-    # den Kandidaten gezielt nachpruefen, sonst den Ordner im Root neu anlegen.
-    top_id = next((c["id"] for c in candidates if client.exists(c["id"])), None)
-    if top_id is None:
-        top_id = client.create_folder(folder_name, None)
+    # die Kandidaten gezielt nachpruefen, sonst den Ordner im Root neu anlegen.
+    tops = [c["id"] for c in candidates if client.exists(c["id"])]
+    if not tops:
+        tops = [client.create_folder(folder_name, None)]
     children: dict[str, list[dict]] = {}
     for i in items:
         for parent in i.get("parents") or []:
             children.setdefault(parent, []).append(i)
-    tree = RemoteTree(top_id, folders={"": top_id})
-    stack = [("", top_id)]
-    while stack:
-        rel, fid = stack.pop()
+    tree = RemoteTree(tops[0], folders={"": tops[0]})
+    # Breitensuche: an jeder Stelle kommt der aelteste Ordner vor seinen Doppelten
+    queue = deque(("", top) for top in tops)
+    seen = set(tops)
+    while queue:
+        rel, fid = queue.popleft()
         for child in children.get(fid, []):
             child_rel = f"{rel}/{child['name']}" if rel else child["name"]
             if child.get("mimeType") == FOLDER_MIME:
-                if child_rel not in tree.folders:
-                    tree.folders[child_rel] = child["id"]
-                    stack.append((child_rel, child["id"]))
+                tree.folders.setdefault(child_rel, child["id"])
+                if child["id"] not in seen:
+                    seen.add(child["id"])
+                    queue.append((child_rel, child["id"]))
             else:
                 tree.files.setdefault(child_rel, child)
     return tree
@@ -238,6 +252,56 @@ def run_sync(client, source: Path, folder_name: str, hashes: HashCache,
     }
 
 
+class SyncLock:
+    """Nur ein Abgleich zur Zeit, auch ueber mehrere Fenster (Prozesse) hinweg.
+
+    Zwei gleichzeitige Laeufe legten neue Ordner doppelt an. Gesperrt wird ueber
+    das Betriebssystem (Windows: ``msvcrt.locking``, sonst ``flock``); endet ein
+    Fenster unerwartet, gibt das System die Sperre von selbst frei.
+    """
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self.fd: int | None = None
+
+    def acquire(self) -> bool:
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            fd = os.open(self.path, os.O_RDWR | os.O_CREAT, 0o600)
+        except OSError:
+            return True  # ohne Sperrdatei lieber abgleichen als nie
+        try:
+            if os.name == "nt":
+                import msvcrt
+
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            os.close(fd)
+            return False
+        self.fd = fd
+        return True
+
+    def release(self) -> None:
+        if self.fd is None:
+            return
+        try:
+            if os.name == "nt":
+                import msvcrt
+
+                os.lseek(self.fd, 0, os.SEEK_SET)
+                msvcrt.locking(self.fd, msvcrt.LK_UNLCK, 1)
+        except OSError:
+            pass
+        finally:
+            os.close(self.fd)  # flock endet mit dem Schliessen
+            self.fd = None
+
+
 # ---------------------------------------------------------------------- #
 # Worker im eigenen Thread
 # ---------------------------------------------------------------------- #
@@ -257,6 +321,10 @@ class SyncWorker(QObject):
 
     @Slot(str, str)
     def sync(self, source: str, folder_name: str) -> None:
+        lock = SyncLock(self.store.folder.parent / "gdrive.lock")
+        if not lock.acquire():
+            self.failed.emit("busy", "Ein anderes CompletionistMD-Fenster gleicht gerade ab.")
+            return
         try:
             creds = self.store.credentials()
             client = DriveClient(creds, self.cancel)
@@ -273,6 +341,8 @@ class SyncWorker(QObject):
             self.failed.emit("error", f"{type(exc).__name__}: {exc}")
         else:
             self.finished.emit(result)
+        finally:
+            lock.release()
 
     @Slot()
     def link(self) -> None:
@@ -447,6 +517,11 @@ class GDriveSync(QObject):
         self.running = False
         self._again = False
         if kind == "cancelled":
+            return
+        if kind == "busy":
+            # Kein Fehler: das andere Fenster laedt hoch; danach die eigenen Aenderungen
+            self.retry.start(BUSY_RETRY_MS)
+            self._set("busy", "Google Drive: anderes Fenster gleicht ab …", message)
             return
         if kind == "auth":
             self._set("auth", "Google Drive: Authentifizierung erforderlich", message)

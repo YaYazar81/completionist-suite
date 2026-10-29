@@ -14,6 +14,23 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
 
+## 29.10.2026 – CompletionistMD 1.9.1 – Drive-Sync: neue Ordner und Dateien kommen wieder an
+
+### CompletionistMD 1.9.1
+* **Neue Ordner und Dateien landeten in Google Drive im falschen Ordner.** Jedes Fenster
+  glich für sich ab; liefen zwei Fenster gleichzeitig, legten beide einen neuen Ordner an,
+  und es gab ihn in Drive doppelt. Welchen davon der nächste Lauf als Ziel nahm, hing von
+  der Reihenfolge ab, in der Google die Liste lieferte – neue Dateien landeten so oft im
+  „anderen“, gleichnamigen Ordner, vorhandene wurden dorthin ein zweites Mal hochgeladen.
+  * Es gleicht immer nur ein Fenster zur Zeit ab (Sperrdatei neben den Zugangsdaten); die
+    anderen zeigen „anderes Fenster gleicht ab …“ und versuchen es 30 Sekunden später.
+  * Gleichnamige Ordner an derselben Stelle zählen zusammen: Neues geht immer in den
+    ältesten, Dateien in den anderen werden erkannt und nicht noch einmal hochgeladen.
+    Schon entstandene doppelte Ordner bleiben in Drive stehen (gelöscht wird dort nie) und
+    lassen sich von Hand zusammenlegen.
+* Neue Dateien und Ordner aus dem Vault-Explorer sowie Umbenanntes gehen nach wenigen
+  Sekunden hoch, nicht erst im 15-Minuten-Takt.
+
 ## 29.10.2026 – CompletionistMD 1.9.0, CompletionistPDF 1.8.0 – Druckdialog mit Seitenansicht
 
 ### CompletionistMD 1.9.0, CompletionistPDF 1.8.0
