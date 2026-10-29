@@ -35,6 +35,9 @@ CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
   Link, Zahlen und jede übersprungene Datei samt Grund. Fehlt zu einem „Start“ das Ende,
   hing der Lauf. Der Tooltip der Statusanzeige nennt Link und Protokoll.
 * **Übersprungene Dateien fallen auf:** Die Anzeige wird dann gelb statt grün.
+* **CompletionistPDF: „Drucken …“ im Menü am Druckknopf druckt wieder.** Der Eintrag war
+  versehentlich ein Untermenü seiner selbst (Pfeil ▸) und tat beim Klick nichts; der Knopf
+  selbst und Strg + P waren nicht betroffen.
 * **Drucken: kein Absturz mehr nach „Windows-Druckdialog …“ und Abbrechen.** Der eigene
   Druckdialog versteckte sich, solange der Windows-Dialog offen war; das beendete ihn
   intern, und nach dem Abbrechen beider Dialoge stürzte die App ab. Der Windows-Dialog

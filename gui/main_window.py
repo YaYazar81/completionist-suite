@@ -256,18 +256,25 @@ class MainWindow(QMainWindow):
         recent_button.setMenu(self.recent_menu)
         tb.addWidget(recent_button)
         a_print = act("Drucken …", self.print_pdf, "Ctrl+P", "PDF bzw. Vorschau drucken", "printer")
-        # Klick druckt, der Pfeil bietet Seitenansicht und Seite einrichten
-        print_menu = QMenu(self)
-        print_menu.addAction(a_print)
+        # Klick druckt, der Pfeil bietet Seitenansicht und Seite einrichten. Das Menue
+        # haengt am Knopf, nicht an a_print: sonst erschiene "Drucken …" darin als
+        # Untermenue seiner selbst und taete beim Klick nichts. Der Eintrag ist deshalb
+        # eine eigene Aktion; Strg+P zeigt er nur an (zwei Aktionen mit derselben
+        # Taste waeren mehrdeutig, und Qt loeste dann keine aus).
+        self.print_menu = print_menu = QMenu(self)
+        a_print_entry = QAction(design.icon("printer"), "Drucken …\t"
+                                + QKeySequence("Ctrl+P").toString(QKeySequence.SequenceFormat.NativeText), self)
+        a_print_entry.triggered.connect(self.print_pdf)
+        print_menu.addAction(a_print_entry)
         a_preview = QAction(design.icon("eye"), "Seitenansicht …", self)
         a_preview.setShortcut(QKeySequence("Ctrl+F2"))
         a_preview.triggered.connect(self.preview_pdf)
         self.addAction(a_preview)
         print_menu.addAction(a_preview)
         print_menu.addAction("Seite einrichten …", self.page_setup)
-        a_print.setMenu(print_menu)
         print_button = tb.widgetForAction(a_print)
         if isinstance(print_button, QToolButton):
+            print_button.setMenu(print_menu)
             print_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
         act("Zusammenführen …", self.merge_files, None,
             "Mehrere Markdown-Dateien zu einer zusammenführen (getrennt durch *** = Seitenumbruch)", "merge")

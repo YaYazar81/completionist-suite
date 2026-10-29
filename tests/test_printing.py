@@ -22,6 +22,21 @@ ROOT = Path(__file__).resolve().parents[1]
 def qapp():
     app = QApplication.instance() or QApplication(["pytest"])
     yield app
+    # Aufraeumen, solange es die QApplication noch gibt: Dialoge, Fenster und der
+    # gemeinsame Drucker stuerzten sonst beim Beenden des Prozesses ab.
+    import gc
+
+    from PySide6.QtCore import QCoreApplication, QEvent
+
+    from core import printing
+
+    for w in app.topLevelWidgets():
+        w.close()
+        w.deleteLater()
+    printing._printer = None
+    gc.collect()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    app.processEvents()
 
 
 def test_all_pages_are_printed(qapp, tmp_path, monkeypatch):
@@ -78,7 +93,7 @@ def test_preview_renders_every_page_with_low_resolution(qapp, monkeypatch):
     assert max(s.width() for s in seen) <= round(8.5 * printing.PREVIEW_MAX_DPI)
 
 
-def test_page_range_and_preview_dpi():
+def test_page_range_and_preview_dpi(qapp):
     from core import printing
 
     printer = QtPrintSupport.QPrinter()
@@ -189,3 +204,18 @@ def test_cancel_windows_dialog_then_print_dialog(qapp, tmp_path, monkeypatch):
     QTimer.singleShot(0, drive)
     printing.print_job(None, printing.PdfJob(src, "demo"))
     assert steps == [("native", True), ("after", True)]
+
+
+def test_pdf_print_menu_entry_prints(qapp, monkeypatch):
+    """CompletionistPDF: "Drucken …" im Menue am Druckknopf druckt (war ein leeres
+    Untermenue seiner selbst) und ist kein Untermenue."""
+    from gui import main_window
+
+    called = []
+    monkeypatch.setattr(main_window.MainWindow, "print_pdf", lambda self: called.append("drucken"))
+    win = main_window.MainWindow(ROOT)
+    entry = win.print_menu.actions()[0]
+    assert entry.text().startswith("Drucken") and entry.menu() is None
+    entry.trigger()
+    assert called == ["drucken"]
+    win.deleteLater()
