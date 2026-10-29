@@ -55,14 +55,16 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core import design
+from core import design, office
 
 MD_SUFFIXES = (".md", ".markdown")
 IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg")
-TAB_SUFFIXES = MD_SUFFIXES + (".txt", ".pdf") + IMAGE_SUFFIXES  # im Editor als Tab darstellbar
+TAB_SUFFIXES = (MD_SUFFIXES + (".txt", ".pdf") + IMAGE_SUFFIXES
+                + office.OFFICE_SUFFIXES)  # im Editor als Tab darstellbar (Office nur lesend)
 # Nur Ordner und diese Dateien zeigt der Baum -- .bak, .tmp, .json usw. bleiben
 # als Werkstatt-Reste unsichtbar.
-NAME_FILTERS = ["*.md", "*.pdf", "*.txt", "*.jpg", "*.jpeg", "*.png", "*.gif", "*.webp", "*.svg"]
+NAME_FILTERS = (["*.md", "*.pdf", "*.txt", "*.jpg", "*.jpeg", "*.png", "*.gif", "*.webp", "*.svg"]
+                + ["*" + s for s in office.OFFICE_SUFFIXES])
 
 
 def is_markdown(path: str | Path) -> bool:
@@ -217,7 +219,7 @@ class BookmarkDialog(QDialog):
 # Dateityp-Icons
 # ---------------------------------------------------------------------- #
 
-ICON_KINDS = ("md", "pdf", "img", "txt")
+ICON_KINDS = ("md", "pdf", "img", "txt", "word", "excel", "powerpoint", "google", "other")
 
 
 class FileTypeIcons:
@@ -244,6 +246,8 @@ class FileTypeIcons:
             kind = "img"
         elif p.endswith(".txt"):
             kind = "txt"
+        elif office.is_office(p):
+            kind = office.family(p)
         else:
             return None
         return self._icons.get(kind)

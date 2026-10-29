@@ -35,8 +35,12 @@ from core.drive import (
     FOLDER_MIME, AuthRequired, Cancelled, DriveClient, NotFound, Offline, SyncError,
     TokenStore, parse_rfc3339,
 )
+from core.office import OFFICE_SYNC_SUFFIXES
 
-SYNC_SUFFIXES = (".md", ".txt", ".pdf", ".png", ".jpg", ".jpeg", ".gif")
+# Notizen, PDFs, Bilder und Office-Dateien aller gaengigen Programme (Word, Excel,
+# PowerPoint, OpenDocument/LibreOffice/OpenOffice, iWork, WPS). Office-Lock-Dateien
+# (~$Bericht.docx, .~lock.…#) beginnen mit ~$ bzw. Punkt und bleiben aussen vor.
+SYNC_SUFFIXES = (".md", ".txt", ".pdf", ".png", ".jpg", ".jpeg", ".gif") + OFFICE_SYNC_SUFFIXES
 DEFAULT_FOLDER = "Completionist Vault"
 DEFAULTS = {
     "enabled": False,

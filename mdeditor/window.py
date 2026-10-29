@@ -38,7 +38,7 @@ from PySide6.QtWidgets import (
     QWidgetAction,
 )
 
-from core import design
+from core import design, office, printing
 
 from . import __version__, images
 from .emoji_dialog import EmojiDialog
@@ -47,17 +47,19 @@ from .history_dialog import HistoryDialog
 from .markdown_io import MarkdownFile, snapshot, snapshots, write_safely
 from .panels import FindBar, OutlinePanel, VaultSearchDialog
 from .settings_dialog import SettingsDialog
-from .tabs import BaseTab, ImageTab, MdTab, PdfTab, TextTab, kind_of, same_path
+from .tabs import BaseTab, ImageTab, MdTab, OfficeTab, PdfTab, TextTab, kind_of, same_path
 from .vault import FileTypeIcons, VaultPanel
 
 APP_TITLE = "CompletionistMD"
 WINDOW_TITLE = f"{APP_TITLE} {__version__}"  # Fenstertitel mit Version
 SETTINGS_FILE = "completionistmd.json"
 RECENT_MAX = 15
+_OFFICE_GLOB = " ".join("*" + s for s in office.OFFICE_SUFFIXES)
 OPEN_FILTER = (
-    "Unterstützte Dateien (*.md *.markdown *.txt *.pdf *.png *.jpg *.jpeg *.gif *.webp *.svg);;"
+    f"Unterstützte Dateien (*.md *.markdown *.txt *.pdf *.png *.jpg *.jpeg *.gif *.webp *.svg {_OFFICE_GLOB});;"
     "Markdown (*.md *.markdown);;Text (*.txt);;PDF (*.pdf);;"
-    "Bilder (*.png *.jpg *.jpeg *.gif *.webp *.svg);;Alle Dateien (*)"
+    "Bilder (*.png *.jpg *.jpeg *.gif *.webp *.svg);;"
+    f"Office-Dokumente ({_OFFICE_GLOB});;Alle Dateien (*)"
 )
 
 
@@ -396,6 +398,8 @@ class MainWindow(QMainWindow):
             elif kind == "img":
                 tab = ImageTab(path, self.tabs)
                 tab.handoffRequested.connect(self.hand_off)
+            elif kind == "office":
+                tab = OfficeTab(path, self.tabs)
             else:
                 QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
                 return None
@@ -549,6 +553,19 @@ class MainWindow(QMainWindow):
         self.recent_menu.aboutToShow.connect(self._fill_recent_menu)
         file_menu.addAction("Ältere Fassungen …", self.show_history)
         file_menu.addAction("Dateien zusammenführen …", lambda: self.merge_dialog([]))
+        file_menu.addSeparator()
+        for text, slot, keys, icon in (("Drucken …", self.print_current, "Ctrl+P", "printer"),
+                                       ("Seitenansicht …", self.preview_current, "Ctrl+F2", "eye"),
+                                       ("Seite einrichten …", lambda: printing.page_setup(self), None, None)):
+            a = QAction(text, self)
+            if icon:
+                a.setIcon(design.icon(icon))
+            if keys:
+                a.setShortcut(QKeySequence(keys))
+                a.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
+            a.triggered.connect(slot)
+            file_menu.addAction(a)
+            self.addAction(a)
         file_menu.addSeparator()
         for text, slot, keys in (("Suchen …", lambda: self.open_find(False), "Ctrl+F"),
                                  ("Ersetzen …", lambda: self.open_find(True), "Ctrl+H"),
@@ -1071,6 +1088,8 @@ class MainWindow(QMainWindow):
 
     def open_find(self, replace: bool) -> None:
         tab = self.current_tab()
+        if isinstance(tab, OfficeTab) and tab.mode == "pdf":
+            tab = tab.pdf  # Office als PDF: dessen Suche
         if isinstance(tab, PdfTab):
             tab.find_edit.setFocus()  # der PDF-Tab hat seine eigene Suche
             tab.find_edit.selectAll()
@@ -1243,6 +1262,40 @@ class MainWindow(QMainWindow):
         self.recent_menu.setToolTipsVisible(True)
         self.recent_menu.addSeparator()
         self.recent_menu.addAction("Liste leeren", lambda: self._settings.update(recent=[]))
+
+    # ------------------------------------------------------------------ #
+    # Drucken
+    # ------------------------------------------------------------------ #
+
+    def _print_job(self):
+        """Druckauftrag des aktiven Tabs oder None (mit Hinweis)."""
+        tab = self.current_tab()
+        if isinstance(tab, MdTab):
+            if tab.file is None:
+                QMessageBox.information(self, "Drucken", "Es ist keine Datei geöffnet.")
+                return None
+            tab.push_source_now()  # im Quellcode Getipptes mitdrucken
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        try:
+            job = tab.print_job() if tab is not None else None
+            empty = job is None or (job.page_count() == 0 and not isinstance(job, printing.TextDocumentJob))
+        finally:
+            QApplication.restoreOverrideCursor()
+        if empty:
+            reason = getattr(job, "error", "") or "In diesem Tab gibt es nichts zu drucken."
+            QMessageBox.information(self, "Drucken", reason)
+            return None
+        return job
+
+    def print_current(self) -> None:
+        job = self._print_job()
+        if job is not None:
+            printing.print_job(self, job)
+
+    def preview_current(self) -> None:
+        job = self._print_job()
+        if job is not None:
+            printing.preview_job(self, job)
 
     def show_history(self) -> None:
         tab = self.current_tab()

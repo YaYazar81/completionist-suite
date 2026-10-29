@@ -14,6 +14,27 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
 
+## 29.10.2026 – CompletionistMD 1.8.0, CompletionistPDF 1.7.0 – Office-Dokumente, Drucken mit Seitenansicht
+
+### CompletionistMD 1.8.0
+* **Office-Dateien im Google-Drive-Sync:** Word, Excel, PowerPoint, OpenDocument
+  (LibreOffice/OpenOffice), Office-2003-XML, RTF, CSV, Apple iWork und WPS Office werden wie
+  Notizen hochgeladen – unverändert, ohne Umwandlung in Google-Formate. Sperrdateien offener
+  Dokumente (`~$…`, `.~lock.…`) und Google-Verknüpfungen (`.gdoc` …) bleiben außen vor.
+* **Office-Dokumente ansehen (nur lesen):** Sie stehen im Vault-Explorer und öffnen sich in
+  einem eigenen Tab – originalgetreu als PDF über LibreOffice oder Microsoft Office, sonst
+  Text und Tabellen ohne Layout. Google-Verknüpfungen öffnen das Dokument im Browser.
+  **Im Standardprogramm öffnen** zum Bearbeiten; nach dem Speichern lädt der Tab neu.
+* **Drucken, Seitenansicht, Seite einrichten** unter **Datei ▾** (Strg + P, Strg + F2) für
+  Markdown, Text, PDF, Bilder und Office-Dokumente. Markdown kommt immer schwarz auf weiß
+  aufs Papier, `***` wird zum Seitenumbruch.
+
+### CompletionistPDF 1.7.0
+* **Seitenansicht funktioniert:** Der Pfeil am Knopf **Drucken** bietet jetzt eine echte
+  Seitenansicht (Strg + F2) mit Zoom, Doppelseiten, Hoch-/Querformat und Drucken aus der
+  Vorschau, dazu **Seite einrichten …** (Papierformat, Ausrichtung, Ränder). Der
+  Windows-Druckdialog selbst hat keine Vorschau.
+
 ## 27.10.2026 – CompletionistMD 1.7.2 – Emojis wieder sichtbar
 
 ### CompletionistMD 1.7.2

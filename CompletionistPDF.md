@@ -53,6 +53,10 @@ wird dabei gelöscht, sonst hinge „Öffnen mit“ in einer Schleife. **In Edit
 - **Drucken …** (Strg+P) druckt im Viewer-Modus das PDF, im Markdown-Modus die aktuelle
   Vorschau. Seitenbereich, Drucker und Kopien kommen aus dem Windows-Druckdialog; jede
   Seite wird mit höchstens 600 dpi gerastert und seitenfüllend gesetzt.
+- Der Pfeil am Druckknopf bietet **Seitenansicht …** (Strg+F2: Zoom, Seite/Doppelseite/
+  Übersicht, Hoch-/Querformat, Drucken aus der Vorschau) und **Seite einrichten …**
+  (Papierformat, Ausrichtung, Ränder; gilt bis zum Programmende). Der Code liegt in
+  `core/printing.py` und ist derselbe wie in CompletionistMD.
 - **Zuletzt ▾** listet die letzten 15 geöffneten Markdown- und PDF-Dateien
   (`%APPDATA%\CompletionistPDF\completionistpdf_recent.json`).
 - **Zusammenführen …** fügt mehrere Markdown-Dateien zu einer neuen zusammen, getrennt

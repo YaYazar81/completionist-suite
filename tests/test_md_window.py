@@ -561,3 +561,42 @@ def test_emoji_grid_is_not_elided_by_the_theme(qapp):
         assert "padding: 0px" in dlg.styleSheet()
     finally:
         dlg.close()
+
+
+def test_print_markdown_on_white_paper_with_page_break(qapp, window, tmp_path, monkeypatch):
+    from PySide6.QtPdf import QPdfDocument
+    from PySide6.QtPrintSupport import QPrinter
+
+    from core import printing
+
+    win, tab, doc = window
+    doc.write_text("# Seite eins\n\nText.\n\n***\n\n# Seite zwei\n", encoding="utf-8")
+    win._load_md(tab, doc)
+    assert wait_for(qapp, lambda: not tab.loading)
+    settle(qapp)
+    job = win._print_job()
+    assert job is not None and job.page_count() == 2  # *** = Seitenumbruch
+
+    out = tmp_path / "druck.pdf"
+    printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+    printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
+    printer.setOutputFileName(str(out))
+    printer.setResolution(96)
+    assert job.paint(printer)
+    printed = QPdfDocument(None)
+    printed.load(str(out))
+    assert printed.pageCount() == 2
+    # Dunkles Thema im Editor, auf Papier trotzdem schwarz auf weiss
+    page = printed.render(0, printed.pagePointSize(0).toSize())
+    corner = page.pixelColor(5, 5)
+    assert corner.alpha() == 0 or corner.lightness() > 240
+    darkest = min(page.pixelColor(x, y).lightness()
+                  for x in range(0, page.width(), 2) for y in range(0, 120, 2)
+                  if page.pixelColor(x, y).alpha() > 200)
+    assert darkest < 60
+
+    # Seitenansicht und Druckdialog rufen den Auftrag des aktiven Tabs auf
+    shown = []
+    monkeypatch.setattr(printing, "preview_job", lambda parent, j: shown.append(j.page_count()))
+    win.preview_current()
+    assert shown == [2]
