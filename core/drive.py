@@ -160,11 +160,22 @@ class TokenStore:
             return None
 
     def save_info(self, info_json: str) -> None:
+        """Token speichern -- nur wenn es sich geaendert hat, und absturzsicher:
+        erst vollstaendig auf die Platte (fsync), dann in einem Schritt ersetzen.
+        Ohne fsync kann ein Hard-Reset eine leere Token-Datei hinterlassen."""
+        try:
+            if json.loads(info_json) == self.load_info():
+                return
+        except ValueError:
+            pass
         self.folder.mkdir(parents=True, exist_ok=True)
         target = self.folder / self.TOKEN_FILE
         # eigener Name je Prozess: MD und QR koennen gleichzeitig erneuern
         tmp = target.with_suffix(f".{os.getpid()}.tmp")
-        tmp.write_bytes(_dpapi(info_json.encode("utf-8"), protect=True))
+        with open(tmp, "wb") as fh:
+            fh.write(_dpapi(info_json.encode("utf-8"), protect=True))
+            fh.flush()
+            os.fsync(fh.fileno())
         os.replace(tmp, target)
 
     def forget(self) -> None:

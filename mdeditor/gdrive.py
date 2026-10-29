@@ -38,6 +38,8 @@ from core.drive import (
 )
 from core.office import OFFICE_SYNC_SUFFIXES
 
+from .markdown_io import write_safely
+
 # Notizen, PDFs, Bilder und Office-Dateien aller gaengigen Programme (Word, Excel,
 # PowerPoint, OpenDocument/LibreOffice/OpenOffice, iWork, WPS). Office-Lock-Dateien
 # (~$Bericht.docx, .~lock.…#) beginnen mit ~$ bzw. Punkt und bleiben aussen vor.
@@ -117,8 +119,9 @@ class HashCache:
             return
         self.data = {k: v for k, v in self.data.items() if k in keep}
         try:
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            self.path.write_text(json.dumps(self.data), encoding="utf-8")
+            # absturzsicher: eine halbe Datei waere zwar harmlos (alles wird neu
+            # berechnet), kostet bei grossen Vaults aber einen langen Lauf
+            write_safely(self.path, json.dumps(self.data))
         except OSError:
             pass
 
@@ -249,7 +252,36 @@ def run_sync(client, source: Path, folder_name: str, hashes: HashCache,
         "conflicts": sum(1 for j in done if j.conflict),
         "failed": failed,
         "time": time.time(),
+        "folder_id": tree.top_id,
     }
+
+
+def folder_link(folder_id: str) -> str:
+    return f"https://drive.google.com/drive/folders/{folder_id}"
+
+
+class SyncLog:
+    """Protokoll der Abgleiche (``gdrive.log`` neben den Zugangsdaten).
+
+    Je Lauf: Start mit Quelle und Ziel, Ende mit Zahlen, Link zum Zielordner und
+    jeder abgelehnten Datei samt Grund -- oder der Fehler. Fehlt zu einem Start
+    das Ende, hing der Lauf. Behalten werden die letzten ``KEEP`` Zeilen.
+    """
+
+    KEEP = 2000
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+
+    def write(self, *lines: str) -> None:
+        stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        try:
+            old = self.path.read_text(encoding="utf-8").splitlines() if self.path.exists() else []
+            new = old + [f"{stamp}  {line}" for line in lines]
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.path.write_text("\n".join(new[-self.KEEP:]) + "\n", encoding="utf-8")
+        except OSError:
+            pass  # ohne Protokoll weiter abgleichen
 
 
 class SyncLock:
@@ -321,10 +353,13 @@ class SyncWorker(QObject):
 
     @Slot(str, str)
     def sync(self, source: str, folder_name: str) -> None:
+        log = SyncLog(self.store.folder.parent / "gdrive.log")
         lock = SyncLock(self.store.folder.parent / "gdrive.lock")
         if not lock.acquire():
+            log.write("Übersprungen: ein anderes Fenster gleicht gerade ab")
             self.failed.emit("busy", "Ein anderes CompletionistMD-Fenster gleicht gerade ab.")
             return
+        log.write(f"Start: Quelle {source} → Google Drive / {folder_name}")
         try:
             creds = self.store.credentials()
             client = DriveClient(creds, self.cancel)
@@ -334,12 +369,18 @@ class SyncWorker(QObject):
             if creds.token:  # AuthorizedSession erneuert unterwegs ggf. das Token
                 self.store.save_info(creds.to_json())
         except SyncError as exc:
+            log.write(f"Abgebrochen ({exc.kind}): {exc}")
             self.failed.emit(exc.kind, str(exc))
         except ImportError as exc:
+            log.write(f"Abgebrochen: Google-Bibliotheken fehlen ({exc.name})")
             self.failed.emit("error", f"Google-Bibliotheken fehlen ({exc.name})")
         except Exception as exc:  # nie den Thread sterben lassen
+            log.write(f"Abgebrochen: {type(exc).__name__}: {exc}")
             self.failed.emit("error", f"{type(exc).__name__}: {exc}")
         else:
+            log.write(f"Fertig: {result['checked']} geprüft, {result['uploaded']} hochgeladen "
+                      f"({result['new']} neu), Zielordner {folder_link(result['folder_id'])}",
+                      *(f"  übersprungen: {rel}: {msg}" for rel, msg in result["failed"].items()))
             self.finished.emit(result)
         finally:
             lock.release()
@@ -535,7 +576,8 @@ class GDriveSync(QObject):
             self._set("offline", "Google Drive: Offline",
                       f"Keine Verbindung zu Google. {later}\n\n{message}")
         else:
-            self._set("error", "Google Drive: Fehler", f"{later}\n\n{message}")
+            self._set("error", "Google Drive: Fehler",
+                      f"{later}\n\n{message}\n\nProtokoll: {self.log_path}")
 
     def _on_linked(self, ok: bool, message: str) -> None:
         self.linking = False
@@ -545,12 +587,18 @@ class GDriveSync(QObject):
 
     # --- Status ---
 
+    @property
+    def log_path(self) -> Path:
+        return self.store.folder.parent / "gdrive.log"
+
     def _refresh_ok_text(self, force: bool = False) -> None:
-        if self._last_ok is None or (self.state != "ok" and not force):
+        if self._last_ok is None or (self.state not in ("ok", "warn") and not force):
             return
         r = self._last_result
-        tip = (f"Quelle: {self.source}\nZiel: Google Drive / {self.settings['folder']}\n"
-               f"Zuletzt: {r.get('uploaded', 0)} hochgeladen, {r.get('checked', 0)} geprüft")
+        tip = (f"Quelle: {self.source}\nZiel: Google Drive / {self.settings['folder']}")
+        if r.get("folder_id"):
+            tip += f"\n{folder_link(r['folder_id'])}"
+        tip += f"\nZuletzt: {r.get('uploaded', 0)} hochgeladen, {r.get('checked', 0)} geprüft"
         if r.get("conflicts"):
             tip += f"\n{r['conflicts']} Konflikt(e) – lokale Fassung hat Vorrang"
         failed = r.get("failed") or {}
@@ -560,12 +608,12 @@ class GDriveSync(QObject):
                 tip += f"\n• {rel}: {msg}"
             if len(failed) > 8:
                 tip += f"\n• … und {len(failed) - 8} weitere"
-        tip += "\nKlick: jetzt synchronisieren"
+        tip += f"\nProtokoll: {self.log_path}\nKlick: jetzt synchronisieren"
         text = f"Google Drive: Synchronisiert ({ago(self._last_ok)})"
         if failed:
             text += f", {len(failed)} übersprungen"
-        # "ok" auch mit Uebersprungenen: die Uhr aktualisiert den Text weiter
-        self._set("ok", text, tip)
+        # Uebersprungenes gelb statt gruen, sonst faellt es nicht auf
+        self._set("warn" if failed else "ok", text, tip)
 
     def _set(self, state: str, text: str, tooltip: str) -> None:
         self.state = state
@@ -580,10 +628,11 @@ class SyncStatusButton(QToolButton):
         "idle": "#10B981",
         "busy": "#38BDF8",     # blau: laeuft
         "offline": "#FBBF24",  # gelb
+        "warn": "#FBBF24",     # gelb: abgeglichen, aber Dateien uebersprungen
         "auth": "#F87171",     # rot
         "error": "#F87171",
     }
-    SYMBOLS = {"ok": "☁", "idle": "☁", "offline": "⚠", "auth": "⚠", "error": "⚠"}
+    SYMBOLS = {"ok": "☁", "idle": "☁", "warn": "⚠", "offline": "⚠", "auth": "⚠", "error": "⚠"}
     SPINNER = "◐◓◑◒"
 
     def __init__(self, parent=None) -> None:

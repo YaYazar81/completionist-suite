@@ -30,6 +30,15 @@ CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
     lassen sich von Hand zusammenlegen.
 * Neue Dateien und Ordner aus dem Vault-Explorer sowie Umbenanntes gehen nach wenigen
   Sekunden hoch, nicht erst im 15-Minuten-Takt.
+* **Protokoll:** Jeder Abgleich steht in `gdrive.log` neben den Zugangsdaten
+  (`%LOCALAPPDATA%\CompletionistLibrary\CompletionistMD`): Quelle, Zielordner in Drive mit
+  Link, Zahlen und jede übersprungene Datei samt Grund. Fehlt zu einem „Start“ das Ende,
+  hing der Lauf. Der Tooltip der Statusanzeige nennt Link und Protokoll.
+* **Übersprungene Dateien fallen auf:** Die Anzeige wird dann gelb statt grün.
+* **Absturzsicher:** Das Google-Token wird nur noch geschrieben, wenn es sich geändert hat,
+  und erst vollständig auf die Platte gebracht, bevor es die alte Datei ersetzt; die
+  Prüfsummen-Liste ebenso. Bisher schrieb jeder Abgleich das Token neu – ein Hard-Reset im
+  falschen Moment konnte eine leere Datei hinterlassen.
 
 ## 29.10.2026 – CompletionistMD 1.9.0, CompletionistPDF 1.8.0 – Druckdialog mit Seitenansicht
 

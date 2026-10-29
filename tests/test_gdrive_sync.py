@@ -67,6 +67,7 @@ def test_new_nested_folders_and_files_are_uploaded(tmp_path):
     (tmp_path / "Neu" / "Plan.xlsx").write_bytes(b"x")
     result = run_sync(drive, tmp_path, TOP, hashes)
     assert result["new"] == 2
+    assert result["folder_id"] == remote_tree(drive, TOP).top_id
     tree = remote_tree(drive, TOP)
     assert {"a.md", "Neu/Plan.xlsx", "Neu/Tief/b.md"} == set(tree.files)
 
@@ -130,3 +131,72 @@ def test_worker_reports_busy_while_another_window_syncs(tmp_path):
     worker.sync(str(tmp_path), TOP)
     held.release()
     assert seen == ["busy"]
+
+
+def test_log_records_each_run_and_keeps_the_tail(tmp_path, monkeypatch):
+    from mdeditor.gdrive import SyncLog
+
+    monkeypatch.setattr(SyncLog, "KEEP", 3)
+    log = SyncLog(tmp_path / "gdrive.log")
+    for n in range(5):
+        log.write(f"Zeile {n}")
+    lines = (tmp_path / "gdrive.log").read_text(encoding="utf-8").splitlines()
+    assert [ln.split("  ", 1)[1] for ln in lines] == ["Zeile 2", "Zeile 3", "Zeile 4"]
+
+
+def test_busy_run_is_logged(tmp_path):
+    class Store:
+        folder = tmp_path / "credentials"
+
+    held = SyncLock(tmp_path / "gdrive.lock")
+    assert held.acquire()
+    SyncWorker(Store()).sync(str(tmp_path), TOP)
+    held.release()
+    assert "anderes Fenster" in (tmp_path / "gdrive.log").read_text(encoding="utf-8")
+
+
+def test_skipped_files_turn_the_status_yellow(tmp_path):
+    from PySide6.QtWidgets import QApplication
+
+    from mdeditor.gdrive import GDriveSync
+
+    # volle QApplication: spaetere Tests im selben Lauf brauchen Fenster
+    QApplication.instance() or QApplication(["pytest"])
+
+    class Store:
+        folder = tmp_path / "credentials"
+
+        def has_token(self):
+            return True
+
+    sync = GDriveSync(store=Store())
+    seen = []
+    sync.statusChanged.connect(lambda state, text, tip: seen.append((state, text, tip)))
+    try:
+        result = {"checked": 3, "uploaded": 1, "new": 1, "conflicts": 0, "time": 0,
+                  "folder_id": "abc", "failed": {"Guide/Plan.docx": "Drive-Fehler 403: Speicher voll"}}
+        sync.running = True
+        sync._on_finished(result)
+        state, text, tip = seen[-1]
+        assert state == "warn" and "1 übersprungen" in text
+        assert "drive/folders/abc" in tip and "Speicher voll" in tip and "gdrive.log" in tip
+        sync._on_finished(dict(result, failed={}))
+        assert seen[-1][0] == "ok"
+    finally:
+        sync.shutdown()
+
+
+def test_token_is_only_rewritten_when_it_changed(tmp_path):
+    import json
+
+    from core.drive import TokenStore
+
+    store = TokenStore(tmp_path)
+    store.save_info(json.dumps({"token": "a", "refresh_token": "r"}))
+    token_file = tmp_path / TokenStore.TOKEN_FILE
+    stamp = token_file.stat().st_mtime_ns
+    store.save_info(json.dumps({"refresh_token": "r", "token": "a"}))  # gleich, andere Reihenfolge
+    assert token_file.stat().st_mtime_ns == stamp
+    store.save_info(json.dumps({"token": "b", "refresh_token": "r"}))
+    assert store.load_info()["token"] == "b"
+    assert not list(tmp_path.glob("*.tmp"))

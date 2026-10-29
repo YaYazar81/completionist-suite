@@ -178,10 +178,12 @@ class SettingsDialog(QDialog):
         ab.addLayout(acc_row)
 
         hint = QLabel(
-            "Hochgeladen werden nur neue oder geänderte Dateien (.md, .txt, .pdf, .png, .jpg, "
-            ".jpeg, .gif); versteckte Ordner wie .obsidian bleiben außen vor. Bei Abweichungen "
-            "gewinnt die lokale Fassung. In Drive wird nie etwas gelöscht. Ein Klick auf die "
-            "Anzeige unten rechts startet den Abgleich sofort.",
+            "Hochgeladen werden nur neue oder geänderte Dateien: Notizen (.md, .txt), PDFs, "
+            "Bilder (.png, .jpg, .gif) und Office-Dateien (Word, Excel, PowerPoint, "
+            "LibreOffice/OpenOffice …); versteckte Ordner wie .obsidian bleiben außen vor. Bei "
+            "Abweichungen gewinnt die lokale Fassung. In Drive wird nie etwas gelöscht. Ein Klick "
+            "auf die Anzeige unten rechts startet den Abgleich sofort; jeder Lauf steht im "
+            "Protokoll gdrive.log neben den Zugangsdaten.",
             page,
         )
         hint.setWordWrap(True)
