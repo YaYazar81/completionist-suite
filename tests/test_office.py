@@ -142,9 +142,12 @@ def test_libreoffice_command_uses_own_profile(tmp_path):
 
 
 def test_ms_office_script_quotes_paths():
-    cmd = office.ms_office_command(Path("C:/Guides/O'Brien.xlsx"), Path("C:/tmp/o.pdf"))
-    body = cmd[-1]
-    assert "Excel.Application" in body and "'C:/Guides/O''Brien.xlsx'" in body
+    src = Path("C:/Guides/O'Brien.xlsx")
+    body = office.ms_office_command(src, Path("C:/tmp/o.pdf"))[-1]
+    # Pfad so, wie das Betriebssystem ihn schreibt (Windows: Backslashes), ' verdoppelt
+    quoted = "'" + str(src).replace("'", "''") + "'"
+    assert "O''Brien.xlsx'" in quoted
+    assert "Excel.Application" in body and quoted in body
     assert office.ms_office_command(Path("a.odg"), Path("o.pdf")) is None  # kein MS-Programm dafuer
 
 
