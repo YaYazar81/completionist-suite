@@ -307,11 +307,12 @@ class PrintDialog(QDialog):
             super().accept()
 
     def _native(self) -> None:
+        # Der Windows-Dialog oeffnet sich ueber diesem. Nicht verstecken: hide()
+        # beendet die Schleife von exec(), der Dialog wurde abgeraeumt, und der
+        # naechste Klick nach dem Abbrechen brachte die App zum Absturz.
         self.apply()
-        self.hide()
-        if printing.print_job_native(self.parentWidget(), self.job):
+        if printing.print_job_native(self, self.job):
             super().accept()
             return
         self._load_from_printer()  # der Windows-Dialog kann Drucker und Format geaendert haben
-        self.show()
         self._schedule()

@@ -152,3 +152,40 @@ def test_text_document_honours_page_ranges(qapp, tmp_path):
     printed = QPdfDocument(None)
     printed.load(str(out))
     assert printed.pageCount() == 1
+
+
+def test_cancel_windows_dialog_then_print_dialog(qapp, tmp_path, monkeypatch):
+    """Windows-Druckdialog abbrechen, dann den eigenen: der eigene Dialog muss dabei
+    durchgehend laufen (frueher beendete hide() seine Schleife -> Absturz)."""
+    from PySide6.QtCore import QTimer
+
+    from core import printing
+    from core.print_dialog import PrintDialog
+
+    src = QPdfDocument(None)
+    src.load(str(ROOT / "examples" / "demo.pdf"))
+    steps = []
+
+    def fake_native(parent, job):
+        steps.append(("native", parent.isVisible()))
+        return False  # abgebrochen
+
+    monkeypatch.setattr(printing, "print_job_native", fake_native)
+    created = []
+    real_init = PrintDialog.__init__
+
+    def track(self, *a, **kw):
+        real_init(self, *a, **kw)
+        created.append(self)
+
+    monkeypatch.setattr(PrintDialog, "__init__", track)
+
+    def drive():
+        dlg = created[0]
+        dlg._native()
+        steps.append(("after", dlg.isVisible()))
+        QTimer.singleShot(0, dlg.reject)
+
+    QTimer.singleShot(0, drive)
+    printing.print_job(None, printing.PdfJob(src, "demo"))
+    assert steps == [("native", True), ("after", True)]

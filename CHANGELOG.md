@@ -35,6 +35,10 @@ CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
   Link, Zahlen und jede übersprungene Datei samt Grund. Fehlt zu einem „Start“ das Ende,
   hing der Lauf. Der Tooltip der Statusanzeige nennt Link und Protokoll.
 * **Übersprungene Dateien fallen auf:** Die Anzeige wird dann gelb statt grün.
+* **Drucken: kein Absturz mehr nach „Windows-Druckdialog …“ und Abbrechen.** Der eigene
+  Druckdialog versteckte sich, solange der Windows-Dialog offen war; das beendete ihn
+  intern, und nach dem Abbrechen beider Dialoge stürzte die App ab. Der Windows-Dialog
+  öffnet sich jetzt über dem eigenen, der stehen bleibt (gilt auch für CompletionistPDF).
 * **Absturzsicher:** Das Google-Token wird nur noch geschrieben, wenn es sich geändert hat,
   und erst vollständig auf die Platte gebracht, bevor es die alte Datei ersetzt; die
   Prüfsummen-Liste ebenso. Bisher schrieb jeder Abgleich das Token neu – ein Hard-Reset im

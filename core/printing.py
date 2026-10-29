@@ -242,7 +242,11 @@ def print_job(parent: QWidget | None, job: PrintJob) -> None:
     from .print_dialog import PrintDialog
 
     _prepare(job)
-    PrintDialog(job, parent).exec()
+    dlg = PrintDialog(job, parent)
+    try:
+        dlg.exec()
+    finally:
+        dlg.deleteLater()  # mit Eltern-Fenster bliebe er sonst bis zum Programmende stehen
 
 
 def print_job_native(parent: QWidget | None, job: PrintJob) -> bool:
