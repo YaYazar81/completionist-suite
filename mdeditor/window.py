@@ -215,6 +215,9 @@ class MainWindow(QMainWindow):
         self.vault_panel.aboutToChange.connect(self._on_vault_about_to_change)
         self.vault_panel.pathRenamed.connect(self._on_vault_renamed)
         self.vault_panel.pathRemoved.connect(self._on_vault_removed)
+        # Neu Angelegtes und Umbenanntes gleich hochladen, nicht erst im 15-Minuten-Takt
+        self.vault_panel.pathCreated.connect(lambda _p: self.gdrive.notify_saved())
+        self.vault_panel.pathRenamed.connect(lambda _old, _new: self.gdrive.notify_saved())
         self.vault_panel.settingsRequested.connect(self.open_settings)
         self.vault_panel.handoffRequested.connect(self.hand_off)
         self.vault_panel.mergeRequested.connect(self.merge_dialog)

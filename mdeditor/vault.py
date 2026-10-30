@@ -297,6 +297,7 @@ class VaultPanel(QWidget):
     aboutToChange = Signal(str)          # Pfad wird gleich umbenannt/geloescht
     pathRenamed = Signal(str, str)       # alt, neu
     pathRemoved = Signal(str)
+    pathCreated = Signal(str)            # neue Datei bzw. neuer Ordner (Drive-Sync anstossen)
     settingsRequested = Signal()
     handoffRequested = Signal(str, str)  # Suite-App ("CompletionistPDF" ...), Datei
     mergeRequested = Signal(list)        # mehrere .md (Strg/Umschalt+Klick) zusammenfuehren
@@ -605,6 +606,7 @@ class VaultPanel(QWidget):
         except OSError as exc:
             QMessageBox.critical(self, "Neue Datei", f"Datei konnte nicht angelegt werden:\n{exc}")
             return
+        self.pathCreated.emit(str(target))
         self.openFile.emit(str(target))
         self.select_file(str(target))
 
@@ -618,6 +620,7 @@ class VaultPanel(QWidget):
         except OSError as exc:
             QMessageBox.critical(self, "Neuer Ordner", f"Ordner konnte nicht angelegt werden:\n{exc}")
             return
+        self.pathCreated.emit(str(target))
         idx = self._proxy_index(folder)
         if idx.isValid():
             self.tree.expand(idx)

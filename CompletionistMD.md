@@ -19,6 +19,7 @@ Optional mit Datei: `python main_md.py "Kapitel 1.md"` (taugt auch für
 | `mdeditor/tabs.py` | Tabs: Markdown, Text, PDF, Bild, Office (nur lesen); Beobachten der Dateien |
 | `mdeditor/printing.py` | Markdown drucken (Chromium setzt das PDF) |
 | `core/printing.py` | Drucken, Seitenansicht, Seite einrichten (auch in CompletionistPDF) |
+| `core/print_dialog.py` | Druckdialog mit Seitenansicht (auch in CompletionistPDF) |
 | `core/office.py` | Office-Formate: Endungen, Umwandlung nach PDF, eingebaute Textansicht |
 | `mdeditor/vault.py` | Vault-Explorer links: Verzeichnisbaum, Dateiaktionen, Bookmarks, Mehrfachauswahl |
 | `mdeditor/panels.py` | Gliederung, Suchleiste, Volltextsuche im Vault |
@@ -168,6 +169,13 @@ Office-Dateien.
 **Datei ▾ → Drucken …** (Strg + P), **Seitenansicht …** (Strg + F2) und **Seite
 einrichten …** gelten für jeden Tab: Markdown, Text, PDF, Bild und Office-Dokument.
 
+- **Drucken** öffnet einen eigenen Druckdialog mit Seitenansicht (`core/print_dialog.py`):
+  links Drucker oder **Als PDF speichern**, Ausrichtung, Papier, Ränder, Kopien, Farbe oder
+  Graustufen, beidseitig (wenn der Drucker es kann) und Seiten (`1-3, 5`, `4-` = ab Seite 4),
+  rechts die Vorschau, die jeder Änderung folgt. Der Windows-11-Druckdialog zeigt für
+  Qt-Programme keine Vorschau („Diese App unterstützt keine Seitenansicht“) – deshalb der
+  eigene. Für Treiber-Einstellungen wie Papierart oder Druckqualität führt
+  **Windows-Druckdialog …** dorthin und druckt von dort.
 - **Seitenansicht** zeigt die Seiten so, wie sie aufs Papier kommen: Zoom, an Breite oder
   Seite anpassen, eine Seite / Doppelseiten / alle Seiten, Hoch- und Querformat, Seite
   einrichten und Drucken direkt aus der Vorschau.
@@ -192,6 +200,12 @@ OpenOffice (`.odt`, `.ods`, `.odp`, `.odg`, Vorlagen und Flat-XML), Apple iWork 
 Umwandlung in Google-Formate). Nicht hochgeladen werden die Sperrdateien offener Dokumente
 (`~$Bericht.docx`, `.~lock.…#`) und Google-Verknüpfungen (`.gdoc` …) – deren Dokumente
 liegen ohnehin in Drive.
+
+Abgeglichen wird beim Start, wenige Sekunden nach dem Speichern bzw. nach dem Anlegen oder
+Umbenennen im Vault-Explorer, im eingestellten Takt (Standard 15 Minuten) und per Klick auf
+die Anzeige in der Statusleiste. Es gleicht immer nur ein Fenster zur Zeit ab
+(`gdrive.lock` neben den Zugangsdaten); die anderen versuchen es 30 Sekunden später.
+Gibt es einen Ordner in Drive doppelt, geht Neues immer in den ältesten.
 
 ## Mehrere Fenster
 

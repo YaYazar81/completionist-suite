@@ -14,6 +14,51 @@ von dort im Setup, im Fenstertitel und in den Dateieigenschaften der `.exe`:
 
 CompletionistIMG ist ein eigenes Projekt mit eigenem Änderungsprotokoll.
 
+## 29.10.2026 – CompletionistMD 1.9.1 – Drive-Sync: neue Ordner und Dateien kommen wieder an
+
+### CompletionistMD 1.9.1
+* **Neue Ordner und Dateien landeten in Google Drive im falschen Ordner.** Jedes Fenster
+  glich für sich ab; liefen zwei Fenster gleichzeitig, legten beide einen neuen Ordner an,
+  und es gab ihn in Drive doppelt. Welchen davon der nächste Lauf als Ziel nahm, hing von
+  der Reihenfolge ab, in der Google die Liste lieferte – neue Dateien landeten so oft im
+  „anderen“, gleichnamigen Ordner, vorhandene wurden dorthin ein zweites Mal hochgeladen.
+  * Es gleicht immer nur ein Fenster zur Zeit ab (Sperrdatei neben den Zugangsdaten); die
+    anderen zeigen „anderes Fenster gleicht ab …“ und versuchen es 30 Sekunden später.
+  * Gleichnamige Ordner an derselben Stelle zählen zusammen: Neues geht immer in den
+    ältesten, Dateien in den anderen werden erkannt und nicht noch einmal hochgeladen.
+    Schon entstandene doppelte Ordner bleiben in Drive stehen (gelöscht wird dort nie) und
+    lassen sich von Hand zusammenlegen.
+* Neue Dateien und Ordner aus dem Vault-Explorer sowie Umbenanntes gehen nach wenigen
+  Sekunden hoch, nicht erst im 15-Minuten-Takt.
+* **Protokoll:** Jeder Abgleich steht in `gdrive.log` neben den Zugangsdaten
+  (`%LOCALAPPDATA%\CompletionistLibrary\CompletionistMD`): Quelle, Zielordner in Drive mit
+  Link, Zahlen und jede übersprungene Datei samt Grund. Fehlt zu einem „Start“ das Ende,
+  hing der Lauf. Der Tooltip der Statusanzeige nennt Link und Protokoll.
+* **Übersprungene Dateien fallen auf:** Die Anzeige wird dann gelb statt grün.
+* **CompletionistPDF: „Drucken …“ im Menü am Druckknopf druckt wieder.** Der Eintrag war
+  versehentlich ein Untermenü seiner selbst (Pfeil ▸) und tat beim Klick nichts; der Knopf
+  selbst und Strg + P waren nicht betroffen.
+* **Drucken: kein Absturz mehr nach „Windows-Druckdialog …“ und Abbrechen.** Der eigene
+  Druckdialog versteckte sich, solange der Windows-Dialog offen war; das beendete ihn
+  intern, und nach dem Abbrechen beider Dialoge stürzte die App ab. Der Windows-Dialog
+  öffnet sich jetzt über dem eigenen, der stehen bleibt (gilt auch für CompletionistPDF).
+* **Absturzsicher:** Das Google-Token wird nur noch geschrieben, wenn es sich geändert hat,
+  und erst vollständig auf die Platte gebracht, bevor es die alte Datei ersetzt; die
+  Prüfsummen-Liste ebenso. Bisher schrieb jeder Abgleich das Token neu – ein Hard-Reset im
+  falschen Moment konnte eine leere Datei hinterlassen.
+
+## 29.10.2026 – CompletionistMD 1.9.0, CompletionistPDF 1.8.0 – Druckdialog mit Seitenansicht
+
+### CompletionistMD 1.9.0, CompletionistPDF 1.8.0
+* **Eigener Druckdialog mit Seitenansicht** (Strg + P): Der Druckdialog von Windows 11 zeigt
+  für diese Programme keine Vorschau („Diese App unterstützt keine Seitenansicht“). Der neue
+  Dialog zeigt sie direkt neben den Einstellungen und folgt jeder Änderung: Drucker oder
+  **Als PDF speichern**, Hoch-/Querformat, Papier, Ränder, Kopien, Farbe oder Graustufen,
+  beidseitig und Seiten wie `1-3, 5`. **Windows-Druckdialog …** bleibt für
+  Treiber-Einstellungen (Papierart, Qualität).
+* Beim Aufbau einer Vorschau zeichnet die Oberfläche nicht mehr zwischendurch neu (konnte
+  die sichtbare Vorschau zum Absturz bringen).
+
 ## 29.10.2026 – CompletionistMD 1.8.0, CompletionistPDF 1.7.0 – Office-Dokumente, Drucken mit Seitenansicht
 
 ### CompletionistMD 1.8.0

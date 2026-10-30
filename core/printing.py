@@ -4,7 +4,10 @@ Ein ``PrintJob`` kennt seine Seitenzahl und malt sich auf einen ``QPrinter``.
 Alle drei Wege nutzen denselben Drucker der Sitzung, damit Papierformat,
 Hoch-/Querformat und Raender aus *Seite einrichten* bis zum Programmende gelten:
 
-* ``print_job``   -- Druckdialog (Drucker, Seiten, Kopien), dann drucken
+* ``print_job``   -- eigener Druckdialog mit Seitenansicht (``core/print_dialog.py``):
+  Drucker, Ausrichtung, Papier, Raender, Kopien, Farbe, beidseitig, Seiten
+* ``print_job_native`` -- der Windows-Druckdialog (Treiber-Einstellungen; Windows 11
+  zeigt darin fuer Qt-Programme keine Vorschau)
 * ``preview_job`` -- Seitenansicht (``QPrintPreviewDialog``): Zoom, Seite/Doppelseite/
   Uebersicht, Hoch-/Querformat, Seite einrichten und Drucken direkt aus der Vorschau
 * ``page_setup``  -- Papierformat, Ausrichtung, Raender
@@ -59,13 +62,44 @@ def preview_dpi(pages: int, page_inch2: float = 8.27 * 11.69) -> int:
 
 
 def page_range(printer, pages: int) -> tuple[int, int]:
-    """Gewaehlte Seiten (1-basiert, einschliesslich) -- ohne Auswahl alle."""
+    """Erste und letzte gewaehlte Seite (1-basiert, einschliesslich) -- ohne Auswahl alle."""
+    chosen = selected_pages(printer, pages)
+    return (chosen[0], chosen[-1]) if chosen else (1, pages)
+
+
+def selected_pages(printer, pages: int) -> list[int]:
+    """Gewaehlte Seiten (1-basiert): Bereiche wie "1-3, 5" (``pageRanges``) oder
+    von-bis aus dem Windows-Dialog; ohne Auswahl alle."""
     from PySide6.QtPrintSupport import QPrinter
 
+    if printer.printRange() != QPrinter.PrintRange.PageRange:
+        return list(range(1, pages + 1))
+    ranges = printer.pageRanges()
+    if not ranges.isEmpty():
+        return [n for n in range(1, pages + 1) if ranges.contains(n)]
     first, last = printer.fromPage(), printer.toPage()
-    if printer.printRange() != QPrinter.PrintRange.PageRange or first == 0:
-        return 1, pages
-    return max(1, first), min(pages, last or pages)
+    if first == 0:
+        return list(range(1, pages + 1))
+    return list(range(max(1, first), min(pages, last or pages) + 1))
+
+
+def parse_pages(text: str):
+    """"1-3, 5, 8-" -> ``QPageRanges``; leer = alle (leere Ranges), None = ungueltig."""
+    import re
+
+    from PySide6.QtGui import QPageRanges
+
+    ranges = QPageRanges()
+    for part in filter(None, (p.strip() for p in text.replace(";", ",").split(","))):
+        m = re.fullmatch(r"(\d+)\s*(?:[-–]\s*(\d*))?", part)
+        if not m:
+            return None
+        first = int(m.group(1))
+        last = int(m.group(2)) if m.group(2) else (10 ** 6 if "-" in part or "–" in part else first)
+        if first < 1 or last < first:
+            return None
+        ranges.addRange(first, last)
+    return ranges
 
 
 # ---------------------------------------------------------------------- #
@@ -100,14 +134,14 @@ class PdfJob(PrintJob):
     def paint(self, printer) -> bool:
         from PySide6.QtGui import QPainter
 
-        pages = self.page_count()
-        first, last = page_range(printer, pages)
+        chosen = selected_pages(printer, self.page_count())
         painter = QPainter()
         if not painter.begin(printer):
             return False
-        dpi = preview_dpi(last - first + 1) if is_preview(painter) else min(printer.resolution(), MAX_DPI)
+        preview = is_preview(painter)
+        dpi = preview_dpi(len(chosen)) if preview else min(printer.resolution(), MAX_DPI)
         try:
-            for n, page in enumerate(range(first - 1, last)):
+            for n, page in enumerate(p - 1 for p in chosen):
                 if n:
                     printer.newPage()
                 pt = self.doc.pagePointSize(page)
@@ -118,7 +152,10 @@ class PdfJob(PrintJob):
                 w, h = size.width() * scale, size.height() * scale
                 painter.drawImage(QRectF(target.x() + (target.width() - w) / 2,
                                          target.y() + (target.height() - h) / 2, w, h), image)
-                QApplication.processEvents()
+                if not preview:
+                    # Beim Drucken die Oberflaeche am Leben halten. Nicht in der
+                    # Seitenansicht: die wuerde sich mitten im Aufbau neu zeichnen (Absturz).
+                    QApplication.processEvents()
         finally:
             painter.end()
         return True
@@ -201,7 +238,19 @@ def _prepare(job: PrintJob):
 
 
 def print_job(parent: QWidget | None, job: PrintJob) -> None:
-    """Druckdialog zeigen und drucken."""
+    """Eigener Druckdialog mit Seitenansicht, dann drucken."""
+    from .print_dialog import PrintDialog
+
+    _prepare(job)
+    dlg = PrintDialog(job, parent)
+    try:
+        dlg.exec()
+    finally:
+        dlg.deleteLater()  # mit Eltern-Fenster bliebe er sonst bis zum Programmende stehen
+
+
+def print_job_native(parent: QWidget | None, job: PrintJob) -> bool:
+    """Windows-Druckdialog zeigen und drucken. False = abgebrochen."""
     from PySide6.QtPrintSupport import QPrintDialog
 
     printer, pages = _prepare(job)
@@ -209,8 +258,9 @@ def print_job(parent: QWidget | None, job: PrintJob) -> None:
     dlg.setWindowTitle(f"Drucken – {job.title}")
     dlg.setMinMax(1, pages or 9999)
     if dlg.exec() != QPrintDialog.DialogCode.Accepted:
-        return
+        return False
     _run(parent, job, printer)
+    return True
 
 
 def preview_job(parent: QWidget | None, job: PrintJob) -> None:

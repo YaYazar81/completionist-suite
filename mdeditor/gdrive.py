@@ -24,6 +24,7 @@ import json
 import os
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -36,6 +37,8 @@ from core.drive import (
     TokenStore, parse_rfc3339,
 )
 from core.office import OFFICE_SYNC_SUFFIXES
+
+from .markdown_io import write_safely
 
 # Notizen, PDFs, Bilder und Office-Dateien aller gaengigen Programme (Word, Excel,
 # PowerPoint, OpenDocument/LibreOffice/OpenOffice, iWork, WPS). Office-Lock-Dateien
@@ -53,6 +56,7 @@ DEFAULTS = {
 SAVE_DEBOUNCE_MS = 5000
 STARTUP_DELAY_MS = 4000
 RETRY_MINUTES = (1, 2, 5, 10, 15)  # neuer Lauf nach Abbruch (offline/Fehler)
+BUSY_RETRY_MS = 30_000  # anderes Fenster gleicht ab: danach noch einmal
 
 
 def settings_with_defaults(raw) -> dict:
@@ -115,8 +119,9 @@ class HashCache:
             return
         self.data = {k: v for k, v in self.data.items() if k in keep}
         try:
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            self.path.write_text(json.dumps(self.data), encoding="utf-8")
+            # absturzsicher: eine halbe Datei waere zwar harmlos (alles wird neu
+            # berechnet), kostet bei grossen Vaults aber einen langen Lauf
+            write_safely(self.path, json.dumps(self.data))
         except OSError:
             pass
 
@@ -129,7 +134,16 @@ class RemoteTree:
 
 
 def remote_tree(client, folder_name: str) -> RemoteTree:
-    items = client.list_all()
+    """Der Zielordner in Drive samt Unterordnern und Dateien.
+
+    Gleichnamige Ordner an derselben Stelle (vor MD 1.9.1 von zwei Fenstern zur
+    selben Zeit angelegt) zaehlen zusammen: Neues landet immer im
+    aeltesten, Dateien in den anderen werden erkannt und nicht noch einmal
+    hochgeladen. Ohne feste Wahl hing das Ziel davon ab, in welcher Reihenfolge
+    Google die Liste lieferte -- neue Dateien landeten dann im "anderen" Ordner.
+    """
+    # Aelteste zuerst (stabil sortiert: ohne createdTime bleibt die Reihenfolge)
+    items = sorted(client.list_all(), key=lambda i: i.get("createdTime") or "")
     # Kein files/root: mit drive.file darf die App den Root-Ordner nicht lesen
     # (404 "File not found: 0A…PVA"). Zielordner ist deshalb der gleichnamige
     # Ordner, der nicht selbst in einem Ordner der App liegt.
@@ -139,24 +153,27 @@ def remote_tree(client, folder_name: str) -> RemoteTree:
         and not own.intersection(i.get("parents") or [])
     ]
     # Die Liste kann kurz nach dem Loeschen noch verwaiste IDs enthalten:
-    # den Kandidaten gezielt nachpruefen, sonst den Ordner im Root neu anlegen.
-    top_id = next((c["id"] for c in candidates if client.exists(c["id"])), None)
-    if top_id is None:
-        top_id = client.create_folder(folder_name, None)
+    # die Kandidaten gezielt nachpruefen, sonst den Ordner im Root neu anlegen.
+    tops = [c["id"] for c in candidates if client.exists(c["id"])]
+    if not tops:
+        tops = [client.create_folder(folder_name, None)]
     children: dict[str, list[dict]] = {}
     for i in items:
         for parent in i.get("parents") or []:
             children.setdefault(parent, []).append(i)
-    tree = RemoteTree(top_id, folders={"": top_id})
-    stack = [("", top_id)]
-    while stack:
-        rel, fid = stack.pop()
+    tree = RemoteTree(tops[0], folders={"": tops[0]})
+    # Breitensuche: an jeder Stelle kommt der aelteste Ordner vor seinen Doppelten
+    queue = deque(("", top) for top in tops)
+    seen = set(tops)
+    while queue:
+        rel, fid = queue.popleft()
         for child in children.get(fid, []):
             child_rel = f"{rel}/{child['name']}" if rel else child["name"]
             if child.get("mimeType") == FOLDER_MIME:
-                if child_rel not in tree.folders:
-                    tree.folders[child_rel] = child["id"]
-                    stack.append((child_rel, child["id"]))
+                tree.folders.setdefault(child_rel, child["id"])
+                if child["id"] not in seen:
+                    seen.add(child["id"])
+                    queue.append((child_rel, child["id"]))
             else:
                 tree.files.setdefault(child_rel, child)
     return tree
@@ -235,7 +252,86 @@ def run_sync(client, source: Path, folder_name: str, hashes: HashCache,
         "conflicts": sum(1 for j in done if j.conflict),
         "failed": failed,
         "time": time.time(),
+        "folder_id": tree.top_id,
     }
+
+
+def folder_link(folder_id: str) -> str:
+    return f"https://drive.google.com/drive/folders/{folder_id}"
+
+
+class SyncLog:
+    """Protokoll der Abgleiche (``gdrive.log`` neben den Zugangsdaten).
+
+    Je Lauf: Start mit Quelle und Ziel, Ende mit Zahlen, Link zum Zielordner und
+    jeder abgelehnten Datei samt Grund -- oder der Fehler. Fehlt zu einem Start
+    das Ende, hing der Lauf. Behalten werden die letzten ``KEEP`` Zeilen.
+    """
+
+    KEEP = 2000
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+
+    def write(self, *lines: str) -> None:
+        stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        try:
+            old = self.path.read_text(encoding="utf-8").splitlines() if self.path.exists() else []
+            new = old + [f"{stamp}  {line}" for line in lines]
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.path.write_text("\n".join(new[-self.KEEP:]) + "\n", encoding="utf-8")
+        except OSError:
+            pass  # ohne Protokoll weiter abgleichen
+
+
+class SyncLock:
+    """Nur ein Abgleich zur Zeit, auch ueber mehrere Fenster (Prozesse) hinweg.
+
+    Zwei gleichzeitige Laeufe legten neue Ordner doppelt an. Gesperrt wird ueber
+    das Betriebssystem (Windows: ``msvcrt.locking``, sonst ``flock``); endet ein
+    Fenster unerwartet, gibt das System die Sperre von selbst frei.
+    """
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self.fd: int | None = None
+
+    def acquire(self) -> bool:
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            fd = os.open(self.path, os.O_RDWR | os.O_CREAT, 0o600)
+        except OSError:
+            return True  # ohne Sperrdatei lieber abgleichen als nie
+        try:
+            if os.name == "nt":
+                import msvcrt
+
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            os.close(fd)
+            return False
+        self.fd = fd
+        return True
+
+    def release(self) -> None:
+        if self.fd is None:
+            return
+        try:
+            if os.name == "nt":
+                import msvcrt
+
+                os.lseek(self.fd, 0, os.SEEK_SET)
+                msvcrt.locking(self.fd, msvcrt.LK_UNLCK, 1)
+        except OSError:
+            pass
+        finally:
+            os.close(self.fd)  # flock endet mit dem Schliessen
+            self.fd = None
 
 
 # ---------------------------------------------------------------------- #
@@ -257,6 +353,13 @@ class SyncWorker(QObject):
 
     @Slot(str, str)
     def sync(self, source: str, folder_name: str) -> None:
+        log = SyncLog(self.store.folder.parent / "gdrive.log")
+        lock = SyncLock(self.store.folder.parent / "gdrive.lock")
+        if not lock.acquire():
+            log.write("Übersprungen: ein anderes Fenster gleicht gerade ab")
+            self.failed.emit("busy", "Ein anderes CompletionistMD-Fenster gleicht gerade ab.")
+            return
+        log.write(f"Start: Quelle {source} → Google Drive / {folder_name}")
         try:
             creds = self.store.credentials()
             client = DriveClient(creds, self.cancel)
@@ -266,13 +369,21 @@ class SyncWorker(QObject):
             if creds.token:  # AuthorizedSession erneuert unterwegs ggf. das Token
                 self.store.save_info(creds.to_json())
         except SyncError as exc:
+            log.write(f"Abgebrochen ({exc.kind}): {exc}")
             self.failed.emit(exc.kind, str(exc))
         except ImportError as exc:
+            log.write(f"Abgebrochen: Google-Bibliotheken fehlen ({exc.name})")
             self.failed.emit("error", f"Google-Bibliotheken fehlen ({exc.name})")
         except Exception as exc:  # nie den Thread sterben lassen
+            log.write(f"Abgebrochen: {type(exc).__name__}: {exc}")
             self.failed.emit("error", f"{type(exc).__name__}: {exc}")
         else:
+            log.write(f"Fertig: {result['checked']} geprüft, {result['uploaded']} hochgeladen "
+                      f"({result['new']} neu), Zielordner {folder_link(result['folder_id'])}",
+                      *(f"  übersprungen: {rel}: {msg}" for rel, msg in result["failed"].items()))
             self.finished.emit(result)
+        finally:
+            lock.release()
 
     @Slot()
     def link(self) -> None:
@@ -448,6 +559,11 @@ class GDriveSync(QObject):
         self._again = False
         if kind == "cancelled":
             return
+        if kind == "busy":
+            # Kein Fehler: das andere Fenster laedt hoch; danach die eigenen Aenderungen
+            self.retry.start(BUSY_RETRY_MS)
+            self._set("busy", "Google Drive: anderes Fenster gleicht ab …", message)
+            return
         if kind == "auth":
             self._set("auth", "Google Drive: Authentifizierung erforderlich", message)
             return
@@ -460,7 +576,8 @@ class GDriveSync(QObject):
             self._set("offline", "Google Drive: Offline",
                       f"Keine Verbindung zu Google. {later}\n\n{message}")
         else:
-            self._set("error", "Google Drive: Fehler", f"{later}\n\n{message}")
+            self._set("error", "Google Drive: Fehler",
+                      f"{later}\n\n{message}\n\nProtokoll: {self.log_path}")
 
     def _on_linked(self, ok: bool, message: str) -> None:
         self.linking = False
@@ -470,12 +587,18 @@ class GDriveSync(QObject):
 
     # --- Status ---
 
+    @property
+    def log_path(self) -> Path:
+        return self.store.folder.parent / "gdrive.log"
+
     def _refresh_ok_text(self, force: bool = False) -> None:
-        if self._last_ok is None or (self.state != "ok" and not force):
+        if self._last_ok is None or (self.state not in ("ok", "warn") and not force):
             return
         r = self._last_result
-        tip = (f"Quelle: {self.source}\nZiel: Google Drive / {self.settings['folder']}\n"
-               f"Zuletzt: {r.get('uploaded', 0)} hochgeladen, {r.get('checked', 0)} geprüft")
+        tip = (f"Quelle: {self.source}\nZiel: Google Drive / {self.settings['folder']}")
+        if r.get("folder_id"):
+            tip += f"\n{folder_link(r['folder_id'])}"
+        tip += f"\nZuletzt: {r.get('uploaded', 0)} hochgeladen, {r.get('checked', 0)} geprüft"
         if r.get("conflicts"):
             tip += f"\n{r['conflicts']} Konflikt(e) – lokale Fassung hat Vorrang"
         failed = r.get("failed") or {}
@@ -485,12 +608,12 @@ class GDriveSync(QObject):
                 tip += f"\n• {rel}: {msg}"
             if len(failed) > 8:
                 tip += f"\n• … und {len(failed) - 8} weitere"
-        tip += "\nKlick: jetzt synchronisieren"
+        tip += f"\nProtokoll: {self.log_path}\nKlick: jetzt synchronisieren"
         text = f"Google Drive: Synchronisiert ({ago(self._last_ok)})"
         if failed:
             text += f", {len(failed)} übersprungen"
-        # "ok" auch mit Uebersprungenen: die Uhr aktualisiert den Text weiter
-        self._set("ok", text, tip)
+        # Uebersprungenes gelb statt gruen, sonst faellt es nicht auf
+        self._set("warn" if failed else "ok", text, tip)
 
     def _set(self, state: str, text: str, tooltip: str) -> None:
         self.state = state
@@ -505,10 +628,11 @@ class SyncStatusButton(QToolButton):
         "idle": "#10B981",
         "busy": "#38BDF8",     # blau: laeuft
         "offline": "#FBBF24",  # gelb
+        "warn": "#FBBF24",     # gelb: abgeglichen, aber Dateien uebersprungen
         "auth": "#F87171",     # rot
         "error": "#F87171",
     }
-    SYMBOLS = {"ok": "☁", "idle": "☁", "offline": "⚠", "auth": "⚠", "error": "⚠"}
+    SYMBOLS = {"ok": "☁", "idle": "☁", "warn": "⚠", "offline": "⚠", "auth": "⚠", "error": "⚠"}
     SPINNER = "◐◓◑◒"
 
     def __init__(self, parent=None) -> None:
